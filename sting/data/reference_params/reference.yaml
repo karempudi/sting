@@ -1,0 +1,28 @@
+# This should contain the complete list of all the parameters.
+--- # Begin
+Motion:
+  magnification: 20
+
+Acquisition:
+  timeepoints: 10
+
+CellSeg:
+  network: 'Unet'
+
+ChannelSeg:
+  network: 'Unet'
+
+Tracking:
+  network: 'Graphnet'
+
+GrowthRates:
+  calculation_type: 'exponential_fit'
+
+Save:
+  directory: # Top level directory for saving files.
+
+
+
+
+
+
