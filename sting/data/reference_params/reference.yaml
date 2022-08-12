@@ -7,10 +7,12 @@ Acquisition:
   timeepoints: 10
 
 CellSeg:
-  network: 'Unet'
+  network: 'Unet' # Network type used for cell seg
+  model_path: #  model .pt or .pth file containing network weights
 
 ChannelSeg:
   network: 'Unet'
+  model_path: # model .pt or .pth file containing network weights
 
 Tracking:
   network: 'Graphnet'
@@ -24,6 +26,13 @@ Save:
 Experiment:
   number: 'exp-bp-000' # Experiment no
   analysis_type: 'simlive' # should be 'live' or 'post' or 'simlive'
+  queues: # list with 4 things ['acquire', 'segment', 'channel', 'growth']
+  # if you want to remove, only remove from the end, you can't remove
+  # arbitrarily
+    - acquire
+    - segment
+    - track
+    - growth
 
 
 
