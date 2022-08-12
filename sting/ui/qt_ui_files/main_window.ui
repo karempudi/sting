@@ -367,7 +367,7 @@
     <property name="title">
      <string>Controls</string>
     </property>
-    <widget class="QPushButton" name="start_expt_button">
+    <widget class="QPushButton" name="start_status_button">
      <property name="geometry">
       <rect>
        <x>30</x>
@@ -380,7 +380,7 @@
       <string>Start</string>
      </property>
     </widget>
-    <widget class="QPushButton" name="stop_expt_button">
+    <widget class="QPushButton" name="stop_status_button">
      <property name="geometry">
       <rect>
        <x>30</x>

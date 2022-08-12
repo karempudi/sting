@@ -19,7 +19,11 @@ GrowthRates:
   calculation_type: 'exponential_fit'
 
 Save:
-  directory: # Top level directory for saving files.
+  directory: "C:\\Users\\Praneeth\\Documents\\Elflab\\Code\\outputdump" # Top level directory for saving files.
+
+Experiment:
+  number: 'exp-bp-000' # Experiment no
+  analysis_type: 'simlive' # should be 'live' or 'post' or 'simlive'
 
 
 

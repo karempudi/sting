@@ -50,13 +50,13 @@ class ParamHandling:
             from the file
         """
         
-        extension =self._chekc_return_extension(filename)
+        extension =self._check_return_extension(filename)
         if extension == '.json':
             with open(filename) as json_file:
                 params_dict = json.load(json_file)
         elif extension in ('.yml', '.yaml'):
             with open(filename) as yaml_file:
-                params_dict = yaml.save_load(yaml_file)
+                params_dict = yaml.safe_load(yaml_file)
         
         params_ref = load_reference()
         params_dict = autofill_dict(params_dict, params_ref)
