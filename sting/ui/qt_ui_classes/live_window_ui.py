@@ -1,0 +1,116 @@
+# -*- coding: utf-8 -*-
+
+# Form implementation generated from reading ui file '.\qt_ui_files\live_window.ui'
+#
+# Created by: PyQt5 UI code generator 5.9.2
+#
+# WARNING! All changes made in this file will be lost!
+
+from PyQt5 import QtCore, QtGui, QtWidgets
+
+class Ui_LiveWindow(object):
+    def setupUi(self, LiveWindow):
+        LiveWindow.setObjectName("LiveWindow")
+        LiveWindow.resize(959, 544)
+        self.centralwidget = QtWidgets.QWidget(LiveWindow)
+        self.centralwidget.setObjectName("centralwidget")
+        self.highlight_box = QtWidgets.QGroupBox(self.centralwidget)
+        self.highlight_box.setGeometry(QtCore.QRect(230, 10, 531, 61))
+        self.highlight_box.setObjectName("highlight_box")
+        self.horizontalLayoutWidget = QtWidgets.QWidget(self.highlight_box)
+        self.horizontalLayoutWidget.setGeometry(QtCore.QRect(10, 30, 511, 27))
+        self.horizontalLayoutWidget.setObjectName("horizontalLayoutWidget")
+        self.horizontalLayout = QtWidgets.QHBoxLayout(self.horizontalLayoutWidget)
+        self.horizontalLayout.setContentsMargins(0, 0, 0, 0)
+        self.horizontalLayout.setObjectName("horizontalLayout")
+        self.ch_no_label = QtWidgets.QLabel(self.horizontalLayoutWidget)
+        self.ch_no_label.setObjectName("ch_no_label")
+        self.horizontalLayout.addWidget(self.ch_no_label)
+        self.ch_no_edit = QtWidgets.QLineEdit(self.horizontalLayoutWidget)
+        self.ch_no_edit.setObjectName("ch_no_edit")
+        self.horizontalLayout.addWidget(self.ch_no_edit)
+        self.block_no_label = QtWidgets.QLabel(self.horizontalLayoutWidget)
+        self.block_no_label.setObjectName("block_no_label")
+        self.horizontalLayout.addWidget(self.block_no_label)
+        self.block_no_edit = QtWidgets.QLineEdit(self.horizontalLayoutWidget)
+        self.block_no_edit.setObjectName("block_no_edit")
+        self.horizontalLayout.addWidget(self.block_no_edit)
+        self.highlight_button = QtWidgets.QPushButton(self.horizontalLayoutWidget)
+        self.highlight_button.setObjectName("highlight_button")
+        self.horizontalLayout.addWidget(self.highlight_button)
+        self.controls_box = QtWidgets.QGroupBox(self.centralwidget)
+        self.controls_box.setGeometry(QtCore.QRect(10, 10, 221, 61))
+        self.controls_box.setObjectName("controls_box")
+        self.horizontalLayoutWidget_2 = QtWidgets.QWidget(self.controls_box)
+        self.horizontalLayoutWidget_2.setGeometry(QtCore.QRect(0, 20, 221, 41))
+        self.horizontalLayoutWidget_2.setObjectName("horizontalLayoutWidget_2")
+        self.horizontalLayout_2 = QtWidgets.QHBoxLayout(self.horizontalLayoutWidget_2)
+        self.horizontalLayout_2.setContentsMargins(0, 0, 0, 0)
+        self.horizontalLayout_2.setObjectName("horizontalLayout_2")
+        self.start_imaging_button = QtWidgets.QPushButton(self.horizontalLayoutWidget_2)
+        self.start_imaging_button.setObjectName("start_imaging_button")
+        self.horizontalLayout_2.addWidget(self.start_imaging_button)
+        self.stop_imaging_button = QtWidgets.QPushButton(self.horizontalLayoutWidget_2)
+        self.stop_imaging_button.setObjectName("stop_imaging_button")
+        self.horizontalLayout_2.addWidget(self.stop_imaging_button)
+        self.live_image_graphics = ImageView(self.centralwidget)
+        self.live_image_graphics.setGeometry(QtCore.QRect(10, 120, 921, 331))
+        self.live_image_graphics.setObjectName("live_image_graphics")
+        self.scroll_bar = QtWidgets.QScrollBar(self.centralwidget)
+        self.scroll_bar.setGeometry(QtCore.QRect(380, 460, 160, 16))
+        self.scroll_bar.setOrientation(QtCore.Qt.Horizontal)
+        self.scroll_bar.setObjectName("scroll_bar")
+        self.cell_seg_check_box = QtWidgets.QCheckBox(self.centralwidget)
+        self.cell_seg_check_box.setGeometry(QtCore.QRect(20, 80, 92, 23))
+        self.cell_seg_check_box.setObjectName("cell_seg_check_box")
+        self.channel_seg_check_box = QtWidgets.QCheckBox(self.centralwidget)
+        self.channel_seg_check_box.setGeometry(QtCore.QRect(110, 80, 92, 23))
+        self.channel_seg_check_box.setObjectName("channel_seg_check_box")
+        self.gpu_check_box = QtWidgets.QCheckBox(self.centralwidget)
+        self.gpu_check_box.setGeometry(QtCore.QRect(300, 80, 92, 23))
+        self.gpu_check_box.setObjectName("gpu_check_box")
+        self.islive_check_box = QtWidgets.QCheckBox(self.centralwidget)
+        self.islive_check_box.setGeometry(QtCore.QRect(420, 80, 92, 23))
+        self.islive_check_box.setObjectName("islive_check_box")
+        self.reg_detect_check_box = QtWidgets.QCheckBox(self.centralwidget)
+        self.reg_detect_check_box.setGeometry(QtCore.QRect(190, 80, 92, 23))
+        self.reg_detect_check_box.setObjectName("reg_detect_check_box")
+        LiveWindow.setCentralWidget(self.centralwidget)
+        self.menubar = QtWidgets.QMenuBar(LiveWindow)
+        self.menubar.setGeometry(QtCore.QRect(0, 0, 959, 21))
+        self.menubar.setObjectName("menubar")
+        LiveWindow.setMenuBar(self.menubar)
+        self.statusbar = QtWidgets.QStatusBar(LiveWindow)
+        self.statusbar.setObjectName("statusbar")
+        LiveWindow.setStatusBar(self.statusbar)
+
+        self.retranslateUi(LiveWindow)
+        QtCore.QMetaObject.connectSlotsByName(LiveWindow)
+
+    def retranslateUi(self, LiveWindow):
+        _translate = QtCore.QCoreApplication.translate
+        LiveWindow.setWindowTitle(_translate("LiveWindow", "MainWindow"))
+        self.highlight_box.setTitle(_translate("LiveWindow", "Highlight"))
+        self.ch_no_label.setText(_translate("LiveWindow", "Channel No"))
+        self.block_no_label.setText(_translate("LiveWindow", "Block No"))
+        self.highlight_button.setText(_translate("LiveWindow", "Highlight"))
+        self.controls_box.setTitle(_translate("LiveWindow", "Controls"))
+        self.start_imaging_button.setText(_translate("LiveWindow", "Start"))
+        self.stop_imaging_button.setText(_translate("LiveWindow", "Stop"))
+        self.cell_seg_check_box.setText(_translate("LiveWindow", "Cells"))
+        self.channel_seg_check_box.setText(_translate("LiveWindow", "Channels"))
+        self.gpu_check_box.setText(_translate("LiveWindow", "GPU"))
+        self.islive_check_box.setText(_translate("LiveWindow", "Live"))
+        self.reg_detect_check_box.setText(_translate("LiveWindow", "Region detect"))
+
+from pyqtgraph import ImageView
+
+if __name__ == "__main__":
+    import sys
+    app = QtWidgets.QApplication(sys.argv)
+    LiveWindow = QtWidgets.QMainWindow()
+    ui = Ui_LiveWindow()
+    ui.setupUi(LiveWindow)
+    LiveWindow.show()
+    sys.exit(app.exec_())
+
