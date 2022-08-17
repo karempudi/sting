@@ -17,6 +17,13 @@ setup(
     version = '0.0.1',
     packages = setuptools.find_packages(),
     install_requires = requirements,
+    entry_points= {
+        'console_scripts' : [
+            'sting.seg.train = sting.segmentation.train:main',
+            'sting.runner = sting.ui.run:main',
+            'sting.viewer = sting.ui.viewer:main'
+        ]
+    },
     zip_safe=False,
     url='https://github.com/karempudi/sting',
     license='MIT',
