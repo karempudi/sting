@@ -5,10 +5,10 @@ import pathlib
 from pathlib import Path
 from PyQt5.QtWidgets import (QApplication, QMainWindow, 
                 QMessageBox, QFileDialog)
-from qt_ui_classes.main_window_ui import Ui_MainWindow
+from sting.ui.qt_ui_classes.main_window_ui import Ui_MainWindow
 from sting.utils.param_io import load_params, save_params
 from datetime import datetime
-from sting.liveanalysis.processes import start_live_experiment, start_simlive_experiment
+from sting.liveanalysis.processes import start_live_experiment
 from sting.analysis.processes import start_post_analysis
 
 class MainWindow(QMainWindow):
@@ -120,10 +120,12 @@ class MainWindow(QMainWindow):
     def show_dead_alive(self):
         pass
     
-if __name__ == "__main__":
+
+def main():
     app = QApplication(sys.argv)
     window = MainWindow()
     window.show()
-    sys.exit(app.exec())
+    sys.exit(app.exec())    
 
-    
+if __name__ == "__main__":
+    main()

@@ -3,12 +3,14 @@
 
 from PyQt5.QtWidgets import (QApplication, QMainWindow, 
                 QFileDialog, QMessageBox)
-from qt_ui_classes.run_window_ui import Ui_RunWindow
+from sting.ui.qt_ui_classes.run_window_ui import Ui_RunWindow
 import sys
 import json
 import yaml
 import pathlib
 from pathlib import Path
+from sting.utils.param_io import load_params
+from sting.liveanalysis.processes import ExptRun, start_live_experiment
 
 class RunWindow(QMainWindow):
 
@@ -20,6 +22,9 @@ class RunWindow(QMainWindow):
      
         self.setup_button_handlers()
 
+        self.params = None
+        self.expt_obj = None
+
     def setup_button_handlers(self):
         # button handlers 
         self.ui.load_button.clicked.connect(self.load_expt_params)
@@ -29,16 +34,59 @@ class RunWindow(QMainWindow):
         self.ui.stop_button.clicked.connect(self.stop_expt)
 
     def load_expt_params(self):
-        print('Loadinng experimental parameters')
+        sys.stdout.write("Loadinng experimental parameters. Please select file.\n")
+        sys.stdout.flush()
+        try:
+            filename, _ = QFileDialog.getOpenFileName(self,
+                                                   self.tr("Open an expt params setup file"),
+                                                   '.',
+                                                   self.tr("Expt json or yaml file (*.json *.yaml *.yml"))
+            if filename == '':
+                msg = QMessageBox()
+                msg.setText("Expt setup params not selected")
+                msg.exec()
+            else:
+                # load params
+                self.params = load_params(filename)
+                # call verify params and raise something if it 
+                # is not correct
+        
+        except Exception as e:
+            sys.stdout.write(f"Error in loading the experimental setup file -- {e}\n")
+            sys.stdout.flush()
+        
+        finally:
+            if self.params != None:
+                sys.stdout.write("Parameters for the experiment set from file \n")
+                sys.stdout.flush()
 
     def start_expt(self):
-        print('starting experiment')
+        sys.stdout.write("Setting up experiment object from the parameters.\n")
+        sys.stdout.flush()
+
+        self.expt_obj = ExptRun(self.params)
+        self.ui.start_button.setEnabled(False)
+        self.ui.load_button.setEnabled(False)
+        #start_live_experiment(self.expt_obj, self.params)
+
 
     def stop_expt(self):
-        print('stopping experiment')
+        sys.stdout.write("Stopping the experiment.\n")
+        sys.stdout.flush()
 
-if __name__ == "__main__":
+        # Stop the experiment and finally set it to None
+
+        self.ui.load_button.setEnabled(True)
+        self.ui.start_button.setEnabled(True)
+        self.expt_obj = None
+
+        
+def main():
     app = QApplication(sys.argv)
     window = RunWindow()
     window.show()
     sys.exit(app.exec())
+
+
+if __name__ == "__main__":
+    main()
