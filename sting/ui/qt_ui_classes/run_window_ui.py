@@ -23,6 +23,9 @@ class Ui_RunWindow(object):
         self.load_button = QtWidgets.QPushButton(self.centralwidget)
         self.load_button.setGeometry(QtCore.QRect(50, 20, 75, 23))
         self.load_button.setObjectName("load_button")
+        self.simulation_check = QtWidgets.QCheckBox(self.centralwidget)
+        self.simulation_check.setGeometry(QtCore.QRect(50, 140, 70, 17))
+        self.simulation_check.setObjectName("simulation_check")
         RunWindow.setCentralWidget(self.centralwidget)
         self.menubar = QtWidgets.QMenuBar(RunWindow)
         self.menubar.setGeometry(QtCore.QRect(0, 0, 345, 21))
@@ -41,6 +44,7 @@ class Ui_RunWindow(object):
         self.start_button.setText(_translate("RunWindow", "Start"))
         self.stop_button.setText(_translate("RunWindow", "Stop"))
         self.load_button.setText(_translate("RunWindow", "Load"))
+        self.simulation_check.setText(_translate("RunWindow", "Simulation"))
 
 
 if __name__ == "__main__":

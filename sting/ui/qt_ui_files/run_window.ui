@@ -53,6 +53,19 @@
      <string>Load</string>
     </property>
    </widget>
+   <widget class="QCheckBox" name="simulation_check">
+    <property name="geometry">
+     <rect>
+      <x>50</x>
+      <y>140</y>
+      <width>70</width>
+      <height>17</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>Simulation</string>
+    </property>
+   </widget>
   </widget>
   <widget class="QMenuBar" name="menubar">
    <property name="geometry">
