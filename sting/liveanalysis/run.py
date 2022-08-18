@@ -23,7 +23,7 @@ def main():
     # from the processes.py module
     params = load_params(args.param_file)
     expt_obj = ExptRun(params)
-    start_live_experiment(expt_obj, params, sim=args.sim)
+    start_live_experiment(expt_obj, params, sim=args.sim, from_cmdline=True)
 
 if __name__ == "__main__":
     main()

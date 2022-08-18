@@ -72,7 +72,8 @@ class RunWindow(QMainWindow):
             self.expt_obj = ExptRun(self.params)
             self.ui.start_button.setEnabled(False)
             self.ui.load_button.setEnabled(False)
-            start_live_experiment(self.expt_obj, self.params, sim=False)
+            start_live_experiment(self.expt_obj, self.params, 
+                                  sim=self.simulation, from_cmdline=False)
         else:
             msg = QMessageBox()
             msg.setText("Expt parameters not loaded")

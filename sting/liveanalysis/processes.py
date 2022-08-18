@@ -192,7 +192,7 @@ def worker_process(queue, configurer):
         
 
 def start_live_experiment(expt_run: ExptRun, param: Union[RecursiveNamespace, dict],
-                    sim: bool=True):
+                    sim: bool=True, from_cmdline: bool=False):
     """
     Function that starts the processes in the experiment run object 
     created whether you use the UI or run from command line
@@ -247,6 +247,18 @@ def start_live_experiment(expt_run: ExptRun, param: Union[RecursiveNamespace, di
             expt_run.growth_kill_event.clear()
             growth_process = tmp.Process(target=expt_run.growth_rates, name='growth')
             growth_process.start()
+
+        if from_cmdline:
+            logger_process.join()
+            if 'acquire' in param.Experiment.queues:
+                acquire_process.join()
+            if 'segment' in param.Experiment.queues:
+                segment_process.join()
+            if 'track' in param.Experiment.queues:
+                track_process.join()
+            if 'growth' in param.Experiment.queues:
+                growth_process.join()
+        
         
     except KeyboardInterrupt:
         pass
