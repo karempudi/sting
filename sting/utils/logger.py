@@ -14,7 +14,7 @@ def setup_root_logger(param: RecursiveNamespace):
             used for the experiment
     """
     root = logging.getLogger()
-    f = logging.Formatter('%(asctime)s %(processName)-10s %(levelname)-8s %(messages)s')
+    f = logging.Formatter('%(asctime)s %(processName)-10s %(levelname)-8s %(message)s')
     if param.Logging.to_file:
         h = logging.FileHandler(filename=param.Logging.directory, mode='w')
         h.setFormatter(f)

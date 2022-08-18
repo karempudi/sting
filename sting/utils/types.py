@@ -20,6 +20,8 @@ class RecursiveNamespace(SimpleNamespace):
         if isinstance(entry, dict):
             return RecursiveNamespace(**entry)
 
+        return  entry
+        
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         for key, val in kwargs.items():

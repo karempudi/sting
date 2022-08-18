@@ -4,6 +4,7 @@
 from PyQt5.QtWidgets import (QApplication, QMainWindow, 
                 QFileDialog, QMessageBox)
 from sting.ui.qt_ui_classes.run_window_ui import Ui_RunWindow
+import time
 import sys
 import json
 import yaml
@@ -24,6 +25,7 @@ class RunWindow(QMainWindow):
 
         self.params = None
         self.expt_obj = None
+        self.simulation = False
 
     def setup_button_handlers(self):
         # button handlers 
@@ -32,6 +34,8 @@ class RunWindow(QMainWindow):
         self.ui.start_button.clicked.connect(self.start_expt)
 
         self.ui.stop_button.clicked.connect(self.stop_expt)
+
+        self.ui.simulation_check.stateChanged.connect(self.set_simulation_mode)
 
     def load_expt_params(self):
         sys.stdout.write("Loadinng experimental parameters. Please select file.\n")
@@ -64,10 +68,15 @@ class RunWindow(QMainWindow):
         sys.stdout.write("Setting up experiment object from the parameters.\n")
         sys.stdout.flush()
 
-        self.expt_obj = ExptRun(self.params)
-        self.ui.start_button.setEnabled(False)
-        self.ui.load_button.setEnabled(False)
-        #start_live_experiment(self.expt_obj, self.params)
+        if self.params != None:
+            self.expt_obj = ExptRun(self.params)
+            self.ui.start_button.setEnabled(False)
+            self.ui.load_button.setEnabled(False)
+            start_live_experiment(self.expt_obj, self.params, sim=False)
+        else:
+            msg = QMessageBox()
+            msg.setText("Expt parameters not loaded")
+            msg.exec()
 
 
     def stop_expt(self):
@@ -75,10 +84,20 @@ class RunWindow(QMainWindow):
         sys.stdout.flush()
 
         # Stop the experiment and finally set it to None
-
+        self.expt_obj.stop()
+        time.sleep(3)
         self.ui.load_button.setEnabled(True)
         self.ui.start_button.setEnabled(True)
         self.expt_obj = None
+
+    def set_simulation_mode(self, state):
+        self.simulation = state
+        if self.simulation:
+            sys.stdout.write("Expt running in simulation mode\n")
+            sys.stdout.flush()
+        else:
+            sys.stdout.write("Expt running in real mode\n")
+            sys.stdout.flush()
 
         
 def main():
