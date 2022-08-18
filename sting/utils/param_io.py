@@ -38,13 +38,16 @@ class ParamHandling:
         
         return extension
     
-    def load_params(self, filename: str) -> RecursiveNamespace:
+    def load_params(self, filename: str, ref_type: str = 'expt') -> RecursiveNamespace:
         """
         Load parameters from file
         
         Args:
-            filename:
-        
+            filename: filename of the parameter file
+            ref_type: reference type command to fill in the defaults 
+                if they are not written down explicitly
+                can have 'expt', 'segment', 'regiondetect',
+                'tracking'
         Returns:
             an instance of RecursiveNamespace with all parameters loaded
             from the file
@@ -58,7 +61,8 @@ class ParamHandling:
             with open(filename) as yaml_file:
                 params_dict = yaml.safe_load(yaml_file)
         
-        params_ref = load_reference()
+
+        params_ref = load_reference(ref_type)
         params_dict = autofill_dict(params_dict, params_ref)
         params = RecursiveNamespace(**params_dict)
 
@@ -111,19 +115,27 @@ class ParamHandling:
 
         
 
-def load_reference() -> dict:
+def load_reference(ref_type: str = 'expt') -> dict:
     """
     Loads the reference params file, that should contain all the parameters ever used 
+
+    Args:
+        ref_type (str) : 'expt' or 'segment' or 'tracking' or 'regiondetect'
     """
-    from ..data import reference_params
-    param_ref = pkg_resources.open_text(reference_params, 'reference.yaml')
-    param_ref = yaml.load(param_ref, Loader=yaml.SafeLoader)
+    if ref_type == 'expt':
+        from ..data import reference_params
+        param_ref = pkg_resources.open_text(reference_params, 'reference.yaml')
+        param_ref = yaml.load(param_ref, Loader=yaml.SafeLoader)
+    elif ref_type == 'segment':
+        from ..segmentation import configs
+        param_ref = pkg_resources.open_text(configs, 'segment.yaml')
+        param_ref = yaml.load(param_ref, Loader=yaml.SafeLoader)
 
     
     return param_ref
 
-def load_params(file): # alias
-    return ParamHandling().load_params(file)
+def load_params(file, ref_type: str = 'expt'): # alias
+    return ParamHandling().load_params(file, ref_type=ref_type)
 
 def save_params(file, param):
     ParamHandling().write_params(file, param)

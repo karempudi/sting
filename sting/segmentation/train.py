@@ -1,5 +1,6 @@
 import argparse
 from pathlib import Path
+from sting.utils.param_io import ParamHandling, load_params
 
 import torch
 
@@ -17,13 +18,13 @@ def parse_args():
     parser.add_argument('-w', '--num_workers_override',
             help='Override number of workers of pytorch dataloaders.', type=int)
     
-    parser.add_argument('-l', '--log_dir', defaults='segment_runs',
+    parser.add_argument('-l', '--log_dir', default='segment_runs',
             help='Set directory name where you want the logs to go in.')
     
     parser.add_argument('-c', '--log_comment', default=None,
             help='Added a log comment to the run')
 
-    parser.add_argument()
+    args = parser.parse_args()
 
     return args
 
@@ -43,13 +44,18 @@ def train_model(param_file: str, device_overwrite: str = None,
         log_comment (str): comment to the experiment
 
     """
-    pass
+    param_file = Path(param_file)
+    if not param_file.exists():
+        raise FileNotFoundError(f"Parameter file {str(param_file)} doesn't exist")
+        
+    param = load_params(param_file, 'segment')
+    print(param)
 
 def main():
     print("Hello from segmentation training")
     args = parse_args()
 
-    train_model()
+    train_model(args.param_file)
 
 if __name__ == "__main__":
     main()
