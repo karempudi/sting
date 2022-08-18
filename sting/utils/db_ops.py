@@ -4,6 +4,7 @@
 # experiment.
 
 import psycopg2 as pg
+import sqlite3
 
 def write_event(event):
     pass

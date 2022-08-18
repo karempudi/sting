@@ -129,8 +129,9 @@ class MotionFromFile(Motion):
                 stage positions list
         """
         filename = filename if isinstance(filename, pathlib.Path) else Path(filename)
-        # fix the logger 
-        logger = logging.getLogger()
+        # get the root logger that handles all the logs
+        #name = tmp.current_process().name
+        #logger = logging.getLogger(name)
         
         if not filename.exists():
             raise FileNotFoundError(f"Filename {filename} not found")
@@ -139,12 +140,15 @@ class MotionFromFile(Motion):
             raise ValueError(f"Position file {filename} doesn't have .pos extension")
         
         # log file found
+        logging.info("%s - file read for positions", str(filename))
         
         with open(filename, 'r') as json_handle:
             data = json.load(json_handle)
 
         # log micromanager file read and print the version of 
         # micromanger found
+
+        #logging.info("Micro-manager version: %s-%s", data['major_version'], data['minor_version'])
 
         positions_dicts = data['map']['StagePositions']['array']
 
@@ -171,7 +175,6 @@ class MotionFromFile(Motion):
     
         # find the ranges of x and y to make it easier to write
         # movement bounds
-        
         x_values = [item['x'] for item in positions]
         y_values = [item['y'] for item in positions]
         z_values = [item['z'] for item in positions]
