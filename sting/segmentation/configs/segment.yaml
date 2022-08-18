@@ -1,0 +1,16 @@
+---
+# Segmentation network training parameters all 
+# parameters need, including network hyper parameters
+# are written in the is file. It is used to train 
+# models for segmentation of cells and channels
+Model:
+
+Save:
+
+Logging:
+
+Dataset:
+
+Metrics:
+
+
