@@ -75,6 +75,7 @@ class ExptRun(object):
                 self.logger_kill_event.set()
                 sys.stdout.write("Logger process interrupted using keyboard\n")
                 sys.stdout.flush()
+                break
 
     def set_process_logger(self):
         h = logging.handlers.QueueHandler(self.logger_queue)
@@ -97,6 +98,7 @@ class ExptRun(object):
                 self.acquire_kill_event.set()
                 sys.stdout.write("Acquire process interrupted using keyboard\n")
                 sys.stdout.flush()
+                break
                 
     
     def acquire_sim(self):
@@ -121,6 +123,7 @@ class ExptRun(object):
                 self.segment_kill_event.set()
                 sys.stdout.write("Segment process interrupted using keyboard\n")
                 sys.stdout.flush()
+                break
 
                 
     
@@ -139,6 +142,7 @@ class ExptRun(object):
                 self.track_kill_event.set()
                 sys.stdout.write("Track process interrupted using keyboard\n")
                 sys.stdout.flush()
+                break
         
     def growth_rates(self):
         # configure growth logger
@@ -155,6 +159,7 @@ class ExptRun(object):
                 self.growth_kill_event.set()
                 sys.stdout.write("Growth process interrupted using keyboard\n")
                 sys.stdout.flush()
+                break
 
 
     def stop(self,):
@@ -200,6 +205,7 @@ def start_live_experiment(expt_run: ExptRun, param: Union[RecursiveNamespace, di
         sim (bool): set (False) if you run real experiment, set (True) 
             for simulation/debugging, defaults to True.
     """
+    tmp.freeze_support()
     try:
         tmp.set_start_method('spawn')
     except:
@@ -209,33 +215,40 @@ def start_live_experiment(expt_run: ExptRun, param: Union[RecursiveNamespace, di
     # the experiment run object 
     
     # logger queue will always be setup
-    expt_run.logger_kill_event.clear()
-    logger_process = tmp.Process(target=expt_run.logger_listener,
-                                 name='logger')
-    logger_process.start()
+    try:
+            
+        expt_run.logger_kill_event.clear()
+        logger_process = tmp.Process(target=expt_run.logger_listener,
+                                    name='logger')
+        logger_process.start()
 
-    # Setup queues and processes to operate on them based on params
-    if 'acquire' in param.Experiment.queues:
-        # create and call an acquire process 
-        # that run the acquisition and put the results in segment queue
-        expt_run.acquire_kill_event.clear()
-        acquire_process = tmp.Process(target=expt_run.acquire, name='acquire')
-        acquire_process.start()
+        # Setup queues and processes to operate on them based on params
+        if 'acquire' in param.Experiment.queues:
+            # create and call an acquire process 
+            # that run the acquisition and put the results in segment queue
+            expt_run.acquire_kill_event.clear()
+            acquire_process = tmp.Process(target=expt_run.acquire, name='acquire')
+            acquire_process.start()
 
-    if 'segment' in param.Experiment.queues:
-        # create and call segmentation process
-        expt_run.segment_kill_event.clear()
-        segment_process = tmp.Process(target=expt_run.segment, name='segment')
-        segment_process.start()
+        if 'segment' in param.Experiment.queues:
+            # create and call segmentation process
+            expt_run.segment_kill_event.clear()
+            segment_process = tmp.Process(target=expt_run.segment, name='segment')
+            segment_process.start()
+            
+        if 'track' in param.Experiment.queues:
+            # create and call tracking process
+            expt_run.track_kill_event.clear()
+            track_process = tmp.Process(target=expt_run.track, name='track')
+            track_process.start()
+
+        if 'growth' in param.Experiment.queues:
+            # create and call growth rates process
+            expt_run.growth_kill_event.clear()
+            growth_process = tmp.Process(target=expt_run.growth_rates, name='growth')
+            growth_process.start()
         
-    if 'track' in param.Experiment.queues:
-        # create and call tracking process
-        expt_run.track_kill_event.clear()
-        track_process = tmp.Process(target=expt_run.track, name='track')
-        track_process.start()
-
-    if 'growth' in param.Experiment.queues:
-        # create and call growth rates process
-        expt_run.growth_kill_event.clear()
-        growth_process = tmp.Process(target=expt_run.growth_rates, name='growth')
-        growth_process.start()
+    except KeyboardInterrupt:
+        pass
+        
+        
