@@ -1,0 +1,64 @@
+# This should contain the complete list of all the parameters.
+--- # Begin
+Motion:
+  magnification: 20
+
+Acquisition:
+  timeepoints: 10
+
+CellSeg:
+  network: 'Unet' # Network type used for cell seg
+  model_path: #  model .pt or .pth file containing network weights
+
+ChannelSeg:
+  network: 'Unet'
+  model_path: # model .pt or .pth file containing network weights
+
+Tracking:
+  network: 'Graphnet'
+
+GrowthRates:
+  calculation_type: 'exponential_fit'
+
+Save:
+  directory: "/Users/pk/work/outputdump" # Top level directory for saving files.
+
+Experiment:
+  number: 'exp-bp-000' # Experiment no
+  analysis_type: 'simlive' # should be 'live' or 'post' or 'simlive'
+  analysis_device: 'cuda:0' # defaults to 'cpu' if not available
+  queues: # list with 4 things 'acquire', 'segment', 'channel', 'growth'
+    - 'acquire'
+    - 'segment'
+    - 'track'
+    - 'growth'
+  events:
+    pass_one_and_wait: True # if you set this to true, set pass_all to False
+    pass_all: False # if you set this to true, pass_one_and_wait to False
+    from_file: True # Get positions from file, if false, will grab stuff directly from micro-manager
+    pos_fiilename: # positions filename
+    presets: 
+      - 'phaseFast' # presets that are available
+      - 'phaseSlow'
+    rules:
+      - type: 'combinatorial' # combinatorial or sequential
+        positions: # takes positions set in the previous section
+        start: 0 # start t = 0 mins
+        every: '60' # units in seconds
+        end: 5 # end t = 5 mins
+        preset: 'phaseFast'
+        exposure: '10' # Always in ms
+        wait_pfs: False
+        speed: 'dual' # speed can be 'mono' or 'dual' or anything custom you write
+        speed_fn: # custom speed function # not needed for now
+
+
+Logging:
+  to_file: True
+  to_console: True
+  directory: "/Users/pk/work/outputdump/logs.log" # Directory to save the logs
+
+
+
+
+
