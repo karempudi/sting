@@ -1,6 +1,10 @@
 import argparse
+import shutil
+import socket
 from pathlib import Path
-from sting.utils.param_io import ParamHandling, load_params
+from datetime import datetime
+from sting.utils.param_io import ParamHandling, load_params, save_params
+from sting.utils.hardware import get_device_str
 
 import torch
 
@@ -44,12 +48,73 @@ def train_model(param_file: str, device_overwrite: str = None,
         log_comment (str): comment to the experiment
 
     """
+
+    # Loading parameters for network training from the parameter file
     param_file = Path(param_file)
     if not param_file.exists():
         raise FileNotFoundError(f"Parameter file {str(param_file)} doesn't exist")
-        
+    # make a param namespace and fill in defaults
     param = load_params(param_file, 'segment')
     print(param)
+
+    # Load ckpt if the training stops and you need to restart 
+    if param.Checkpoints.load_ckpt == False:
+        expt_id = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
+        from_ckpt = False
+    else:
+        from_ckpt = True
+        expt_id = Path(param.Checkpoints.ckpt_filename).parent.name
+
+    if log_comment:
+        expt_id = expt_id + '_' + log_comment
+
+    if not from_ckpt:
+        # create new expt dir
+        expt_dir = Path(param.Save.directory) / Path(expt_id)
+    else:
+        expt_dir = Path(param.Checkpoints.ckpt_filename).parent
+    
+    if not expt_dir.parent.exists():
+        expt_dir.parent.mkdir()
+
+    # create dir for expt if not loaded from ckpt
+    if not from_ckpt:
+        expt_dir.mkdir(exist_ok=False)
+
+    model_out = expt_dir / Path('model.pth')
+    ckpt_path = expt_dir / Path('ckpt.pth')
+
+    # save parameter file used in the directory of the experiment
+    param_in_save = expt_dir / Path('training_run_set').with_suffix(param_file.suffix)
+    shutil.copy(param_file, param_in_save)
+
+    # training run params after filling the defaults
+    param_used_save = expt_dir/ Path('training_run_used').with_suffix(param_file.suffix)
+    save_params(param_used_save, param)
+
+    # set hardware device to train
+    if device_overwrite is not None:
+        param.Hardware.device = device
+        device = device_overwrite
+    else:
+        device = param.Hardware.device
+    
+    # check for cuda
+    if torch.cuda.is_available():
+        _, device_idx = get_device_str(device)
+        if device_idx is not None:
+            torch.cuda.set_device(device) 
+    else:
+        device = 'cpu'
+    
+    torch.set_num_threads(param.Hardware.torch_threads)
+
+    # Log system
+    log_dir = Path(param.Logging.directory) / Path(log_dir)
+
+
+
+
 
 def main():
     print("Hello from segmentation training")

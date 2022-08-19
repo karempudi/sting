@@ -6,11 +6,25 @@
 Model:
 
 Save:
+  directory: '/mnt/sda2/Praneeth/REALTIME/seg_expts' # main direcotry that contains all training runs
 
 Logging:
+  directory: '/mnt/sda2/Praneeth/REALTIME/seg_expts'
 
 Dataset:
 
 Metrics:
 
+PreTrain:
+  load_params: False # load a model file and use a pretrainied parameters, default is False
+  model_filename: # file used to load pretrained weights of the model
+
+Checkpoints:
+  load_ckpt: False # Incase the training stops, we should load from checkpoint and restart
+  ckpt_filename: # ckpt filename from which to load the experiment to restart
+
+Hardware:
+  device: 'cuda:0' # device on which to train the network
+  num_workers: 6 #
+  torch_threads: 6
 
