@@ -30,4 +30,5 @@ Hardware:
 
 HyperParameters:
   batch_size: 8
+  architecture: 'Unet'
 
