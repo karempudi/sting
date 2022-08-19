@@ -28,3 +28,6 @@ Hardware:
   num_workers: 6 #
   torch_threads: 6
 
+HyperParameters:
+  batch_size: 8
+

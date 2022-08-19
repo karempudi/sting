@@ -5,8 +5,10 @@ from pathlib import Path
 from datetime import datetime
 from sting.utils.param_io import ParamHandling, load_params, save_params
 from sting.utils.hardware import get_device_str
-
+from sting.segmentation import logger
 import torch
+from torch.utils.data import Dataset, DataLoader
+from 
 
 def parse_args():
     parser = argparse.ArgumentParser(description="Segmentation networks Training Arguments")
@@ -113,7 +115,57 @@ def train_model(param_file: str, device_overwrite: str = None,
     log_dir = Path(param.Logging.directory) / Path(log_dir)
 
 
+    logger = logger.MultiLogger([
+        # put things in filterkeys, the things you don't want to be logged
+        logger.SummaryWriter(log_dir=log_dir, filter_keys=[]),
+        logger.DictLogger(),
+    ])
 
+    #setup_trainer()
+
+    dl_train, dl_val, dl_test = setup_dataloader(param, ds_train, ds_val, ds_test)
+
+
+def setup_trainer():
+    pass
+
+def setup_dataloader(param, train_ds, val_ds=None, test_ds=None):
+    """
+    Setup dataloaders for the datasets
+    """
+    train_dl = DataLoader(
+        dataset=train_ds,
+        batch_size=param.HyperParameters.batch_size,
+        drop_last=True,
+        shuffle=True,
+        num_workers=param.Hardware.num_workers,
+        pin_memory=True,
+    )
+    if val_ds is not None:
+        val_dl = DataLoader(
+            dataset=val_ds,
+            batch_size=param.HyperParameters.batch_size,
+            drop_last=False,
+            shuffle=False,
+            num_workers=param.Hardware.num_workers,
+            pin_memory=False
+        )
+    else:
+        val_dl = None
+
+    if test_ds is not None:
+        test_dl = DataLoader(
+            dataset=test_ds,
+            batch_size=param.HyperParameters.batch_size,
+            drop_last=False,
+            shuffle=False,
+            num_workers=param.Hardware.num_workers,
+            pin_memory=False
+        )
+    else:
+        test_dl = None
+    
+    return train_dl, val_dl, test_dl
 
 
 def main():
