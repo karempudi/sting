@@ -151,7 +151,7 @@ class MultiLogger:
             Execute all loggers and put the results in a list
             after executing them sequentially.
             """
-            def idk(**args, **kwargs):
+            def idk(*args, **kwargs):
                 # for l in loggers
                 return [getattr(l, method)(*args, **kwargs) for l in loggers]
 
@@ -162,7 +162,7 @@ class MultiLogger:
 
         # get all methods from the 0th logger
         methods = [method_name for method_name in dir(self.logger[0]) if callable(getattr(self.logger[0], method_name))]
-        methods = [m of m in methods if '__' not in m]
+        methods = [m for m in methods if '__' not in m]
 
         for m in methods:
             setattr(self, m, execute_for_all(self.logger, m))

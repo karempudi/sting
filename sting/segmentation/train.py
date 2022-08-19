@@ -8,7 +8,6 @@ from sting.utils.hardware import get_device_str
 from sting.segmentation import logger
 import torch
 from torch.utils.data import Dataset, DataLoader
-from 
 
 def parse_args():
     parser = argparse.ArgumentParser(description="Segmentation networks Training Arguments")
@@ -115,7 +114,7 @@ def train_model(param_file: str, device_overwrite: str = None,
     log_dir = Path(param.Logging.directory) / Path(log_dir)
 
 
-    logger = logger.MultiLogger([
+    logger_expt = logger.MultiLogger([
         # put things in filterkeys, the things you don't want to be logged
         logger.SummaryWriter(log_dir=log_dir, filter_keys=[]),
         logger.DictLogger(),
@@ -123,7 +122,7 @@ def train_model(param_file: str, device_overwrite: str = None,
 
     #setup_trainer()
 
-    dl_train, dl_val, dl_test = setup_dataloader(param, ds_train, ds_val, ds_test)
+    #dl_train, dl_val, dl_test = setup_dataloader(param, ds_train, ds_val, ds_test)
 
 
 def setup_trainer():
