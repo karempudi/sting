@@ -31,4 +31,15 @@ Hardware:
 HyperParameters:
   batch_size: 8
   architecture: 'Unet'
+  channels_by_scale:
+    - 1
+    - 8
+    - 16
+    - 32
+    - 64
+    - 128
+  num_outputs: 1
+  upsample_type: 'transpose_conv'
+  feature_fusion_type: 'concat'
+
 

@@ -8,6 +8,7 @@ from sting.utils.hardware import get_device_str
 from sting.segmentation import logger
 import torch
 from torch.utils.data import Dataset, DataLoader
+from sting.segmentation.networks import model_dict 
 
 def parse_args():
     parser = argparse.ArgumentParser(description="Segmentation networks Training Arguments")
@@ -121,6 +122,8 @@ def train_model(param_file: str, device_overwrite: str = None,
     ])
 
     #setup_trainer()
+    model = model_dict[param.HyperParameters.architecture].param(param)
+    #print(model)
 
     #dl_train, dl_val, dl_test = setup_dataloader(param, ds_train, ds_val, ds_test)
 
