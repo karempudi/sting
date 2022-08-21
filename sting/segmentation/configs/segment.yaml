@@ -14,7 +14,9 @@ Logging:
 Datasets:
   directory: '/mnt/sda2/Praneeth/REALTIME/data/omnipose'
   # follow the documentation in datasets for directory structure
-  type:  'omni_train' # 'omni_train', 'unet_train', 'omni_train_dual', 'unet_train_dual'
+  type:  'omni_train_cells' 
+  # 'omni_train_cells', 'unet_train_cells', 'omni_train_dual', 'unet_train_dual'
+  # 'omni_train_channels', 'unet_train_channels'
   # duals are when you learn channels and cells in the same model
   species: 
     - mixed
