@@ -7,6 +7,7 @@ import ncolor
 import edt
 import torch
 import fastremap
+import os
 import matplotlib.pyplot as plt
 from pathlib import Path
 from skiamge import io, filters
@@ -23,7 +24,8 @@ from sklearn.cluster import DBSCAN
 # forked from a repo of paper https://dl.acm.org/doi/10.1145/3318464.3380582
 # is used to compile this .so file, need to work on how to get it to work on
 # windows
-from .DBSCAN import DBSCAN as FASTDBSCAN
+if os.name == 'posix':
+    from .DBSCAN import DBSCAN as FASTDBSCAN
 from matplotlib_inline.backend_inline import set_matplotlib_formats
 set_matplotlib_formats('svg', 'pdf')
 import matplotlib
@@ -504,10 +506,10 @@ def reconstruct_masks_cpu_omni(net_output, cell_prob_threshold=0.3, clean_mask=T
 
     new_mask = np.zeros((traced_p.shape[1], traced_p.shape[2]))
 
-    if fast == False:
+    if fast == False or os.name !='posix':
         db = DBSCAN(eps=eps, min_samples=3, n_jobs=8).fit(newinds)
         labels = db.labels_
-    else:
+    elif (fast == True) and (os.name == 'posix') :
         labels, _ = FASTDBSCAN(newinds.astype('double'), eps=eps, min_samples=3)
 
 
