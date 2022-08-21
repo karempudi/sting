@@ -8,10 +8,11 @@ from typing import Union
 
 class MMDatasetOmni(Dataset):
 
-    def __init__(self, phase_dir: Union[str, pathlib.Path], cell_labels_dir: Union[str, pathlib.Path],
-                channel_labels_dir: Union[str, pathlib.Path],
+    def __init__(self, phase_dir: Union[str, pathlib.Path], cell_labels_dir: Union[str, pathlib.Path] = None,
+                channel_labels_dir: Union[str, pathlib.Path] = None,
                 transforms=None, phase_fileformat: str = '.png', cell_labels_fileformat: str = '.png',
-                channel_labels_fileformat: str = '.png'
+                channel_labels_fileformat: str = '.png',
+                dataset_type: str = 'cells', recalculate_flows: bool = False,
                 ):
         """
         Each dataset has two sets of images, one phase image and its
@@ -34,6 +35,9 @@ class MMDatasetOmni(Dataset):
                 it is used to grab the list of files based on extensions
             channel_labels_fileformat (str): '.png', '.npy' or '.tiff' or '.tif'
                 is is used to grab the list of files based on 
+            dataset_type (str): 'cells', 'channels', 'dual'
+
+            recalculate_flows (bool): should you recalculate flows? Defualt False
 
         """
         super(MMDatasetOmni, self).__init__()
@@ -42,17 +46,39 @@ class MMDatasetOmni(Dataset):
         channel_fileformats = ['.tiff', '.tif', '.png', '.npy']
 
         self.phase_dir = phase_dir if isinstance(phase_dir, pathlib.Path) else Path(phase_dir)
-        self.cell_labels_dir = cell_labels_dir if isinstance(cell_labels_dir, pathlib.Path) else Path(cell_labels_dir)
-        self.channel_labels_dir = channel_labels_dir if isinstance(channel_labels_dir, pathlib.Path) else Path(channel_labels_dir) 
+        self.dataset_type = dataset_type
+
+        if self.dataset_type in ['cells', 'dual']:
+            assert cell_labels_dir != None, "Cell labels directory is None, the model expects to train on cells"
+            self.cell_labels_dir = cell_labels_dir if isinstance(cell_labels_dir, pathlib.Path) else Path(cell_labels_dir)
+        else:
+            self.cell_labels_dir = None
+        
+        if self.dataset_type in ['channels', 'dual']:
+            assert channel_labels_dir != None, "Channel labels directory is None, the model expects to train on channels"
+            self.channel_labels_dir = channel_labels_dir if isinstance(channel_labels_dir, pathlib.Path) else Path(channel_labels_dir) 
+        else:
+            self.channel_labels_dir = None
 
         assert phase_fileformat in phase_fileformats, "Phase file format is not .png, .tiff, .tif"
         assert cell_labels_fileformat in cell_fileformats, "Label file format is not .png, .tiff, .tif, .npy"
         assert channel_labels_fileformat in channel_fileformats, "Label file format is not .png, .tiff, .tif, .npy"
 
+        self.phase_fileformat = '*' + phase_fileformat
+        self.cell_labels_fileformat = '*' + cell_labels_fileformat
+        self.channel_labels_fileformat = '*' + channel_labels_fileformat
+
+        # always check that there is a phase image dir
+        assert self.phase_dir.existS() and self.phase_dir.is_dir()
+
+        # grab all the file in the phase dir
+        file_paths = list(self.phase_dir.glob(self.phase_fileformat))
+        self.filenames = [filepath.name for filepath in file_paths]
+        # calculate flows if they don't exist
         
 
     def __len__(self):
-        pass
+        return len(self.filenames) 
 
     def __getitem__(self, idx):
         pass
