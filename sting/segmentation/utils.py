@@ -10,8 +10,9 @@ import fastremap
 import os
 import matplotlib.pyplot as plt
 from pathlib import Path
-from skiamge import io, filters
+from skimage import io, filters
 from skimage.measure import label, regionprops
+from skimage.filters import gaussian
 
 from scipy.ndimage import mean, convolve, binary_fill_holes, find_objects
 from scipy.ndimage.morphology import binary_dilation
@@ -152,6 +153,52 @@ def labels_to_flows_cpu_omni(label_img):
             flows_padded_normalized[:, img_pad: -img_pad, img_pad: -img_pad]
             )
 
+def labels_to_output_omni(label_img):
+    """
+    Takes ina labelled image (H, W) and generates (8, H, W) that is used 
+    by the network to calculcate the loss functions on
+
+    Args:
+        label_img (np.ndarray): a labeled image loaded using skimage.io
+            of (H, W)
+
+    Return
+        labels (np.ndarray) : a set of images (8, H, W) stacked in the 
+            following order. Look for labels_to_flows_cpu_omni documentation for 
+            exact details to follow on these fields
+                labels, dists, flow-x, flow-y, heat, boundary, binary_mask,
+                weights
+    """
+    label_img, dists, heat, flows = labels_to_flows_cpu_omni(label_img)
+
+    # final_labels (5, H, W) shape
+    final_labels = np.concatenate((label_img[np.newaxis,:, :],
+                                   dists[np.newaxis, :, :],
+                                   flows,
+                                   heat[np.newaxis, :, :]), axis=0).astype(np.float32)
+    
+    dist_bg = 5
+    dist_t = final_labels[1]
+    dist_t[dist_t == 0] = -5.0
+
+    boundary = 5.0 * (final_labels[1] == 1)
+    boundary[boundary == 0] = -5.0
+
+    # add boundary to the final_labels stack
+    final_labels = np.concatenate((final_labels, boundary[np.newaxis, ]))
+    #add binary mask to the label stack
+    binary_mask = final_labels[0] > 0
+    final_labels = np.concatenate((final_labels, binary_mask[np.newaxis,]))
+
+    # add weights
+
+    bg_edt = edt.edt(final_labels[0] < 0, black_border=True)
+    cutoff = 9
+    weights = (gaussian(1 - np.clip(bg_edt, 0, cutoff)/ cutoff, 1) + 0.5)
+
+    labels = np.concatenate((final_labels, weights[np.newaxis,]))
+
+    return labels
 
 def divergence_rescale(dP,mask):
     dP = dP.copy()
