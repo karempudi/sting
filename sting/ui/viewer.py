@@ -9,6 +9,7 @@ from PyQt5.QtWidgets import (QApplication, QMainWindow,
 from sting.ui.qt_ui_classes.main_window_ui import Ui_MainWindow
 from sting.utils.param_io import load_params, save_params
 from sting.ui.tweezer import TweezerWindow 
+from sting.ui.live import LiveWindow
 from datetime import datetime
 from sting.liveanalysis.processes import start_live_experiment
 from sting.analysis.processes import start_post_analysis
@@ -33,6 +34,11 @@ class MainWindow(QMainWindow):
         # initialize a tweezer window
         # set it's parameters when you have them
         self.tweezer_window = TweezerWindow() 
+
+        
+        # initialize a live window
+        # set it's parameters when you have them
+        self.live_window = LiveWindow()
     
     def setup_button_handlers(self):
         # setup group buttons
@@ -83,6 +89,7 @@ class MainWindow(QMainWindow):
             sys.stdout.write(f"Loaded parameters from {filename}\n")
             sys.stdout.flush()
             self.tweezer_window.set_params(copy.deepcopy(param))
+            self.live_window.set_params(copy.deepcopy(param))
 
 
     def view_setup_file(self):
@@ -126,7 +133,7 @@ class MainWindow(QMainWindow):
         self.tweezer_window.show()
     
     def show_live_window(self):
-        pass
+        self.live_window.show()
 
     def show_growth_rates(self):
         pass
