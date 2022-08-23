@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Form implementation generated from reading ui file '.\qt_ui_files\viewer_window.ui'
+# Form implementation generated from reading ui file '.\qt_ui_files\tweezer_window.ui'
 #
 # Created by: PyQt5 UI code generator 5.9.2
 #
@@ -8,16 +8,16 @@
 
 from PyQt5 import QtCore, QtGui, QtWidgets
 
-class Ui_ViewerWindow(object):
-    def setupUi(self, ViewerWindow):
-        ViewerWindow.setObjectName("ViewerWindow")
-        ViewerWindow.resize(1551, 709)
+class Ui_TweezerWindow(object):
+    def setupUi(self, TweezerWindow):
+        TweezerWindow.setObjectName("TweezerWindow")
+        TweezerWindow.resize(1551, 709)
         sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Preferred, QtWidgets.QSizePolicy.Preferred)
         sizePolicy.setHorizontalStretch(0)
         sizePolicy.setVerticalStretch(0)
-        sizePolicy.setHeightForWidth(ViewerWindow.sizePolicy().hasHeightForWidth())
-        ViewerWindow.setSizePolicy(sizePolicy)
-        self.centralwidget = QtWidgets.QWidget(ViewerWindow)
+        sizePolicy.setHeightForWidth(TweezerWindow.sizePolicy().hasHeightForWidth())
+        TweezerWindow.setSizePolicy(sizePolicy)
+        self.centralwidget = QtWidgets.QWidget(TweezerWindow)
         self.centralwidget.setObjectName("centralwidget")
         self.remove_button = QtWidgets.QPushButton(self.centralwidget)
         self.remove_button.setGeometry(QtCore.QRect(1090, 450, 89, 25))
@@ -166,55 +166,55 @@ class Ui_ViewerWindow(object):
         self.plot_properties_check = QtWidgets.QCheckBox(self.centralwidget)
         self.plot_properties_check.setGeometry(QtCore.QRect(1090, 580, 121, 23))
         self.plot_properties_check.setObjectName("plot_properties_check")
-        ViewerWindow.setCentralWidget(self.centralwidget)
-        self.menubar = QtWidgets.QMenuBar(ViewerWindow)
+        TweezerWindow.setCentralWidget(self.centralwidget)
+        self.menubar = QtWidgets.QMenuBar(TweezerWindow)
         self.menubar.setGeometry(QtCore.QRect(0, 0, 1551, 21))
         self.menubar.setObjectName("menubar")
-        ViewerWindow.setMenuBar(self.menubar)
-        self.statusbar = QtWidgets.QStatusBar(ViewerWindow)
+        TweezerWindow.setMenuBar(self.menubar)
+        self.statusbar = QtWidgets.QStatusBar(TweezerWindow)
         self.statusbar.setObjectName("statusbar")
-        ViewerWindow.setStatusBar(self.statusbar)
+        TweezerWindow.setStatusBar(self.statusbar)
 
-        self.retranslateUi(ViewerWindow)
-        QtCore.QMetaObject.connectSlotsByName(ViewerWindow)
+        self.retranslateUi(TweezerWindow)
+        QtCore.QMetaObject.connectSlotsByName(TweezerWindow)
 
-    def retranslateUi(self, ViewerWindow):
+    def retranslateUi(self, TweezerWindow):
         _translate = QtCore.QCoreApplication.translate
-        self.remove_button.setText(_translate("ViewerWindow", "Remove"))
-        self.show_button.setText(_translate("ViewerWindow", "Show"))
-        self.undo_button.setText(_translate("ViewerWindow", "Undo"))
-        self.reset_button.setText(_translate("ViewerWindow", "Reset"))
-        self.filter_params_box.setTitle(_translate("ViewerWindow", "Filter Parameters"))
-        self.frame_label.setText(_translate("ViewerWindow", "Starting Frame No"))
-        self.area_label.setText(_translate("ViewerWindow", "Area Threshold"))
-        self.fraction_label.setText(_translate("ViewerWindow", "Fraction"))
-        self.cell_obj_label.setText(_translate("ViewerWindow", "No of Cell like objects"))
-        self.next_auto_button.setText(_translate("ViewerWindow", "Next Auto"))
-        self.send_tweeze_pos_button.setText(_translate("ViewerWindow", "Send Tweeze Positions"))
-        self.pos_label.setText(_translate("ViewerWindow", "Position"))
-        self.ch_no_label.setText(_translate("ViewerWindow", "Channel No"))
-        self.fetch_button.setText(_translate("ViewerWindow", "Fetch"))
-        self.phase_image.setText(_translate("ViewerWindow", "Phase"))
-        self.cell_seg_image.setText(_translate("ViewerWindow", "Cell Seg"))
-        self.cell_tracks_image.setText(_translate("ViewerWindow", "Tracking"))
-        self.update_filters_button.setText(_translate("ViewerWindow", "Update Filter Parameters"))
-        self.find_tweezable_pos_button.setText(_translate("ViewerWindow", "Find All Tweezable Channels"))
-        self.expt_running_check.setText(_translate("ViewerWindow", "Is Expt running?"))
-        self.toTweezeListButton.setText(_translate("ViewerWindow", ">>"))
-        self.to_active_list_button.setText(_translate("ViewerWindow", "<<"))
-        self.view_active_list_check.setText(_translate("ViewerWindow", "Active? "))
-        self.get_last20_radio.setText(_translate("ViewerWindow", "Last 20 images"))
-        self.get_all_images_radio.setText(_translate("ViewerWindow", "All Images"))
-        self.plot_properties_check.setText(_translate("ViewerWindow", "Plot Properties"))
+        self.remove_button.setText(_translate("TweezerWindow", "Remove"))
+        self.show_button.setText(_translate("TweezerWindow", "Show"))
+        self.undo_button.setText(_translate("TweezerWindow", "Undo"))
+        self.reset_button.setText(_translate("TweezerWindow", "Reset"))
+        self.filter_params_box.setTitle(_translate("TweezerWindow", "Filter Parameters"))
+        self.frame_label.setText(_translate("TweezerWindow", "Starting Frame No"))
+        self.area_label.setText(_translate("TweezerWindow", "Area Threshold"))
+        self.fraction_label.setText(_translate("TweezerWindow", "Fraction"))
+        self.cell_obj_label.setText(_translate("TweezerWindow", "No of Cell like objects"))
+        self.next_auto_button.setText(_translate("TweezerWindow", "Next Auto"))
+        self.send_tweeze_pos_button.setText(_translate("TweezerWindow", "Send Tweeze Positions"))
+        self.pos_label.setText(_translate("TweezerWindow", "Position"))
+        self.ch_no_label.setText(_translate("TweezerWindow", "Channel No"))
+        self.fetch_button.setText(_translate("TweezerWindow", "Fetch"))
+        self.phase_image.setText(_translate("TweezerWindow", "Phase"))
+        self.cell_seg_image.setText(_translate("TweezerWindow", "Cell Seg"))
+        self.cell_tracks_image.setText(_translate("TweezerWindow", "Tracking"))
+        self.update_filters_button.setText(_translate("TweezerWindow", "Update Filter Parameters"))
+        self.find_tweezable_pos_button.setText(_translate("TweezerWindow", "Find All Tweezable Channels"))
+        self.expt_running_check.setText(_translate("TweezerWindow", "Is Expt running?"))
+        self.toTweezeListButton.setText(_translate("TweezerWindow", ">>"))
+        self.to_active_list_button.setText(_translate("TweezerWindow", "<<"))
+        self.view_active_list_check.setText(_translate("TweezerWindow", "Active? "))
+        self.get_last20_radio.setText(_translate("TweezerWindow", "Last 20 images"))
+        self.get_all_images_radio.setText(_translate("TweezerWindow", "All Images"))
+        self.plot_properties_check.setText(_translate("TweezerWindow", "Plot Properties"))
 
 from pyqtgraph import ImageView, PlotWidget
 
 if __name__ == "__main__":
     import sys
     app = QtWidgets.QApplication(sys.argv)
-    ViewerWindow = QtWidgets.QMainWindow()
-    ui = Ui_ViewerWindow()
-    ui.setupUi(ViewerWindow)
-    ViewerWindow.show()
+    TweezerWindow = QtWidgets.QMainWindow()
+    ui = Ui_TweezerWindow()
+    ui.setupUi(TweezerWindow)
+    TweezerWindow.show()
     sys.exit(app.exec_())
 

@@ -1,12 +1,14 @@
 
 # The Entry point into the UI of the analysis
 import sys
+import copy
 import pathlib
 from pathlib import Path
 from PyQt5.QtWidgets import (QApplication, QMainWindow, 
                 QMessageBox, QFileDialog)
 from sting.ui.qt_ui_classes.main_window_ui import Ui_MainWindow
 from sting.utils.param_io import load_params, save_params
+from sting.ui.tweezer import TweezerWindow 
 from datetime import datetime
 from sting.liveanalysis.processes import start_live_experiment
 from sting.analysis.processes import start_post_analysis
@@ -26,6 +28,11 @@ class MainWindow(QMainWindow):
         # to most functions in the code
         self.param = None
         self.written_param_file = None
+
+        
+        # initialize a tweezer window
+        # set it's parameters when you have them
+        self.tweezer_window = TweezerWindow() 
     
     def setup_button_handlers(self):
         # setup group buttons
@@ -70,8 +77,13 @@ class MainWindow(QMainWindow):
 
         else:
             # load up the parameters into
-            self.param = load_params(filename)
+            param = load_params(filename)
+            self.param = param
             # write to logs here that you loaded parameters
+            sys.stdout.write(f"Loaded parameters from {filename}\n")
+            sys.stdout.flush()
+            self.tweezer_window.set_params(copy.deepcopy(param))
+
 
     def view_setup_file(self):
         # View setup parameters in a window
@@ -101,6 +113,8 @@ class MainWindow(QMainWindow):
             save_params(write_filename, self.param)
             # log there that you create a directory and saved params
         self.written_param_file = write_filename
+        sys.stdout.write(f"Parameters of this expt viewing are stored in {write_filename}\n")
+        sys.stdout.flush()
     
     def start_status_update(self):
         pass
@@ -109,7 +123,7 @@ class MainWindow(QMainWindow):
         pass
 
     def show_tweeze_window(self):
-        pass
+        self.tweezer_window.show()
     
     def show_live_window(self):
         pass
