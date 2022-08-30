@@ -130,7 +130,11 @@ def load_reference(ref_type: str = 'expt') -> dict:
         from ..segmentation import configs
         param_ref = pkg_resources.open_text(configs, 'segment.yaml')
         param_ref = yaml.load(param_ref, Loader=yaml.SafeLoader)
-
+    
+    elif ref_type == 'barcode':
+        from ..regiondetect import configs
+        param_ref = pkg_resources.open_text(configs, 'yolobarcode.yaml')
+        param_ref = yaml.load(param_ref, Loader=yaml.SafeLoader)
     
     return param_ref
 

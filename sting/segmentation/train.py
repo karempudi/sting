@@ -96,7 +96,7 @@ def train_model(param_file: str, device_overwrite: str = None,
 
     # set hardware device to train
     if device_overwrite is not None:
-        param.Hardware.device = device
+        param.Hardware.device = device_overwrite
         device = device_overwrite
     else:
         device = param.Hardware.device

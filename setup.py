@@ -23,7 +23,8 @@ setup(
             'sting.runner = sting.ui.run:main',
             'sting.viewer = sting.ui.viewer:main',
             'sting.runcmd = sting.liveanalysis.run:main',
-            'sting.segtrain = sting.segmentation.train:main'
+            'sting.segtrain = sting.segmentation.train:main',
+            'sting.barcodetrain = sting.regiondetect.train:main'
         ]
     },
     zip_safe=False,

@@ -1,0 +1,50 @@
+---
+# Region detection network training parameters all 
+# parameters need, including network hyper parameters
+# are written in the is file. It is used to train 
+# models for detecting regions on the image that has barcode.
+
+Model:
+
+Save:
+  # main directory that stores all the experiment done during training of 
+  # the networ
+  directory: '/mnt/sda2/Praneeth/REALTIME/barcode_expts' 
+
+Datasets:
+  directory: '/mnt/sda2/Praneeth/REALTIME/data/regiondetect'
+  type:
+
+
+  # You can decide which pools you want to train your network
+  # on, The dataset is divided into 3 parts train, validation, test.
+  # You can decide which portion to validate/test your detection network on
+  train:
+    - 'train'
+  validation:
+    - 'validation'
+  test:
+    - 'test'
+
+  transforms: # transformations depending on the dataset
+
+PreTrain:
+  load_params:
+  model_file:
+
+Checkpoints:
+  load_ckpt: False
+  ckpt_filename:
+
+Hardware:
+  device: 'cuda:0'
+  num_workers: 6
+  torch_threads: 6
+
+HyperParameters:
+  batch_size: 2
+  architecture: 'yolov3'
+  arch_filepath: 
+
+
+
