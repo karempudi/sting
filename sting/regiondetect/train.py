@@ -8,7 +8,7 @@ import torch
 from torch.utils.data import Dataset, DataLoader
 from sting.utils.hardware import get_device_str
 from sting.utils.types import RecursiveNamespace
-
+from art import tprint
 
 def parse_args():
     parser = argparse.ArgumentParser(description="Region detection Training Arguments")
@@ -16,19 +16,21 @@ def parse_args():
     parser.add_argument('-p', '--param_file',
                         help='Specify the param file for training region detection network',
                         required=True)
-    parser.add_argument('-d', '--device',
+    parser.add_argument('-d', '--device', default=None,
                         help='Specify the device string (cpu, cuda, cuda:0, or cuda:1',
                         type=str, required=False)
 
-    parser.add_argument('-w', '--num_workers_override',
+    parser.add_argument('-w', '--num_workers_override', default=None,
                         help='Override number of workers for pytorch dataloader.',
-                        type=int)
+                        type=int, required=False)
     
-    parser.add_argument('-l', '--log_dir',
-                        help='Set directory name where you want the logs to go in')
+    parser.add_argument('-l', '--log_dir', default='barcode_logs',
+                        help='Set directory name where you want the logs to go in',
+                        required=False, type=str)
     
     parser.add_argument('-c', '--log_comment', default=None,
-                        help='Added a log comment to the run')
+                        help='Added a log comment to the run',
+                        type=str, required=False)
     
     args = parser.parse_args()
     
@@ -37,7 +39,7 @@ def parse_args():
     
 def train_model(param_file: str, device_overwrite: str = None,
                 num_workers_overwrite: int = None,
-                log_dir: str = 'barcode_runs', log_comment: str = None
+                log_dir: str = 'barcode_logs', log_comment: str = None
                 ):
     
     """
@@ -117,12 +119,17 @@ def train_model(param_file: str, device_overwrite: str = None,
     torch.set_num_threads(param.Hardware.torch_threads)
 
     # Log system
-
+    # Use tensorboard on this directory to view logs of all the experimental runs
+    log_dir_path = Path(param.Save.directory).parent / log_dir
+    if not log_dir_path.exists():
+        log_dir_path.mkdir(exist_ok=False)
     
     # model
     
     
     # datasets
+
+    # train
 
 def setup_trainer():
     pass
@@ -174,15 +181,17 @@ def setup_dataloader(param, train_ds, val_ds=None, test_ds=None):
     return train_dl, val_dl, test_dl
 
 
-    
-        
-
-
 def main():
     print("Hello from region detection training")
+    tprint("BARCODE")
     args = parse_args()
 
-    train_model(args.param_file)
+    train_model(args.param_file, 
+                device_overwrite=args.device,
+                num_workers_overwrite=args.num_workers_override,
+                log_dir=args.log_dir,
+                log_comment=args.log_comment,
+                )
 
 if __name__ == "__main__":
     main()

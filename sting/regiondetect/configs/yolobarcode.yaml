@@ -8,11 +8,12 @@ Model:
 
 Save:
   # main directory that stores all the experiment done during training of 
-  # the networ
-  directory: '/mnt/sda2/Praneeth/REALTIME/barcode_expts' 
+  # the network. Will also be where all the network models and checkpoints
+  # are stored
+  directory: '/home/pk/Documents/REALTIME/network_expts/barcode_expts' 
 
 Datasets:
-  directory: '/mnt/sda2/Praneeth/REALTIME/data/regiondetect'
+  directory: '/home/pk/Documents/REALTIME/data/barcode_yolo'
   type:
 
 

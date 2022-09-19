@@ -3,7 +3,7 @@ import setuptools
 
 from setuptools import setup
 
-if os.environ["CONDA_DEFAULT_ENV"] == "sting":
+if os.environ["CONDA_DEFAULT_ENV"] in ["sting", "sting_gpu_l", "sting_gpu_w"]:
     # conda requirements are set using the .yml files in the 
     # conda_envs directory.
     requirements = []
