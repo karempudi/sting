@@ -1,6 +1,9 @@
 
 import albumentations as A
 import cv2
+import numpy as np
+import torch
+from torchvision import transforms
 
 class YoloAugmentations:
     
@@ -36,4 +39,23 @@ class YoloAugmentations:
     
     def __call__(self, datapoint):
         # datapoint in a dict with keys = {'image', 'bboxes'}
-        return self.transform(image=datapoint['image'], bboxes=datapoint['bboxes'])
+        bboxes = datapoint['bboxes'][:, 1:].tolist()
+        for i, box in enumerate(bboxes):
+            box.append(datapoint['bboxes'][i, 0]) # add back the label at the end as albumentations expects it
+        transformed = self.transform(image=datapoint['image'], bboxes=bboxes)
+        
+        
+        image = transforms.ToTensor()(transformed['image'][:,:, 0].astype('float32'))
+        
+        bboxes_t = torch.from_numpy(np.array(transformed['bboxes']))
+        #print(bboxes_t)
+        n_boxes = bboxes_t.shape[0]
+        bb_targets = torch.zeros((n_boxes, 6))
+        bb_targets[:, 2:] = bboxes_t[:, :4]
+        bb_targets[:, 1] = bboxes_t[:, -1]
+        #print(bb_targets)
+        return {
+            'image': image,
+            'bboxes': bb_targets
+        }
+    
