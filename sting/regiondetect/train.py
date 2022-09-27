@@ -4,11 +4,17 @@ import shutil
 from pathlib import Path
 from datetime import datetime
 from sting.utils.param_io import load_params, save_params, ParamHandling
+from sting.regiondetect.logger import SummaryWriter
+from sting.regiondetect.datasets import BarcodeDataset
+from sting.regiondetect.transforms import YoloAugmentations
+from sting.regiondetect.networks import YOLOv3
 import torch
 from torch.utils.data import Dataset, DataLoader
 from sting.utils.hardware import get_device_str
 from sting.utils.types import RecursiveNamespace
 from art import tprint
+from torch.utils.data import random_split, ConcatDataset
+import time
 
 def parse_args():
     parser = argparse.ArgumentParser(description="Region detection Training Arguments")
@@ -20,7 +26,7 @@ def parse_args():
                         help='Specify the device string (cpu, cuda, cuda:0, or cuda:1',
                         type=str, required=False)
 
-    parser.add_argument('-w', '--num_workers_override', default=None,
+    parser.add_argument('-w', '--num_workers_override', default=6,
                         help='Override number of workers for pytorch dataloader.',
                         type=int, required=False)
     
@@ -123,16 +129,61 @@ def train_model(param_file: str, device_overwrite: str = None,
     log_dir_path = Path(param.Save.directory).parent / log_dir
     if not log_dir_path.exists():
         log_dir_path.mkdir(exist_ok=False)
-    
-    # model
-    
+
+    # setup tensorboard logger, what to write to tensorboard add things to logger as you train
+    logger = SummaryWriter(log_dir=log_dir_path)
     
     # datasets
+    if param.Datasets.transformations.type == 'YoloAugmentations':
+        dataset_transformations = YoloAugmentations()
+    dataset = BarcodeDataset(data_dir=param.Datasets.directory, transform=dataset_transformations) 
+    len_dataset = len(dataset)
+    train_len = int(len_dataset * param.Datasets.train.percentage)
+    val_len = int(len_dataset * param.Datasets.validation.percentage)
+    test_len = len_dataset - train_len - val_len
+    train_ds, val_ds, test_ds = random_split(dataset, [train_len, val_len, test_len]) 
+    #print(f"Length of train dataset: {len(train_ds)} , validation: {len(val_ds)}, test: {len(test_ds)}")
 
-    # train
+    # setup dataloaders
+    train_dl, val_dl, test_dl = setup_dataloader(param, train_ds, val_ds, test_ds)
 
-def setup_trainer():
-    pass
+    #train_batch = next(iter(train_dl))
+    #val_batch = next(iter(val_dl))
+    #test_batch = next(iter(test_dl))
+    #print(train_batch[0], train_batch[1].shape, train_batch[2].shape)
+    #print(val_batch[0], val_batch[1].shape, val_batch[2].shape)
+    #print(test_batch[0], test_batch[1].shape, test_batch[2].shape)
+
+    # setup trainer
+
+    model, optimizer, criterion, lr_scheduler = setup_trainer(param, logger, model_out, ckpt_path, device) 
+
+    # train loop
+
+
+
+def setup_trainer(param, logger, model_out, ckpt_path, device):
+    """
+    Sets up all the things needed for training of a network and returns them
+
+    Args:
+        param (RecursiveNamespace): contains all the parameters needed
+        logger (torch.utils.tensorboard.SummaryWriter): a custom tensorboard logger
+        model_out (pathlib.Path): model save path
+        ckpt_path (pathlib.Path): ckpt save path
+        device (torch.device): device onto which the network is loaded
+
+    Returns:
+        model: an instance of the model loaded on the appropriate device
+        optimizer: an instance of optimizer based on Hyperparameters
+        criterion: a loss function used to calculate loss
+        lr_scheduler: learning rate scheduler based on hyperparameters provided
+
+    """
+    models_available = {
+        'YOLOv3': YOLOv3
+    }
+    return None, None, None, None
 
 def setup_dataloader(param, train_ds, val_ds=None, test_ds=None):
     """
@@ -151,6 +202,7 @@ def setup_dataloader(param, train_ds, val_ds=None, test_ds=None):
         shuffle=True,
         num_workers=param.Hardware.num_workers,
         pin_memory=True,
+        collate_fn=train_ds.dataset.collate_fn
     )
 
     if val_ds is not None:
@@ -160,7 +212,8 @@ def setup_dataloader(param, train_ds, val_ds=None, test_ds=None):
             drop_last=False,
             shuffle=False,
             num_workers=param.Hardware.num_workers,
-            pin_memory=False
+            pin_memory=False,
+            collate_fn=val_ds.dataset.collate_fn
         )
     else:
         val_dl = None    
@@ -172,7 +225,8 @@ def setup_dataloader(param, train_ds, val_ds=None, test_ds=None):
             drop_last=False,
             shuffle=False,
             num_workers=param.Hardware.num_workers,
-            pin_memory=False
+            pin_memory=False,
+            collate_fn=test_ds.dataset.collate_fn
         )
     else:
         test_dl = None

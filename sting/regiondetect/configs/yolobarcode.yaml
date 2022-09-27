@@ -16,16 +16,26 @@ Datasets:
   directory: '/home/pk/Documents/REALTIME/data/barcode_yolo'
   type:
 
+  # we use the same transformation for all dataset for now.
+  # Later add this option when you refactor into each of the
+  # traning subsets and add options later, for now we run defaults
+  transformations: 
+    type: 'YoloAugmentations'
 
-  # You can decide which pools you want to train your network
-  # on, The dataset is divided into 3 parts train, validation, test.
-  # You can decide which portion to validate/test your detection network on
+  # You can decide what percentage you want in each of train, validation, test
+  # You can also add subsets on which you want to train, by adding stuff to
+  # the list, for ex, you might want to train your final models on all the data
   train:
-    - 'train'
+    percentage: 0.7
+    subset:
+      - 'train'
   validation:
-    - 'validation'
+    percentage: 0.15
+    subset:
+      - 'validation'
   test:
-    - 'test'
+    percentage: 0.15
+      - 'test'
 
   transforms: # transformations depending on the dataset
 
@@ -43,9 +53,8 @@ Hardware:
   torch_threads: 6
 
 HyperParameters:
-  batch_size: 2
-  architecture: 'yolov3'
-  arch_filepath: 
+  batch_size: 6
+  architecture: 'YOLOv3'
 
 
 
