@@ -261,6 +261,10 @@ class YOLOv3(nn.Module):
                                          first_channels=384)
         
         self.yolo_3 = YOLOLayer(anchors=anchors[2], num_classes=num_classes)
+    
+    @classmethod
+    def parse(cls, *args, **kwargs):
+        return cls(*args, **kwargs)
         
     def forward(self, x):
         yolo_outputs = []

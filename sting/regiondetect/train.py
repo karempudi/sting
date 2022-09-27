@@ -156,7 +156,8 @@ def train_model(param_file: str, device_overwrite: str = None,
 
     # setup trainer
 
-    model, optimizer, criterion, lr_scheduler = setup_trainer(param, logger, model_out, ckpt_path, device) 
+    model, optimizer, criterion, lr_scheduler, anchors, strides = setup_trainer(param, 
+                    logger, model_out, ckpt_path, device) 
 
     # train loop
 
@@ -183,7 +184,15 @@ def setup_trainer(param, logger, model_out, ckpt_path, device):
     models_available = {
         'YOLOv3': YOLOv3
     }
-    return None, None, None, None
+
+    model = models_available[param.HyperParameters.architecture]
+    anchors = param.HyperParameters.model_params.anchors.sizes
+    strides = param.HyperParameters.model_params.anchors.strides
+    print(f"Anchors are .... {anchors} .. strides: {strides}")
+
+    model = model.parse()
+
+    return None, None, None, None, None, None
 
 def setup_dataloader(param, train_ds, val_ds=None, test_ds=None):
     """

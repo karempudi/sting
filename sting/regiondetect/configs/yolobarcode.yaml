@@ -55,6 +55,35 @@ Hardware:
 HyperParameters:
   batch_size: 6
   architecture: 'YOLOv3'
+  model_params:
+    anchors: 
+      number: 9
+      sizes:
+      - - 19
+        - 168
+      - - 21
+        - 168
+      - - 29
+        - 178
+      - - 11
+        - 130
+      - - 11
+        - 131
+      - - 15
+        - 165
+      - - 6
+        - 115
+      - - 7
+        - 115
+      - - 7
+        - 125
+      strides:
+        - - 32
+          - 32
+        - - 16
+          - 16
+        - - 8
+          - 8
 
 
 
