@@ -1,6 +1,7 @@
 import argparse
 import pathlib
 import shutil
+import numpy as np
 from pathlib import Path
 from datetime import datetime
 from sting.utils.param_io import load_params, save_params, ParamHandling
@@ -8,6 +9,8 @@ from sting.regiondetect.logger import SummaryWriter
 from sting.regiondetect.datasets import BarcodeDataset
 from sting.regiondetect.transforms import YoloAugmentations
 from sting.regiondetect.networks import YOLOv3
+from sting.regiondetect.loss import compute_yolo_loss
+from sting.regiondetect.utils import CosineWarmupScheduler
 import torch
 from torch.utils.data import Dataset, DataLoader
 from sting.utils.hardware import get_device_str
@@ -15,6 +18,7 @@ from sting.utils.types import RecursiveNamespace
 from art import tprint
 from torch.utils.data import random_split, ConcatDataset
 import time
+from tqdm import tqdm
 
 def parse_args():
     parser = argparse.ArgumentParser(description="Region detection Training Arguments")
@@ -131,7 +135,7 @@ def train_model(param_file: str, device_overwrite: str = None,
         log_dir_path.mkdir(exist_ok=False)
 
     # setup tensorboard logger, what to write to tensorboard add things to logger as you train
-    logger = SummaryWriter(log_dir=log_dir_path)
+    logger = SummaryWriter(log_dir=log_dir_path/expt_id)
     
     # datasets
     if param.Datasets.transformations.type == 'YoloAugmentations':
@@ -142,7 +146,7 @@ def train_model(param_file: str, device_overwrite: str = None,
     val_len = int(len_dataset * param.Datasets.validation.percentage)
     test_len = len_dataset - train_len - val_len
     train_ds, val_ds, test_ds = random_split(dataset, [train_len, val_len, test_len]) 
-    #print(f"Length of train dataset: {len(train_ds)} , validation: {len(val_ds)}, test: {len(test_ds)}")
+    print(f"Length of train dataset: {len(train_ds)} , validation: {len(val_ds)}, test: {len(test_ds)}")
 
     # setup dataloaders
     train_dl, val_dl, test_dl = setup_dataloader(param, train_ds, val_ds, test_ds)
@@ -160,6 +164,63 @@ def train_model(param_file: str, device_overwrite: str = None,
                     logger, model_out, ckpt_path, device) 
 
     # train loop
+    nEpochs = param.HyperParameters.epochs
+    print(f"Model training for epochs: {nEpochs}")
+    print("\n--- Training barcode detection model ---")
+    current_lr = lr_scheduler.get_last_lr()[0]
+    logger.add_scalar(param.HyperParameters.optimizer.name + '/lr', current_lr, 0)
+
+    for epoch in range(1, nEpochs + 1):
+        model.train()
+        epoch_loss = []
+        for batch_i, (_, images, targets) in enumerate(tqdm(train_dl, desc=f"Training Epcoh {epoch}")):
+            optimizer.zero_grad()
+            batches_done = len(train_dl) * epoch + batch_i
+            images = images.to(device, non_blocking=True)
+            targets = targets.to(device)
+
+            predictions = model(images)
+            loss, loss_parts = criterion(predictions, targets, anchor_boxes=anchors, strides=strides)
+            loss.backward()
+            epoch_loss.append(loss.item())
+            optimizer.step()
+            loss_dict = {
+                'iou_loss': float(loss_parts[0]),
+                'obj_loss': float(loss_parts[1]),
+                'class_loss': float(loss_parts[2]),
+                'loss': loss.cpu().item()
+            }
+            logger.add_scalar_dict('train/', loss_dict, global_step=batches_done)
+
+        lr_scheduler.step() 
+        current_lr = lr_scheduler.get_last_lr()[0]
+        logger.add_scalar(param.HyperParameters.optimizer.name + '/lr', current_lr, batches_done)
+
+        print(f"Epoch: {epoch} Train loss: {np.mean(epoch_loss): 0.4f} lr: {lr_scheduler.get_last_lr()[0] :.6f}")
+
+        # validation loop
+        model.eval()
+        epoch_val_loss = []
+        for batch_i, (_, images, targets) in enumerate(tqdm(val_dl, desc=f"Validation Epoch {epoch}")):
+            batches_val_done = len(val_dl) * epoch + batch_i
+            images = images.to(device, non_blocking=True)
+            targets = targets.to(device)
+            predictions = model(images)
+            loss_val, loss_val_parts = criterion(predictions, targets, anchor_boxes=anchors, strides=strides)
+            epoch_val_loss.append(loss_val.item())
+            loss_dict_val = {
+                'iou_loss': float(loss_val_parts[0]),
+                'obj_loss': float(loss_val_parts[1]),
+                'class_loss': float(loss_val_parts[2]),
+                'loss': loss_val.cpu().item()
+            }
+            logger.add_scalar_dict('validation/', loss_dict_val, global_step=batches_val_done)
+        print(f"Epoch: {epoch} Validation loss: {np.mean(epoch_val_loss): 0.4f}")
+
+    print("\n---- Training done ----\n")
+
+
+    # test loop
 
 
 
@@ -179,6 +240,8 @@ def setup_trainer(param, logger, model_out, ckpt_path, device):
         optimizer: an instance of optimizer based on Hyperparameters
         criterion: a loss function used to calculate loss
         lr_scheduler: learning rate scheduler based on hyperparameters provided
+        anchors : anchors in tensor form used by the loss function
+        strides: strides in tensor form used by the loss function
 
     """
     models_available = {
@@ -186,13 +249,44 @@ def setup_trainer(param, logger, model_out, ckpt_path, device):
     }
 
     model = models_available[param.HyperParameters.architecture]
-    anchors = param.HyperParameters.model_params.anchors.sizes
+    anchor_sizes = param.HyperParameters.model_params.anchors.sizes
     strides = param.HyperParameters.model_params.anchors.strides
-    print(f"Anchors are .... {anchors} .. strides: {strides}")
+    num_classes = param.HyperParameters.model_params.num_classes
+    #print(f"Anchors are .... {anchor_sizes} .. strides: {strides} .. num_classes: {num_classes}")
 
-    model = model.parse()
+    anchors_list = [[anchor_sizes[i], anchor_sizes[i+1], anchor_sizes[i+2]] for i in range(0, len(anchor_sizes), 3)]
 
-    return None, None, None, None, None, None
+    model = model.parse(anchors=anchors_list, num_classes=num_classes).to(device=device)
+
+    anchors_t = tuple(torch.tensor(anch).float().to(device=device) for anch in anchors_list)
+    strides_t = tuple(torch.tensor(stride).to(device=device) for stride in strides)
+    #print(f"Anchor tensors: {anchors_t}")
+    #print(f"Stride_tensors: {strides_t}")
+
+    if param.HyperParameters.loss == 'yolo_loss':
+        criterion = compute_yolo_loss
+
+    if param.HyperParameters.optimizer.name == 'AdamW':
+        optimizer = torch.optim.AdamW(model.parameters(),
+                     lr=param.HyperParameters.optimizer.learning_rate,
+                     weight_decay=param.HyperParameters.optimizer.weight_decay)
+    else:
+        optimizer = torch.optim.SGD(model.parameters(),
+                    lr=param.HyperParameters.optimizer.learning_rate,
+                    weight_decay=param.HyperParameters.optimizer.weight_decay,
+                    momentum=param.HyperParameters.optimizer.momentum)
+
+    if param.HyperParameters.scheduler.name == "CosineWarmup":
+        lr_scheduler = CosineWarmupScheduler(optimizer, 
+                    warmup=param.HyperParameters.scheduler.warmup,
+                    max_iters=param.HyperParameters.scheduler.max_iters)
+    else:
+        lr_scheduler = None
+
+    print(f"Optimizer {param.HyperParameters.optimizer.name} lr: {param.HyperParameters.optimizer.learning_rate}")
+    print(f"Scheduler: {param.HyperParameters.scheduler.name}, warmup: {param.HyperParameters.scheduler.warmup}")
+
+    return model, optimizer, criterion, lr_scheduler, anchors_t, strides_t
 
 def setup_dataloader(param, train_ds, val_ds=None, test_ds=None):
     """
@@ -206,7 +300,7 @@ def setup_dataloader(param, train_ds, val_ds=None, test_ds=None):
 
     train_dl = DataLoader(
         dataset=train_ds,
-        batch_size=param.HyperParameters.batch_size,
+        batch_size=param.HyperParameters.train_batch_size,
         drop_last=True,
         shuffle=True,
         num_workers=param.Hardware.num_workers,
@@ -217,7 +311,7 @@ def setup_dataloader(param, train_ds, val_ds=None, test_ds=None):
     if val_ds is not None:
         val_dl = DataLoader(
             dataset=val_ds,
-            batch_size=param.HyperParameters.batch_size,
+            batch_size=param.HyperParameters.validation_batch_size,
             drop_last=False,
             shuffle=False,
             num_workers=param.Hardware.num_workers,
@@ -230,7 +324,7 @@ def setup_dataloader(param, train_ds, val_ds=None, test_ds=None):
     if test_ds is not None:
         test_dl = DataLoader(
             dataset=test_ds,
-            batch_size=param.HyperParameters.batch_size,
+            batch_size=param.HyperParameters.test_batch_size,
             drop_last=False,
             shuffle=False,
             num_workers=param.Hardware.num_workers,

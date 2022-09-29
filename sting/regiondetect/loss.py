@@ -9,6 +9,7 @@ import numpy as np
 from pathlib import Path
 import torch
 import torch.nn as nn
+import torch.optim as optim
 import math
 
 
@@ -59,7 +60,7 @@ def bbox_iou(box1, box2, x1y1x2y2=True, GIoU=False, DIoU=False, CIoU=False, eps=
         return iou  # IoU
 
 
-def compute_loss(predictions, targets, anchor_boxes, strides):
+def compute_yolo_loss(predictions, targets, anchor_boxes, strides):
     
     device = targets.device
     ## placeholder variables for different losses
