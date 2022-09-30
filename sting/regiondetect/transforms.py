@@ -50,7 +50,11 @@ class YoloAugmentations:
         bboxes_t = torch.from_numpy(np.array(transformed['bboxes']))
         #print(bboxes_t)
         n_boxes = bboxes_t.shape[0]
+        if n_boxes == 0:
+            return self.__call__(datapoint)
         bb_targets = torch.zeros((n_boxes, 6))
+        assert n_boxes != 0, "number of bboxes after transformation is zero"
+        assert bb_targets.shape[0] == bboxes_t.shape[0], "Failed due to shape mismatch in bbox transforms"
         bb_targets[:, 2:] = bboxes_t[:, :4]
         bb_targets[:, 1] = bboxes_t[:, -1]
         #print(bb_targets)

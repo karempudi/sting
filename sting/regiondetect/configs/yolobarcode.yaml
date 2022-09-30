@@ -58,7 +58,7 @@ HyperParameters:
   validation_batch_size: 2
   test_batch_size: 2
   architecture: 'YOLOv3'
-  epochs: 50
+  epochs: 100
   optimizer:
     name: 'AdamW'
     learning_rate: 0.01
@@ -67,7 +67,7 @@ HyperParameters:
   scheduler:
     name: 'CosineWarmup'
     warmup: 10 # number of batches to reach max lr
-    max_iters: 100 # total max for cosine to go to zero
+    max_iters: 200 # total max for cosine to go to zero
 
   loss: 'yolo_loss'
   model_params:
