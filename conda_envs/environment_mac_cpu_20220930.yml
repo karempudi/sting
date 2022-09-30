@@ -396,9 +396,15 @@ dependencies:
   - zstd=1.5.2=hcb37349_0
   - pip:
     - albumentations==1.3.0
+    - imageio==2.22.0
     - notexbook-theme==2.0.1
     - opencv-python-headless==4.6.0.66
+    - pywavelets==1.4.1
     - qudida==0.0.4
+    - scikit-image==0.19.3
+    - scikit-learn==1.1.2
+    - scipy==1.9.1
+    - tifffile==2022.8.12
     - torch-cluster==1.6.0
     - torch-geometric==2.1.0
     - torch-scatter==2.0.9
