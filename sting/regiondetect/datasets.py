@@ -17,12 +17,16 @@ class BarcodeDataset(Dataset):
     
     Arguments:
         data_dir (pathlib.Path or str): path of the data directory 
+        img_size (tuple): Default (256, 800) image size seen by the network
+        multiscale (boolean): Hanve't figured out this yet TODO
+        transform (torchvision transformations): transformations that will be applied to
+                each image in the dataset during training (augmentations and tensorizations)
     
     """
     def __init__(self, data_dir, img_size=(256, 800), multiscale=False, transform=None):
         super(BarcodeDataset, self).__init__()
         self.data_dir = Path(data_dir) if isinstance(data_dir, str) else data_dir
-        assert isinstance(data_dir, pathlib.Path) == False, "data directory is not a valid path"
+        assert isinstance(self.data_dir, pathlib.Path) == True, "data directory is not a valid path"
         
         # images are in /images directory
         self.images_dir = self.data_dir / Path('images')
@@ -117,4 +121,76 @@ class BarcodeDataset(Dataset):
                 ax.add_patch(rect)
 
         plt.show()
-    
+
+
+class BarcodeTestDataset(Dataset):
+    """
+    Constructs dataset that is seen by the network during testing
+
+    Args:
+        images_dir (str or pathlib.Path): path of directory containing images
+        img_size (tuple): Default (256, 800) image size seen by the network
+        transform : torchvision transformations that will tensorize and resize the 
+                    input image
+    """
+
+    def __init__(self, images_dir, img_size=(256, 800), transform=None, fileformat='.tiff'):
+        super(BarcodeTestDataset, self).__init__()
+        self.images_dir = Path(images_dir) if isinstance(images_dir, str) else images_dir
+        assert isinstance(self.images_dir, pathlib.Path) == True, "data dir is not a valid path"
+
+        self.img_size = img_size
+        
+        self.transform = transform
+        self.fileformat = fileformat
+        # build filenames
+        self.filenames = list(self.images_dir.glob('*' + self.fileformat))
+        
+        self.batch_count = 0
+
+    def __len__(self):
+        return len(self.filenames)
+
+    def __getitem__(self, idx):
+        image_filename = self.filenames[idx]
+        image = imread(image_filename)
+        image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
+        
+        datapoint = {
+            'image': image
+        }
+        if self.transform != None:
+            transformed = self.transform(datapoint)
+            image = transformed['image']
+        return {
+            'image': image,
+            'path': str(image_filename)
+        }
+
+    def collate_fn(self, batch):
+        self.batch_count += 1
+        
+        # drop invalid images
+        batch = [data for data in batch if data is not None]
+        
+        #image stack
+        images = torch.stack([data['image'] for data in batch])
+        
+        # paths stack
+        paths = [data['path'] for data in batch]
+        
+        return paths, images
+
+    def plot_datapoint(self, idx):
+        datapoint = self.__getitem__(idx)
+        image = datapoint['image']
+        
+        if image.ndim == 3 and image.shape[2] == 3:
+            image = image[:, :, 0]
+        if image.ndim == 3 and (image.shape[0] == 3 or image.shape[0] == 1):
+            image = image[0, :, :]
+        
+        fig, ax = plt.subplots(figsize=(10, 10))
+        ax.imshow(image, cmap='gray')
+        height, width = image.shape
+        plt.show()

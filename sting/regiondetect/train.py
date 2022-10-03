@@ -27,7 +27,7 @@ def parse_args():
                         help='Specify the param file for training region detection network',
                         required=True)
     parser.add_argument('-d', '--device', default=None,
-                        help='Specify the device string (cpu, cuda, cuda:0, or cuda:1',
+                        help='Specify the device string (cpu, cuda, cuda:0, or cuda:1)',
                         type=str, required=False)
 
     parser.add_argument('-w', '--num_workers_override', default=6,
@@ -218,7 +218,13 @@ def train_model(param_file: str, device_overwrite: str = None,
         print(f"Epoch: {epoch} Validation loss: {np.mean(epoch_val_loss): 0.4f}")
 
     print("\n---- Training done ----\n")
+    
+    # Metrics 
 
+    # saving the model
+    torch.save(model.state_dict(), model_out)
+
+    
 
     # test loop
 

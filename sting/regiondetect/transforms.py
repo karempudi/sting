@@ -62,4 +62,35 @@ class YoloAugmentations:
             'image': image,
             'bboxes': bb_targets
         }
-    
+
+
+class YoloTestAugmentations:
+
+    """
+    Test time augmentations done on the image before the yolo net sees
+    and image, basically doing image resizing and tensorizing
+
+    Args:
+        parameters: parameters used by various transformations.
+
+    """
+
+    def __init__(self, parameters = {
+        'to_float' : {'max_value': 65535.0},
+        'resize': {'height': 256, 'width': 800, 'interpolation': cv2.INTER_LINEAR, 'always_apply': True},
+        'from_float': {'max_value': 65535.0}
+    }):
+        self.parameters = parameters
+        self.transform = A.Compose([
+            A.ToFloat(**parameters['to_float']),
+            A.Resize(**parameters['resize']),
+            A.FromFloat(**parameters['from_float'])
+        ])
+        self.img_size = (self.parameters['resize']['height'], self.parameters['resize']['width'])
+    def __call__(self, datapoint):
+        # datapoint is a dict with keys = {'image'}
+        transformed = self.transform(image=datapoint['image'])
+        image = transforms.ToTensor()(transformed['image'][:, :, 0].astype('float32'))
+        return {
+            'image': image,
+        }
