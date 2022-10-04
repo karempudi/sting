@@ -188,7 +188,7 @@ class YOLOLayer(nn.Module):
         self.mse_loss = nn.MSELoss()
         self.bce_loss = nn.BCELoss()
         self.no = num_classes + 5  # number of outputs per anchor
-        self.grid = torch.zeros(1)  # TODO
+        self.grid = torch.zeros(1)
 
         anchors = torch.tensor(list(chain(*anchors))).float().view(-1, 2)
         self.register_buffer('anchors', anchors)
@@ -200,24 +200,24 @@ class YOLOLayer(nn.Module):
     def forward(self, x, img_size):
         # img_size is a tuple
         # make stride a tuple
-        stride = (img_size[0] // x.size(2), img_size[1] // x.size(3))
+        stride = torch.tensor((img_size[0] // x.size(2), img_size[1] // x.size(3)))
         self.stride = stride
         bs, _, ny, nx = x.shape  # x(bs,255,20,20) to x(bs,3,20,20,85)
         x = x.view(bs, self.num_anchors, self.no, ny, nx).permute(0, 1, 3, 4, 2).contiguous()
 
         #if not self.training:  # inference
         #    if self.grid.shape[2:4] != x.shape[2:4]:
-        #        self.grid = self._make_grid(nx, ny).to(x.device)
+        #    self.grid = self._make_grid(nx, ny).to(x.device)
 
-         #   x[..., 0:2] = (x[..., 0:2].sigmoid() + self.grid) * stride  # xy
-         #   x[..., 2:4] = torch.exp(x[..., 2:4]) * self.anchor_grid # wh
-         #   x[..., 4:] = x[..., 4:].sigmoid()
-         #   x = x.view(bs, -1, self.no)
+        #    x[..., 0:2] = (x[..., 0:2].sigmoid() + self.grid) * stride  # xy
+        #    x[..., 2:4] = torch.exp(x[..., 2:4]) * self.anchor_grid # wh
+        #    x[..., 4:] = x[..., 4:].sigmoid()
+        #    x = x.view(bs, -1, self.no)
 
         return x
     
     @staticmethod
-    def _make_grid(nx=20, ny=20):
+    def _make_grid(nx, ny):
         yv, xv = torch.meshgrid([torch.arange(ny), torch.arange(nx)], indexing='ij')
         return torch.stack((xv, yv), 2).view((1, 1, ny, nx, 2)).float()
 

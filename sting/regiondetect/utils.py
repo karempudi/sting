@@ -24,6 +24,25 @@ class CosineWarmupScheduler(optim.lr_scheduler._LRScheduler):
             lr_factor *= epoch * 1.0 / self.warmup
         return lr_factor
 
+def make_grid(nx, ny):
+    yv, xv = torch.meshgrid([torch.arange(ny), torch.arange(nx)], indexing='ij')
+    return torch.stack((xv, yv), 2).view((1, 1, ny, nx, 2)).float()
+
+def outputs_to_bboxes(outputs, anchors, strides):
+    yolo_bboxes = []
+    for i, (out, anch, stri) in enumerate(zip(outputs, anchors, strides)):
+        #print(out.shape, anch.shape, stri.shape)
+        # scale the outputs to bboxes correctly
+        bs, _, ny, nx, no = out.shape
+        grid = make_grid(nx, ny).to(out.device)
+        anch = anch.view(1, -1, 1, 1, 2).to(out.device)
+        out[..., 0:2] = (out[..., 0:2].sigmoid() + grid) * stri.to(out.device)
+        out[..., 2:4] = torch.exp(out[..., 2:4]) * anch
+        out[..., 4:] = out[..., 4:].sigmoid()
+        out = out.view(bs, -1, no)
+        yolo_bboxes.append(out)
+    return torch.cat(yolo_bboxes, 1)
+
 #############################################################
 ################# Functions for Metrics #####################
 #############################################################
