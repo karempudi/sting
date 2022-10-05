@@ -1,6 +1,10 @@
 import numpy as np
 import torch
 import torch.optim as optim
+import matplotlib.pyplot as plt
+import matplotlib.patches as patches
+import time
+import torchvision
 
 
 # Some code in the file is from UVA dlc course some is from 
@@ -42,6 +46,123 @@ def outputs_to_bboxes(outputs, anchors, strides):
         out = out.view(bs, -1, no)
         yolo_bboxes.append(out)
     return torch.cat(yolo_bboxes, 1)
+
+
+def xywh2xyxy(x):
+    y = x.new(x.shape)
+    y[..., 0] = x[..., 0] - x[..., 2] / 2
+    y[..., 1] = x[..., 1] - x[..., 3] / 2
+    y[..., 2] = x[..., 0] + x[..., 2] / 2
+    y[..., 3] = x[..., 1] + x[..., 3] / 2
+    return y
+
+
+def to_cpu(tensor):
+    return tensor.detach().cpu()
+
+def non_max_suppression(prediction, conf_thres=0.25, iou_thres=0.45, classes=None):
+    """
+    Performs Non-Maximum Suppression (NMS) on inference results
+
+    Args:
+        prediction: 
+        conf_thres:
+        iou_thres: 
+        classs: 
+    Returns:
+         detections with shape: nx6 (x1, y1, x2, y2, conf, cls)
+    """
+
+    nc = prediction.shape[2] - 5  # number of classes
+
+    # Settings
+    # (pixels) minimum and maximum box width and height
+    max_wh = 4096
+    max_det = 300  # maximum number of detections per image
+    max_nms = 30000  # maximum number of boxes into torchvision.ops.nms()
+    time_limit = 1.0  # seconds to quit after
+    multi_label = nc > 1  # multiple labels per box (adds 0.5ms/img)
+
+    t = time.time()
+    output = [torch.zeros((0, 6), device="cpu")] * prediction.shape[0]
+
+    for xi, x in enumerate(prediction):  # image index, image inference
+        # Apply constraints
+        # x[((x[..., 2:4] < min_wh) | (x[..., 2:4] > max_wh)).any(1), 4] = 0  # width-height
+        x = x[x[..., 4] > conf_thres]  # confidence
+
+        # If none remain process next image
+        if not x.shape[0]:
+            continue
+
+        # Compute conf
+        x[:, 5:] *= x[:, 4:5]  # conf = obj_conf * cls_conf
+
+        # Box (center x, center y, width, height) to (x1, y1, x2, y2)
+        box = xywh2xyxy(x[:, :4])
+
+        # Detections matrix nx6 (xyxy, conf, cls)
+        if multi_label:
+            i, j = (x[:, 5:] > conf_thres).nonzero(as_tuple=False).T
+            x = torch.cat((box[i], x[i, j + 5, None], j[:, None].float()), 1)
+        else:  # best class only
+            conf, j = x[:, 5:].max(1, keepdim=True)
+            x = torch.cat((box, conf, j.float()), 1)[conf.view(-1) > conf_thres]
+
+        # Filter by class
+        if classes is not None:
+            x = x[(x[:, 5:6] == torch.tensor(classes, device=x.device)).any(1)]
+
+        # Check shape
+        n = x.shape[0]  # number of boxes
+        if not n:  # no boxes
+            continue
+        elif n > max_nms:  # excess boxes
+            # sort by confidence
+            x = x[x[:, 4].argsort(descending=True)[:max_nms]]
+
+        # Batched NMS
+        c = x[:, 5:6] * max_wh  # classes
+        # boxes (offset by class), scores
+        boxes, scores = x[:, :4] + c, x[:, 4]
+        i = torchvision.ops.nms(boxes, scores, iou_thres)  # NMS
+        if i.shape[0] > max_det:  # limit detections
+            i = i[:max_det]
+
+        output[xi] = to_cpu(x[i])
+
+        if (time.time() - t) > time_limit:
+            print(f'WARNING: NMS time limit {time_limit}s exceeded')
+            break  # time limit exceeded
+
+    return output
+
+def plot_results_batch(images_batch, outputs_batch):
+    """
+    Gives figures handles for plotting results to tensorboard
+
+    Args:
+        images_batch: numpy.ndarray (B, C, H, W), C=1 in our case
+        outputs_batch: list of B elements, one element of each images bbox
+                       Each element is list of bboxes (nboxes x 6) of format
+                       (x1, y1, x2, y2, conf, class)
+    Returns:
+        fig_handles: a list of B fig handles, where each figure has bboxes
+                     plotted on them appropriately 
+    """
+    # return a list of matplotlib figure objects
+    fig_handles = []
+    if (images_batch.shape[0] != len(outputs_batch)):
+        return None
+    for i in range(len(outputs_batch)):
+        fig, ax = plt.subplots()
+        ax.imshow(images_batch[i][0], cmap='gray')
+        for row in outputs_batch[i]:
+            rect = patches.Rectangle((row[0], row[1]), row[2] - row[0], row[3] - row[1], linewidth=1,
+                                edgecolor='r', facecolor='none')
+            ax.add_patch(rect)
+        fig_handles.append(fig)
+    return fig_handles
 
 #############################################################
 ################# Functions for Metrics #####################

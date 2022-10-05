@@ -6,11 +6,12 @@ from pathlib import Path
 from datetime import datetime
 from sting.utils.param_io import load_params, save_params, ParamHandling
 from sting.regiondetect.logger import SummaryWriter
-from sting.regiondetect.datasets import BarcodeDataset
-from sting.regiondetect.transforms import YoloAugmentations
+from sting.regiondetect.datasets import BarcodeDataset, BarcodeTestDataset
+from sting.regiondetect.transforms import YoloAugmentations, YoloTestAugmentations
 from sting.regiondetect.networks import YOLOv3
 from sting.regiondetect.loss import compute_yolo_loss
-from sting.regiondetect.utils import CosineWarmupScheduler
+from sting.regiondetect.utils import CosineWarmupScheduler, outputs_to_bboxes
+from sting.regiondetect.utils import non_max_suppression, plot_results_batch, to_cpu
 import torch
 from torch.utils.data import Dataset, DataLoader
 from sting.utils.hardware import get_device_str
@@ -137,15 +138,20 @@ def train_model(param_file: str, device_overwrite: str = None,
     # setup tensorboard logger, what to write to tensorboard add things to logger as you train
     logger = SummaryWriter(log_dir=log_dir_path/expt_id)
     
-    # datasets
+    # train and validation datasets
     if param.Datasets.transformations.type == 'YoloAugmentations':
         dataset_transformations = YoloAugmentations()
     dataset = BarcodeDataset(data_dir=param.Datasets.directory, transform=dataset_transformations) 
     len_dataset = len(dataset)
     train_len = int(len_dataset * param.Datasets.train.percentage)
-    val_len = int(len_dataset * param.Datasets.validation.percentage)
-    test_len = len_dataset - train_len - val_len
-    train_ds, val_ds, test_ds = random_split(dataset, [train_len, val_len, test_len]) 
+    val_len = len_dataset - train_len
+    train_ds, val_ds = random_split(dataset, [train_len, val_len]) 
+
+    # Test dataset on which the predictions are plotted
+    if param.Datasets.test.transformations == 'YoloTestAugmentations':
+        test_dataset_transformations = YoloTestAugmentations()
+    
+    test_ds = BarcodeTestDataset(images_dir= param.Datasets.test.directory, transform=YoloTestAugmentations())
     print(f"Length of train dataset: {len(train_ds)} , validation: {len(val_ds)}, test: {len(test_ds)}")
 
     # setup dataloaders
@@ -170,6 +176,8 @@ def train_model(param_file: str, device_overwrite: str = None,
     current_lr = lr_scheduler.get_last_lr()[0]
     logger.add_scalar(param.HyperParameters.optimizer.name + '/lr', current_lr, 0)
 
+
+    best_val_loss = 1_000_000.
     for epoch in range(1, nEpochs + 1):
         model.train()
         epoch_loss = []
@@ -215,14 +223,38 @@ def train_model(param_file: str, device_overwrite: str = None,
                 'loss': loss_val.cpu().item()
             }
             logger.add_scalar_dict('validation/', loss_dict_val, global_step=batches_val_done)
-        print(f"Epoch: {epoch} Validation loss: {np.mean(epoch_val_loss): 0.4f}")
+        mean_epoch_val_loss = np.mean(epoch_val_loss)
+        print(f"Epoch: {epoch} Validation loss: {mean_epoch_val_loss: 0.4f}")
+
+        # save model if 
+        if mean_epoch_val_loss < best_val_loss:
+            best_val_loss = mean_epoch_val_loss
+            torch.save(model.state_dict(), model_out)
+
+        # Test loop
+        model.eval()
+        for batch_i, (_, images) in enumerate(tqdm(test_dl, desc=f"Test Epoch {epoch}")):
+            batches_test_done = len(test_dl) * epoch + batch_i
+            with torch.no_grad():
+                predictions = model(images.to(device, non_blocking=True))
+                bboxes = outputs_to_bboxes(predictions, anchors, strides)
+                bboxes_cleaned = non_max_suppression(bboxes, conf_thres=param.Datasets.test.conf_thres,
+                                            iou_thres=param.Datasets.test.iou_thres)
+                # each image in the batch has a bbox array in the list
+                bboxes_numpy = [bbox.numpy() for bbox in bboxes_cleaned]
+                if batch_i == len(test_dl) - 1:
+                    batch_fig_handles = plot_results_batch(to_cpu(images).numpy(), bboxes_numpy)
+                    for i, figure in enumerate(batch_fig_handles, 0):
+                        logger.add_figure('test/fig' + str(i), figure, global_step=batches_test_done)
+        
+        # Do more metrics on test and/or validation data
+
 
     print("\n---- Training done ----\n")
     
     # Metrics 
 
     # saving the model
-    torch.save(model.state_dict(), model_out)
 
     
 
@@ -331,11 +363,11 @@ def setup_dataloader(param, train_ds, val_ds=None, test_ds=None):
         test_dl = DataLoader(
             dataset=test_ds,
             batch_size=param.HyperParameters.test_batch_size,
-            drop_last=False,
+            drop_last=True,
             shuffle=False,
             num_workers=param.Hardware.num_workers,
             pin_memory=False,
-            collate_fn=test_ds.dataset.collate_fn
+            collate_fn=test_ds.collate_fn
         )
     else:
         test_dl = None
