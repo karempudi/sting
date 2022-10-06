@@ -4,6 +4,7 @@ import shutil
 import numpy as np
 from pathlib import Path
 from datetime import datetime
+import matplotlib.pyplot as plt
 from sting.utils.param_io import load_params, save_params, ParamHandling
 from sting.regiondetect.logger import SummaryWriter
 from sting.regiondetect.datasets import BarcodeDataset, BarcodeTestDataset
@@ -233,7 +234,7 @@ def train_model(param_file: str, device_overwrite: str = None,
 
         # Test loop
         model.eval()
-        for batch_i, (_, images) in enumerate(tqdm(test_dl, desc=f"Test Epoch {epoch}")):
+        for batch_i, (paths, images) in enumerate(tqdm(test_dl, desc=f"Test Epoch {epoch}")):
             batches_test_done = len(test_dl) * epoch + batch_i
             with torch.no_grad():
                 predictions = model(images.to(device, non_blocking=True))
@@ -246,7 +247,14 @@ def train_model(param_file: str, device_overwrite: str = None,
                     batch_fig_handles = plot_results_batch(to_cpu(images).numpy(), bboxes_numpy)
                     for i, figure in enumerate(batch_fig_handles, 0):
                         logger.add_figure('test/fig' + str(i), figure, global_step=batches_test_done)
-        
+                # write figures to a directory to save
+                elif epoch == nEpochs:
+                    batch_fig_handles = plot_results_batch(to_cpu(images).numpy(), bboxes_numpy)
+                    for i, figure in enumerate(batch_fig_handles, 0):
+                        save_path = Path(param.Datasets.test.save_directory) / Path(Path(paths[i]).stem + '.png')
+                        figure.savefig(save_path)
+                        plt.close(figure)
+
         # Do more metrics on test and/or validation data
 
 

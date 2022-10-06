@@ -35,6 +35,7 @@ Datasets:
       - 'validation'
   test:
     directory: '/home/pk/Documents/REALTIME/data/barcode_yolo/images/'
+    save_directory: '/home/pk/Documents/REALTIME/network_expts/barcode_test_save/'
     transformations:
       type: 'YoloTestAugmentations'
     conf_thres: 0.25
