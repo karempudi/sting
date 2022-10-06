@@ -1,8 +1,23 @@
 import argparse
 import pathlib
 import numpy as np
+from pathlib import Path
 import matplotlib.pyplot as plt
 from art import tprint
+from datetime import datetime
+from sting.utils.param_io import ParamHandling, load_params, save_params
+from sting.regiondetect.datasets import BarcodeTestDataset
+from sting.regiondetect.transforms import YoloTestAugmentations
+from sting.regiondetect.networks import YOLOv3
+from sting.regiondetect.utils import non_max_suppression, plot_results_batch, to_cpu
+from sting.regiondetect.utils import outputs_to_bboxes
+import torch
+from torch.utils.data import Dataset, DataLoader
+from sting.utils.hardware import get_device_str
+from sting.utils.types import RecursiveNamespace
+import time
+from tqdm import tqdm
+import matplotlib.pyplot as plt
 
 def parse_args():
     parser = argparse.ArgumentParser(description='Region detection testing arguments')
@@ -23,13 +38,23 @@ def parse_args():
                         help='Set directory containing images to override',
                         type=str, required=False)
     
+    parser.add_argument('-s', '--save_dir_override', default=None,
+                        help='Set directory to save plots to override',
+                        type=str, required=False)
+    
+    parser.add_argument('-m', '--model_path', default=None,
+                        help='Set model path to override',
+                        type=str, required=False)
+    
     args = parser.parse_args()
 
     return args
 
 def test_model(param_file: str, device_overwrite: str = None,
                 num_workers_override: int = None,
-                images_dir_override: str = None):
+                images_dir_override: str = None,
+                save_dir_override: str = None,
+                model_path_override: str = None):
     """
     Test a region detection (barcode) model based on the parameters given
 
@@ -39,7 +64,7 @@ def test_model(param_file: str, device_overwrite: str = None,
         device_overwrite (str): overwrite cuda device specified in the param_file
         num_workers_override (int): overwrite num of workers in pytorch dataloaders
         images_dir_override (str): overwrite images_dir in the param file 
-
+        save_dir_override (str) : overwrite save_dir in the param file 
 
         Note:
             the parameters file is the same as yolo training config, but 
@@ -48,13 +73,132 @@ def test_model(param_file: str, device_overwrite: str = None,
 
     """
     # Loading the param
+    param_file = Path(param_file)
+    if not param_file.exists():
+        raise FileNotFoundError(f"Parameter file {str(param_file)} doesn't exist")
+
+    # make a param namespace and fill in the defaults
+    param = load_params(param_file, ref_type='barcode')
+
+    # set hardware device to test one
+    if device_overwrite is not None:
+        param.Testing.Hardware.device = device_overwrite
+        device = device_overwrite
+    else:
+        device = param.Testing.Hardware.device
+
+    # check for cuda
+    if torch.cuda.is_available():
+        _, device_idx = get_device_str(device)
+        if device_idx is not None:
+            torch.cuda.set_device(device)
+    else:
+        device = 'cpu'
+    
+    torch.set_num_threads(param.Testing.Hardware.torch_threads)
+
+    if num_workers_override is not None:
+        param.Testing.Hardware.num_workers = num_workers_override
+    
+    if images_dir_override is not None:
+        param.Testing.images_dir = images_dir_override
+
+    if save_dir_override is not None:
+        param.Testing.save_dir = save_dir_override
+
+    if model_path_override is not None:
+        param.Testing.model_path = model_path_override
+
+    expt_id = datetime.now().strftime("%Y-%m-%d_%H_%M_%S")
+    expt_dir = Path(param.Testing.save_dir) / Path(expt_id)
+
+    if not expt_dir.parent.exists():
+        expt_dir.parent.mkdir()
+    
+    if not expt_dir.exists():
+        expt_dir.mkdir()
+
+    param_used_save = expt_dir / Path('testing_params').with_suffix(param_file.suffix)
+    save_params(param_used_save, param.Testing)
+
+
+    # setup dataset and dataloader
+    if param.Testing.transformations.type == 'YoloTestAugmentations':
+        dataset_transformations = YoloTestAugmentations()
+
+    print(param.Testing)
+
+    test_ds = BarcodeTestDataset(images_dir=param.Testing.images_dir, transform=dataset_transformations)
+    test_dl = DataLoader(
+        dataset = test_ds,
+        batch_size=param.Testing.batch_size,
+        drop_last=False,
+        shuffle=False,
+        num_workers=param.Testing.Hardware.num_workers,
+        pin_memory=False,
+        collate_fn=test_ds.collate_fn
+    )
+    model, anchors, strides = setup_tester(param, device)
+
+    # Test loop
+    model.eval()
+    for batch_i, (paths, images) in enumerate(tqdm(test_dl, desc=f"Test dataset: ")):
+        #batches_test_done = len(test_dl) * epoch + batch_i
+        with torch.no_grad():
+            predictions = model(images.to(device, non_blocking=True))
+            bboxes = outputs_to_bboxes(predictions, anchors, strides)
+            bboxes_cleaned = non_max_suppression(bboxes, conf_thres=param.Testing.thresholds.conf,
+                                        iou_thres=param.Testing.thresholds.iou)
+            # each image in the batch has a bbox array in the list
+            bboxes_numpy = [bbox.numpy() for bbox in bboxes_cleaned]
+            # write figures to a directory to save
+            batch_fig_handles = plot_results_batch(to_cpu(images).numpy(), bboxes_numpy)
+            for i, figure in enumerate(batch_fig_handles, 0):
+                save_path = Path(expt_dir) / Path(Path(paths[i]).stem + '.png')
+                figure.savefig(save_path, bbox_inches='tight')
+                plt.close(figure)
+
+
+def setup_tester(param, device):
+    """
+    Sets up all the things needed for testing a network and returns them
+
+    Args:
+        param (RecursiveNamespace) : contains all parameters needed
+        device: device to send the model to already
+    """
+    models_available = {
+        'YOLOv3': YOLOv3
+    }
+
+    model = models_available[param.Testing.architecture]
+    anchor_sizes = param.Testing.model_params.anchors.sizes
+    strides = param.Testing.model_params.anchors.strides
+    num_classes = param.Testing.model_params.num_classes
+
+    anchors_list = [[anchor_sizes[i], anchor_sizes[i+1], anchor_sizes[i+2]] for i in range(0, len(anchor_sizes), 3)]
+
+    model = model.parse(anchors=anchors_list, num_classes=num_classes).to(device=device)
+
+    # Load model params from file
+    model.load_state_dict(torch.load(param.Testing.model_path))
+
+    anchors_t = tuple(torch.tensor(anch).float().to(device=device) for anch in anchors_list)
+    strides_t = tuple(torch.tensor(stride).to(device=device) for stride in strides)
+
+    return model, anchors_t, strides_t
+
 
 def main():
     print("Hello from region detection testing")
     tprint("BARCODE TEST")
     args = parse_args()
 
-    test_model(args.param_file,)
+    test_model(args.param_file,
+                device_overwrite=args.device,
+                num_workers_override=args.num_workers_override,
+                images_dir_override=args.images_dir_override,
+                save_dir_override=args.save_dir_override)
 
 if __name__ == "__main__":
     parse()

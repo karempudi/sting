@@ -61,7 +61,7 @@ HyperParameters:
   validation_batch_size: 2
   test_batch_size: 8
   architecture: 'YOLOv3'
-  epochs: 50
+  epochs: 100
   optimizer:
     name: 'AdamW'
     learning_rate: 0.01
@@ -70,7 +70,7 @@ HyperParameters:
   scheduler:
     name: 'CosineWarmup'
     warmup: 10 # number of batches to reach max lr
-    max_iters: 100 # total max for cosine to go to zero
+    max_iters: 200 # total max for cosine to go to zero
 
   loss: 'yolo_loss'
   model_params:
@@ -105,12 +105,56 @@ HyperParameters:
           - 8
 
 
-# use this section for debugging on unseen unlabelled data
+# use this section for debugging on unseen unlabelled data run using regiondetect.test.py
 Testing: # all parameters needed for testing are included in this section,
 # This section needs to be self contained and will be read during the test loop of the 
 # model
-  get_current_model: True # if true, will load the 
-  model_path: #
+
+  Hardware:
+    device: 'cuda:1'
+    num_workers: 6
+    torch_threads: 6
+  
+  thresholds:
+    conf: 0.25
+    iou: 0.45
+
+  model_path: '/home/pk/Documents/REALTIME/network_expts/barcode_models/model.pth'
   architecture: 'YOLOv3'
-  batch_size: 2
-  images_dir_path: 
+  batch_size: 8
+  images_dir: '/home/pk/Documents/REALTIME/data/barcode_yolo/images/' 
+  save_plots: True
+  save_dir: '/home/pk/Documents/REALTIME/network_expts/barcode_test_save/'
+  transformations:
+    type: 'YoloTestAugmentations'
+  model_params:
+      num_classes: 1
+      anchors: 
+        number: 9
+        sizes:
+        - - 19
+          - 168
+        - - 21
+          - 168
+        - - 29
+          - 178
+        - - 11
+          - 130
+        - - 11
+          - 131
+        - - 15
+          - 165
+        - - 6
+          - 115
+        - - 7
+          - 115
+        - - 7
+          - 125
+        strides:
+          - - 32
+            - 32
+          - - 16
+            - 16
+          - - 8
+            - 8
+

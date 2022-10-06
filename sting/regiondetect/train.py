@@ -109,10 +109,6 @@ def train_model(param_file: str, device_overwrite: str = None,
     param_in_save = expt_dir / Path('training_run_set').with_suffix(param_file.suffix)
     shutil.copy(param_file, param_in_save)
 
-    # training run params after filling the defualts
-    param_used_save = expt_dir / Path('training_run_used').with_suffix(param_file.suffix)
-    save_params(param_used_save, param)
-
     # set hardware device to train
     if device_overwrite is not None:
         param.Hardware.device = device_overwrite
@@ -127,8 +123,16 @@ def train_model(param_file: str, device_overwrite: str = None,
             torch.cuda.set_device(device) 
     else:
         device = 'cpu'
+
+    if num_workers_overwrite is not None:
+        param.Hardware.num_workers = num_workers_overwrite
     
     torch.set_num_threads(param.Hardware.torch_threads)
+
+    # training run params after filling the defualts
+    param_used_save = expt_dir / Path('training_run_used').with_suffix(param_file.suffix)
+    save_params(param_used_save, param)
+
 
     # Log system
     # Use tensorboard on this directory to view logs of all the experimental runs
@@ -252,7 +256,7 @@ def train_model(param_file: str, device_overwrite: str = None,
                     batch_fig_handles = plot_results_batch(to_cpu(images).numpy(), bboxes_numpy)
                     for i, figure in enumerate(batch_fig_handles, 0):
                         save_path = Path(param.Datasets.test.save_directory) / Path(Path(paths[i]).stem + '.png')
-                        figure.savefig(save_path)
+                        figure.savefig(save_path, bbox_inches='tight')
                         plt.close(figure)
 
         # Do more metrics on test and/or validation data
