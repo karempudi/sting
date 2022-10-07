@@ -136,9 +136,9 @@ class MMDatasetOmni(Dataset):
     def plot(self, idx):
         pass
 
-########################################
+################################################
 ########### Classical U-net dataset ############
-########################################
+################################################
 
 class MMDatasetUnet(Dataset):
 
@@ -249,6 +249,88 @@ class MMDatasetUnetTest(Dataset):
 ####### Dual U-net dataset to predict both cell and channels #######
 ####################################################################
 
+
+class MMDatasetUnetDual(Dataset):
+
+    def __init__(self, data_dir: Union[str, pathlib.Path],
+                transform=None, weights=False, fileformats = {
+                    'phase': '.tif', 'cell_mask': '.tif', 'channel_mask': '.tif', 'weights': '.tif'
+                }):
+        """
+        A dataset of a species is in data_dir, with subdirs 'phase', 'mask' & 'weights'
+        If you want to include more species, use concatenation of different datasets 
+        after creating an MMDatasetUnetDual for each species
+
+        Dual means that we use one network to predict both cells and channels masks
+        So that datasets and dataloaders should deliver identically transformed images
+        of cell mask and channels mask for each transformed phase-contrast training image.
+        If there are weigths, they should be specified for cells only, as we wont need weights
+        for channels as they never really touch each other.
+
+        Args:
+            data_dir (str or pathlib.Path): directory containing data in directores,
+                        'phase', 'cell_mask', 'channel_mask', 'weights_cell'(optional) 
+                    For each phase file , there must be a cell mask file and channel mask file
+                    and weights file (if used)
+                    Note: Pass the extensions correctly for each dataset.
+            transform: transforms applied to a datapoint in the dataset
+            weights (boolean): are weights included int he dataset or not
+            fileformat (dict): fileformats to grab files from directories with
+        """
+        super(MMDatasetUnetDual, self).__init__()
+
+        self.data_dir =  data_dir if isinstance(data_dir, pathlib.Path) else Path(data_dir)
+        self.phase_dir = self.data_dir / Path('phase')
+        self.cell_mask_dir = self.data_dir / Path('mask')
+        self.channel_mask_dir = self.data_dir / Path('channel_mask')
+        self.use_weights = weights
+        self.fileformats = fileformats
+        self.transform = transform
+
+        if self.use_weights:
+            self.weights_dir = self.data_dir / Path('weights')
+
+        self.phase_filenames = list(self.phase_dir.glob('*' + fileformats['phase']))
+        self.cell_mask_filenames = [self.cell_mask_dir / Path(filename.stem + fileformats['cell_mask']) 
+                                    for filename in self.phase_filenames]
+        self.channel_mask_filenames = [self.channel_mask_dir / Path(filename.stem + fileformats['channel_mask']) 
+                                    for filename in self.phase_filenames]
+        if self.use_weights:
+            self.weights_filenames = [self.weights_dir / Path(filename.stem + fileformats['weights']) 
+                                    for filename in self.phase_filenames]
+
+
+    def __len__(self):
+        return len(self.phase_filenames)
+
+    def __getitem__(self, idx):
+
+        phase_img = imread(self.phase_filenames[idx])
+        cell_mask_img = imread(self.cell_mask_filenames[idx])
+        channel_mask_img = imread(self.channel_mask_filenames[idx])
+        if self.use_weights:
+            weights_img = imread(self.weights_filenames[idx])
+        else:
+            weights_img = None
+        
+        height, width = phase_img.shape
+
+        sample = {
+            'phase': phase_img,
+            'mask': cell_mask_img,
+            'channel_mask': channel_mask_img
+            'weights': weights_img,
+            'filename': self.phase_filenames[idx].name,
+            'raw_shape': (height, width)
+        }
+
+        if self.transform != None:
+            sample = self.transform(sample)
+        
+        return sample
+    
+    def plot_datapoint(self, idx):
+        pass
 
 
 ####################################################################
