@@ -8,6 +8,7 @@ from typing import Union
 from tqdm import tqdm
 from sting.segmentation.utils import labels_to_output_omni
 from skimage import io
+from tifffile import imread
 
 class MMDatasetOmni(Dataset):
 
@@ -135,22 +136,124 @@ class MMDatasetOmni(Dataset):
     def plot(self, idx):
         pass
 
+########################################
+########### Classical U-net dataset ############
+########################################
+
 class MMDatasetUnet(Dataset):
 
-    def __init__(self, phase_dir: Union[str, pathlib.Path], labels_dir: Union[str, pathlib.Path],
-                transforms=None, weights=False, phase_fileformat: str = '.tif',
-                labels_fileformat: str = '.tif'):
+    def __init__(self, data_dir: Union[str, pathlib.Path],
+                transform=None, weights=False, fileformats = {
+                    'phase': '.tif', 'mask': '.tif', 'weights': '.tif'
+                }):
         """
+        A dataset of a species is in data_dir, with subdirs 'phase', 'mask' & 'weights'
+        If you want to include more species, use concatenation of different datasets 
+        after creating an MMDatasetUnet for each species
 
+        Args:
+            data_dir (str or pathlib.Path): directory containing data in directores,
+                        'phase', 'mask' and 'weights'(optional)
+                    For each phase file , there must be a mask file and weights file (if used)
+                    Note: Pass the extensions correctly for each dataset.
+            transform: transforms applied to a datapoint in the dataset
+            weights (boolean): are weights included int he dataset or not
+            fileformat (dict): fileformats to grab files from directories with
         """
         super(MMDatasetUnet, self).__init__()
-        pass
+
+        self.data_dir =  data_dir if isinstance(data_dir, pathlib.Path) else Path(data_dir)
+        self.phase_dir = self.data_dir / Path('phase')
+        self.mask_dir = self.data_dir / Path('mask')
+        self.use_weights = weights
+        self.fileformats = fileformats
+        self.transform = transform
+
+        if self.use_weights:
+            self.weights_dir = self.data_dir / Path('weights')
+
+        self.phase_filenames = list(self.phase_dir.glob('*' + fileformats['phase']))
+        self.mask_filenames = [self.mask_dir / Path(filename.stem + fileformats['mask']) 
+                                    for filename in self.phase_filenames]
+        if self.use_weights:
+            self.weights_filenames = [self.weights_dir / Path(filename.stem + fileformats['weights']) 
+                                    for filename in self.phase_filenames]
+
 
     def __len__(self):
+        return len(self.phase_filenames)
+
+    def __getitem__(self, idx):
+
+        phase_img = imread(self.phase_filenames[idx])
+        mask_img = imread(self.mask_filenames[idx])
+        if self.use_weights:
+            weights_img = imread(self.weights_filenames[idx])
+        else:
+            weights_img = None
+        
+        height, width = phase_img.shape
+
+        sample = {
+            'phase': phase_img,
+            'mask': mask_img,
+            'weights': weights_img,
+            'filename': self.phase_filenames[idx].name,
+            'raw_shape': (height, width)
+        }
+
+        if self.transform != None:
+            sample = self.transform(sample)
+        
+        return sample
+    
+    def plot_datapoint(self, idx):
         pass
 
-    def __getitem__(self):
-        pass 
+
+class MMDatasetUnetTest(Dataset):
+
+    def __init__(self, images_dir: Union[str, pathlib.Path], fileformat='.tif*',
+                transform=None):
+        super(MMDatasetUnetTest, self).__init__()
+        
+        self.images_dir = images_dir if isinstance(images_dir, pathlib.Path) else Path(images_dir)
+        self.fileformat = fileformat
+        self.transform = transform
+
+        self.filenames = list(self.images_dir.glob('*' + self.fileformat))
+
+    def __len__(self):
+        return len(self.filenames)
+    
+    def __getitem__(self, idx):
+        
+        phase_img = imread(self.filenames[idx])
+        height, width = phase_img.shape
+
+        sample = {
+            'phase': phase_img,
+            'filename': self.filenames[idx].name,
+            'raw_shape' : (height, width)
+        }
+
+        if self.transform != None:
+            sample = self.transform(sample)
+        
+        return sample
+    
+    def plot_datapoint(self, idx):
+        pass
+
+####################################################################
+####### Dual U-net dataset to predict both cell and channels #######
+####################################################################
+
+
+
+####################################################################
+################# Concatenation of datasets ########################
+####################################################################
 
 # one function for concatenating datasets
 def construct_dataset(param: RecursiveNamespace):
@@ -179,14 +282,3 @@ def construct_dataset(param: RecursiveNamespace):
         datasets.append(species_dataset)
     
     return ConcatDataset(datasets)
-
-class MMDatasetTest(Dataset):
-
-    def __init__(self):
-        pass
-
-    def __len__(self):
-        pass
-    
-    def __getitem__(self):
-        pass
