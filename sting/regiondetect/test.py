@@ -17,7 +17,6 @@ from sting.utils.hardware import get_device_str
 from sting.utils.types import RecursiveNamespace
 import time
 from tqdm import tqdm
-import matplotlib.pyplot as plt
 
 def parse_args():
     parser = argparse.ArgumentParser(description='Region detection testing arguments')
@@ -198,7 +197,8 @@ def main():
                 device_overwrite=args.device,
                 num_workers_override=args.num_workers_override,
                 images_dir_override=args.images_dir_override,
-                save_dir_override=args.save_dir_override)
+                save_dir_override=args.save_dir_override,
+                model_path_override=args.model_path)
 
 if __name__ == "__main__":
     parse()

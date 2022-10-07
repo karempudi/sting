@@ -19,11 +19,11 @@ setup(
     install_requires = requirements,
     entry_points= {
         'console_scripts' : [
-            'sting.seg.train = sting.segmentation.train:main',
             'sting.runner = sting.ui.run:main',
             'sting.viewer = sting.ui.viewer:main',
             'sting.runcmd = sting.liveanalysis.run:main',
             'sting.segtrain = sting.segmentation.train:main',
+            'sting.segtest = sting.segmentation.test:main',
             'sting.barcodetrain = sting.regiondetect.train:main',
             'sting.barcodetest = sting.regiondetect.test:main',
         ]

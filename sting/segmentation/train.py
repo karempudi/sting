@@ -3,6 +3,7 @@ import shutil
 import socket
 from pathlib import Path
 from datetime import datetime
+from art import tprint
 from sting.utils.param_io import ParamHandling, load_params, save_params
 from sting.utils.hardware import get_device_str
 from sting.segmentation import logger
@@ -114,21 +115,15 @@ def train_model(param_file: str, device_overwrite: str = None,
     # Log system
     log_dir = Path(param.Logging.directory) / Path(log_dir)
 
+    # setup datasets
 
-    logger_expt = logger.MultiLogger([
-        # put things in filterkeys, the things you don't want to be logged
-        logger.SummaryWriter(log_dir=log_dir, filter_keys=[]),
-        logger.DictLogger(),
-    ])
-
-    #setup_trainer()
-    model = model_dict[param.HyperParameters.architecture].param(param)
+    # setup models and optimizers, loss functions, etc
     #print(model)
 
     #dl_train, dl_val, dl_test = setup_dataloader(param, ds_train, ds_val, ds_test)
 
 
-def setup_trainer():
+def setup_trainer(param):
     pass
 
 def setup_dataloader(param, train_ds, val_ds=None, test_ds=None):
@@ -172,9 +167,10 @@ def setup_dataloader(param, train_ds, val_ds=None, test_ds=None):
 
 def main():
     print("Hello from segmentation training")
+    tprint("SEGMENT")
     args = parse_args()
 
-    train_model(args.param_file)
+    #train_model(args.param_file)
 
 if __name__ == "__main__":
     main()
