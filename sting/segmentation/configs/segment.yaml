@@ -6,10 +6,10 @@
 Model:
 
 Save:
-  directory: '/mnt/sda2/Praneeth/REALTIME/network_expts/seg_expts' # main direcotry that contains all training runs
+  directory: '/home/pk/Documents/REALTIME/network_expts/seg_expts' # main direcotry that contains all training runs
 
 Datasets:
-  directory: '/mnt/sda2/Praneeth/REALTIME/data/seg_unet'
+  directory: '/home/pk/Documents/REALTIME/data/seg_unet'
   # follow the documentation in datasets for directory structure
   type:  'omni_cells' 
   # 'omni_cells', 'unet_cells', 'omni_dual', 'unet_dual'
@@ -45,7 +45,7 @@ Checkpoints:
   ckpt_filename: # ckpt filename from which to load the experiment to restart
 
 Hardware:
-  device: 'cuda:0' # device on which to train the network
+  device: 'cuda:1' # device on which to train the network
   num_workers: 6 #
   torch_threads: 6
 

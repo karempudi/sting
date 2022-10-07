@@ -119,6 +119,7 @@ def test_model(param_file: str, device_overwrite: str = None,
     test_ds = None
     test_dl = None
 
+    print(param)
     # setup network
 
     # test loop

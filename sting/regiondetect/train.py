@@ -32,7 +32,7 @@ def parse_args():
                         help='Specify the device string (cpu, cuda, cuda:0, or cuda:1)',
                         type=str, required=False)
 
-    parser.add_argument('-w', '--num_workers_override', default=6,
+    parser.add_argument('-w', '--num_workers_override', default=None,
                         help='Override number of workers for pytorch dataloader.',
                         type=int, required=False)
     
