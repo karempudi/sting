@@ -119,7 +119,7 @@ Testing: # all parameters needed for testing are included in this section,
     conf: 0.25
     iou: 0.45
 
-  model_path: '/home/pk/Documents/REALTIME/network_expts/barcode_models/model.pth'
+  model_path: '/home/pk/Documents/REALTIME/network_expts/barcode_models/model_100.pth'
   architecture: 'YOLOv3'
   batch_size: 8
   images_dir: '/home/pk/Documents/REALTIME/data/barcode_yolo/images/' 

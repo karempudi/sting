@@ -6,13 +6,10 @@
 Model:
 
 Save:
-  directory: '/mnt/sda2/Praneeth/REALTIME/seg_expts' # main direcotry that contains all training runs
-
-Logging:
-  directory: '/mnt/sda2/Praneeth/REALTIME/seg_expts'
+  directory: '/mnt/sda2/Praneeth/REALTIME/network_expts/seg_expts' # main direcotry that contains all training runs
 
 Datasets:
-  directory: '/mnt/sda2/Praneeth/REALTIME/data/omnipose'
+  directory: '/mnt/sda2/Praneeth/REALTIME/data/seg_unet'
   # follow the documentation in datasets for directory structure
   type:  'omni_cells' 
   # 'omni_cells', 'unet_cells', 'omni_dual', 'unet_dual'

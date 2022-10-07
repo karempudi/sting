@@ -1,4 +1,3 @@
-from curses import nonl
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
@@ -10,7 +9,7 @@ class ConvBlock(nn.Module):
 
     def __init__(self, c_in: int, c_out: int, 
             kernerl_size:int =3, padding: int = 1, stride: int = 1,
-            bias: bool = False):
+            bias: bool = True):
         """
         A conv block of a U-net module
 
@@ -32,7 +31,7 @@ class ConvBlock(nn.Module):
                     padding=padding, stride=stride, bias=bias),
             nn.BatchNorm2d(c_out),
             nn.ReLU(inplace=True),
-            nn.Conv2d(c_in, c_out, kernel_size=kernerl_size, 
+            nn.Conv2d(c_out, c_out, kernel_size=kernerl_size, 
                     padding=padding, stride=stride, bias=bias),
             nn.BatchNorm2d(c_out),
             nn.ReLU(inplace=True)
@@ -167,12 +166,13 @@ class Unet(nn.Module):
         # be used on the upsample blocks
         features = []
         for i, layer in enumerate(self.down_layers):
+            #print(f"Down Input layer no : {i} - shape: {x.shape}")
             x = layer(x)
             if i%2 == 0 and i < len(self.down_layers) - 1:
                 features.append(x)
-        
         for i, layer in enumerate(self.up_layers, 1):
-            x = layer(x, features[-1])
+            #print(f"Input Up sample layers {i} -- {x.shape}, features")
+            x = layer(x, features[-i])
 
         x = self.last_conv(x) 
 
@@ -357,7 +357,7 @@ class ResUnet(nn.Module):
                 features.append(x)
         
         for i, layer in enumerate(self.up_layers, 1):
-            x = layer(x, features[-1])
+            x = layer(x, features[-i])
 
         x = self.last_conv(x) 
 
