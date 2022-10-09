@@ -10,17 +10,12 @@ Save:
 
 Datasets:
   directory: '/home/pk/Documents/REALTIME/data/seg_unet'
-  # follow the documentation in datasets for directory structure
-  type:  'omni_cells' 
-  # 'omni_cells', 'unet_cells', 'omni_dual', 'unet_dual'
-  # 'omni_channels', 'unet_channels'
+  # 'omni_single', 'unet_single', 'omni_dual', 'unet_dual'
   # duals are when you learn channels and cells in the same model
-  # Each species data is split into 3 parts train, validation, test.
-  # You can decide which parts you want to include in which steps of
-  # training you models, for ex. in the final models, you might want 
-  # to train on all the data you have
+  type:  'unet_single' 
+   # Each species data is split into 3 parts train, validation, test.
   train:
-    - 'train'
+
   validation:
     - 'validation'
   test:
@@ -32,7 +27,7 @@ Datasets:
 
   labels_type: 'flows' # flows or labels
 
-  transforms: # write transforms depending on the dataset
+  transformations: # write transforms depending on the dataset
 
 Metrics:
 
@@ -49,6 +44,8 @@ Hardware:
   num_workers: 6 #
   torch_threads: 6
 
+
+# All network architecture and training related parameters
 HyperParameters:
   batch_size: 8
   architecture: 'Unet'
