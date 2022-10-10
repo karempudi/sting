@@ -115,13 +115,8 @@ class Unet(nn.Module):
         self._init_params()
 
     @classmethod
-    def param(cls, param):
-        return cls(
-            channels_by_scale=param.HyperParameters.channels_by_scale,
-            num_outputs=param.HyperParameters.num_outputs,
-            upsample_type=param.HyperParameters.upsample_type,
-            feature_fusion_type=param.HyperParameters.feature_fusion_type
-        )
+    def parse(cls, *args, **kwargs):
+        return cls(*args, **kwargs)
 
 
     def _create_network(self):
@@ -302,13 +297,8 @@ class ResUnet(nn.Module):
         self._init_params()
 
     @classmethod
-    def param(cls, param):
-        return cls(
-            channels_by_scale=param.HyperParameters.channels_by_scale,
-            num_outputs=param.HyperParameters.num_outputs,
-            upsample_type=param.HyperParameters.upsample_type,
-            feature_fusion_type=param.HyperParameters.feature_fusion_type
-        )
+    def parse(cls, *args, **kwargs):
+        return cls(*args, **kwargs)
 
     def _create_network(self):
         down_layers = []

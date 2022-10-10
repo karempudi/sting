@@ -12,6 +12,7 @@ from sting.segmentation.logger import SummaryWriter
 import torch
 from torch.utils.data import Dataset, DataLoader, random_split
 from sting.segmentation.networks import model_dict 
+from sting.segmentation.utils import CosineWarmupScheduler
 
 def parse_args():
     parser = argparse.ArgumentParser(description="Segmentation networks Training Arguments")
@@ -153,7 +154,7 @@ def train_model(param_file: str, device_overwrite: str = None,
     print(f"Train dataset length: {len(train_ds)} -- val: {len(val_ds)} -- test: {len(test_ds)}")
     # setup models and optimizers, loss functions, etc
     #print(model)
-
+    model, optimizer, criterion, lr_scheduler = setup_trainer(param)
 
 
 def setup_trainer(param):
@@ -165,10 +166,34 @@ def setup_trainer(param):
         criterion:
         lr_scheduler:
     """
-    models_available = {
+    model = model_dict[param.HyperParameters.architecture]
+    model = model.parse(channels_by_scale=param.HyperParameters.model_params.channels_by_scale,
+                        num_outputs=param.HyperParameters.model_params.num_outputs,
+                        upsample_type=param.HyperParameters.model_params.upsample_type,
+                        feature_fusion_type=param.HyperParameters.model_params.feature_fusion_type)
 
-    }
-    pass
+    if param.HyperParameters.optimizer.name == 'AdamW' :
+        optimizer = torch.optim.AdamW(model.parameters(),
+                        lr=param.HyperParameters.optimizer.learning_rate,
+                        weight_decay=param.HyperParameters.optimizer.weight_decay)
+    else:
+        optimizer = torch.optim.SGD(model.parameters(),
+                        lr=param.HyperParameters.optimizer.learning_rate,
+                        weight_decay=param.HyperParameters.optimizer.weight_decay,
+                        momentum=param.HyperParameters.optimizer.momentum)
+    
+    if param.HyperParameters.scheduler.name == "CosineWarmup":
+        lr_scheduler = CosineWarmupScheduler(optimizer,
+                    warmup=param.HyperParameters.scheduler.warmup,
+                    max_iters=param.HyperParameters.scheduler.max_iters)
+    else:
+        lr_scheduler = None
+
+    print(f"Optimizer {param.HyperParameters.optimizer.name} lr: {param.HyperParameters.optimizer.learning_rate}")
+    print(f"Scheduler: {param.HyperParameters.scheduler.name}, warmup: {param.HyperParameters.scheduler.warmup}")
+
+    return model, optimizer, None, lr_scheduler
+    
 
 def setup_dataloader(param, train_ds, val_ds=None, test_ds=None):
     """
