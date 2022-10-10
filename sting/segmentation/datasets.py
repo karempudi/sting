@@ -186,7 +186,7 @@ class MMDatasetUnet(Dataset):
     def __getitem__(self, idx):
 
         phase_img = imread(self.phase_filenames[idx])
-        mask_img = imread(self.mask_filenames[idx])
+        mask_img = imread(self.mask_filenames[idx]) 
         if self.use_weights:
             weights_img = imread(self.weights_filenames[idx])
         else:
@@ -318,7 +318,7 @@ class MMDatasetUnetDual(Dataset):
         sample = {
             'phase': phase_img,
             'mask': cell_mask_img,
-            'channel_mask': channel_mask_img
+            'channel_mask': channel_mask_img,
             'weights': weights_img,
             'filename': self.phase_filenames[idx].name,
             'raw_shape': (height, width)
