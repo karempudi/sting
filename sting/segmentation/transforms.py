@@ -176,7 +176,7 @@ class normalize(object):
  
         return sample
 
-class UnetTrainTranforms:
+class UnetTrainTransforms:
 
     def __init__(self, output_size=(320, 320), rotation=[-20, 20], affine_scale=(0.625, 1.5),
                        affine_shear=[-20, 20, -20, 20], vflip=True, normalize_phase=True, tensorize=True):

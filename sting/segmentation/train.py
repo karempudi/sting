@@ -6,9 +6,11 @@ from datetime import datetime
 from art import tprint
 from sting.utils.param_io import ParamHandling, load_params, save_params
 from sting.utils.hardware import get_device_str
+from sting.segmentation.datasets import MMDatasetUnetDual, MMDatasetUnetTest
+from sting.segmentation.transforms import UnetTestTransforms, UnetTrainTransforms
 from sting.segmentation.logger import SummaryWriter
 import torch
-from torch.utils.data import Dataset, DataLoader
+from torch.utils.data import Dataset, DataLoader, random_split
 from sting.segmentation.networks import model_dict 
 
 def parse_args():
@@ -40,7 +42,7 @@ def parse_args():
 
 def train_model(param_file: str, device_overwrite: str = None,
             num_workers_override: int = None,
-            log_dir: str = 'segment_runs', log_comment: str = None):
+            log_dir: str = 'seg_logs', log_comment: str = None):
     """
     Train a segmentation model based on the parameters given
 
@@ -125,24 +127,65 @@ def train_model(param_file: str, device_overwrite: str = None,
     logger = SummaryWriter(log_dir=log_dir_path/expt_id)
 
     print(param)
-    # setup datasets
+    
 
+    if param.Datasets.type == 'unet_dual':
+        dataset_transformations = UnetTrainTransforms()
+        dataset = MMDatasetUnetDual(data_dir= param.Datasets.directory, 
+                                    transform=dataset_transformations)
+    else:
+        dataset = None
+    
+    len_dataset = len(dataset)
+    train_len = int(len_dataset * param.Datasets.train.percentage)
+    val_len = len_dataset - train_len
+    train_ds, val_ds = random_split(dataset, [train_len, val_len])
+
+    if param.Datasets.test.transformations.type == 'UnetTestTransforms':
+        test_dataset_transformations = UnetTestTransforms()
+        test_ds = MMDatasetUnetTest(images_dir=param.Datasets.test.directory, 
+                                    transform=test_dataset_transformations)
+    else:
+        test_ds = None
+
+    train_dl, val_dl, test_dl = setup_dataloader(param, train_ds, val_ds, test_ds)
+
+    print(f"Train dataset length: {len(train_ds)} -- val: {len(val_ds)} -- test: {len(test_ds)}")
     # setup models and optimizers, loss functions, etc
     #print(model)
 
-    #dl_train, dl_val, dl_test = setup_dataloader(param, ds_train, ds_val, ds_test)
 
 
 def setup_trainer(param):
+    """
+
+    Returns:
+        model: 
+        optimizer:
+        criterion:
+        lr_scheduler:
+    """
+    models_available = {
+
+    }
     pass
 
 def setup_dataloader(param, train_ds, val_ds=None, test_ds=None):
     """
     Setup dataloaders for the datasets
+    Args:
+        param (RecursiveNamespace): parameter namespace
+        train_ds (torch.utils.Dataset): an instance of Dataset class
+        val_ds (optional): an instance of Dataset class
+        test_ds (optional): an instance of Dataset class
+    Return:
+        train_dl: dataloader 
+        val_dl: dataloader
+        test_dl: dataloader
     """
     train_dl = DataLoader(
         dataset=train_ds,
-        batch_size=param.HyperParameters.batch_size,
+        batch_size=param.HyperParameters.train_batch_size,
         drop_last=True,
         shuffle=True,
         num_workers=param.Hardware.num_workers,
@@ -151,7 +194,7 @@ def setup_dataloader(param, train_ds, val_ds=None, test_ds=None):
     if val_ds is not None:
         val_dl = DataLoader(
             dataset=val_ds,
-            batch_size=param.HyperParameters.batch_size,
+            batch_size=param.HyperParameters.validation_batch_size,
             drop_last=False,
             shuffle=False,
             num_workers=param.Hardware.num_workers,
@@ -163,7 +206,7 @@ def setup_dataloader(param, train_ds, val_ds=None, test_ds=None):
     if test_ds is not None:
         test_dl = DataLoader(
             dataset=test_ds,
-            batch_size=param.HyperParameters.batch_size,
+            batch_size=param.HyperParameters.test_batch_size,
             drop_last=False,
             shuffle=False,
             num_workers=param.Hardware.num_workers,

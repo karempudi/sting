@@ -9,25 +9,28 @@ Save:
   directory: '/home/pk/Documents/REALTIME/network_expts/seg_expts' # main direcotry that contains all training runs
 
 Datasets:
-  directory: '/home/pk/Documents/REALTIME/data/seg_unet'
-  # 'omni_single', 'unet_single', 'omni_dual', 'unet_dual'
+  directory: '/home/pk/Documents/REALTIME/data/seg_unet/dual'
+  # 'seg_omni/species', 'seg_unet/species', 'seg_omni/dual', 'seg_unet/dual'
   # duals are when you learn channels and cells in the same model
-  type:  'unet_single' 
+  type:  'unet_dual'  # used for dataset class
    # Each species data is split into 3 parts train, validation, test.
+  transformations: 
+    type: 'UnetTrainTransforms'
+
   train:
-
+    percentage: 0.80
+    subset:
+      - 'train'
   validation:
-    - 'validation'
+    percentage: 0.20
+    subset:
+      - 'validation'
   test:
-    - 'test'
+    directory: '/home/pk/Documents/REALTIME/data/seg_unet/dual/phase'
+    save_directory: '/home/pk/Documents/REALTIME/network_expts/seg_test_save/'
+    transformations:
+      type: 'UnetTestTransforms'
 
-  species: 
-    - mixed
-    - ecoli
-
-  labels_type: 'flows' # flows or labels
-
-  transformations: # write transforms depending on the dataset
 
 Metrics:
 
@@ -47,20 +50,39 @@ Hardware:
 
 # All network architecture and training related parameters
 HyperParameters:
-  batch_size: 8
+  train_batch_size: 8
+  validation_batch_size: 2
+  test_batch_size: 2
   architecture: 'Unet'
-  channels_by_scale:
-    - 1
-    - 8
-    - 16
-    - 32
-    - 64
-    - 128
-  num_outputs: 1
-  upsample_type: 'transpose_conv'
-  feature_fusion_type: 'concat'
+  epochs: 10
+  optimizer:
+    name: 'AdamW'
+    learning_rate: 0.01
+    momentum: 0.9
+    weight_decay: 0.0005
+  scheduler:
+    name: 'CosineWarmup'
+    warmup: 1
+    max_iters: 20
 
+  loss: None
 
+  model_params:
+    channels_by_scale:
+      - 1
+      - 8
+      - 16
+      - 32
+      - 64
+      - 128
+    num_outputs: 1
+    upsample_type: 'transpose_conv'
+    feature_fusion_type: 'concat'
+
+# use this section for debugging on unlabelled data using segmentation.test.py
+# All parameters needed of testing are incldued in this section
+# This section needs to be self contained and will be read during the test loop of the
+# model
 Testing:
   Hardware:
     device: 'cuda:1'
