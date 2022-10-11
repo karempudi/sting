@@ -1,3 +1,4 @@
+import torch
 import pathlib
 import numpy as np
 import matplotlib.pyplot as plt
@@ -223,6 +224,7 @@ class MMDatasetUnetTest(Dataset):
 
         self.filenames = list(self.images_dir.glob('*' + self.fileformat))
 
+        self.batch_count = 0
     def __len__(self):
         return len(self.filenames)
     
@@ -244,6 +246,20 @@ class MMDatasetUnetTest(Dataset):
     
     def plot_datapoint(self, idx):
         pass
+
+    def collate_fn(self, batch):
+        self.batch_count += 1
+
+        # drop invalid images
+        batch = [data for data in batch if data is not None]
+
+        phase = torch.stack([data['phase'] for data in batch])
+
+        filenames = [data['filename'] for data in batch]
+        raw_shapes = [data['raw_shape'] for data in batch]
+
+        return phase, filenames, raw_shapes
+
 
 ####################################################################
 ####### Dual U-net dataset to predict both cell and channels #######
@@ -300,6 +316,8 @@ class MMDatasetUnetDual(Dataset):
                                     for filename in self.phase_filenames]
 
 
+        self.batch_count = 0
+
     def __len__(self):
         return len(self.phase_filenames)
 
@@ -331,6 +349,45 @@ class MMDatasetUnetDual(Dataset):
     
     def plot_datapoint(self, idx):
         pass
+
+    def collate_fn(self, batch):
+        self.batch_count += 1
+
+        # drop invalid images
+        batch = [data for data in batch if data is not None]
+
+        phase = torch.stack([data['phase'] for data in batch])
+
+        mask = []
+        channel_mask = []
+        weights = []
+        for data in batch:
+            if data['mask'] is not None:
+                mask.append(data['mask'])
+            else:
+                mask.append(torch.tensor([-1]))
+            
+            if data['channel_mask'] is not None:
+                channel_mask.append(data['channel_mask'])
+            else:
+                channel_mask.append('0')
+            
+            if data['weights'] is not None:
+                weights.append(data['weights'])
+            else:
+                weights.append('0')
+
+        if batch[0]['mask'] is not None:
+            mask = torch.stack(mask)
+        if batch[0]['channel_mask'] is not None:
+            channel_mask = torch.stack(channel_mask)
+        if batch[0]['weights'] is not None:
+            weights = torch.stack(weights)
+
+        filenames = [data['filename'] for data in batch]
+        raw_shapes = [data['raw_shape'] for data in batch]
+
+        return phase, mask, channel_mask, weights, filenames, raw_shapes
 
 
 ####################################################################

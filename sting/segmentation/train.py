@@ -156,6 +156,17 @@ def train_model(param_file: str, device_overwrite: str = None,
     #print(model)
     model, optimizer, criterion, lr_scheduler = setup_trainer(param)
 
+    # train loop
+    nEpochs = param.HyperParameters.epochs
+    print(f"Model training for epochs: {nEpochs}")
+    print("\n --- Training cell and/or channel detetion model ---")
+    current_lr = lr_scheduler.get_last_lr()[0]
+    logger.add_scalar(param.HyperParameters.optimizer.name + '/lr', current_lr, 0)
+
+    best_val_loss = 1_000_000
+    for epoch in range(1, nEpochs + 1):
+        model.train()
+        epoch_loss = []
 
 def setup_trainer(param):
     """
