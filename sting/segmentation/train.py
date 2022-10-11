@@ -226,6 +226,7 @@ def setup_dataloader(param, train_ds, val_ds=None, test_ds=None):
         shuffle=True,
         num_workers=param.Hardware.num_workers,
         pin_memory=True,
+        collate_fn=train_ds.collate_fn
     )
     if val_ds is not None:
         val_dl = DataLoader(
@@ -234,7 +235,8 @@ def setup_dataloader(param, train_ds, val_ds=None, test_ds=None):
             drop_last=False,
             shuffle=False,
             num_workers=param.Hardware.num_workers,
-            pin_memory=False
+            pin_memory=False,
+            collate_fn=val_ds.collate_fn
         )
     else:
         val_dl = None
@@ -246,7 +248,8 @@ def setup_dataloader(param, train_ds, val_ds=None, test_ds=None):
             drop_last=False,
             shuffle=False,
             num_workers=param.Hardware.num_workers,
-            pin_memory=False
+            pin_memory=False,
+            collate_fn=test_ds.collate_fn
         )
     else:
         test_dl = None
