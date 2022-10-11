@@ -124,8 +124,10 @@ class toTensor(object):
 
 
     def __call__(self, sample):
+
         if not isinstance(sample['phase'], np.ndarray):
             sample['phase'] = np.array(sample['phase']).astype(np.float32)
+
         sample['phase'] = transforms.ToTensor()(sample['phase'])
 
         if ('mask' in sample) and (sample['mask'] is not None):
@@ -147,7 +149,7 @@ class toTensor(object):
 
 def _normalize(img, lower=0.01, upper=99.99):
     img_copy = img.copy()
-    return np.interp(img_copy, (np.percentile(img_copy, lower), np.percentile(img_copy, upper)), (0, 1))
+    return np.interp(img_copy, (np.percentile(img_copy, lower), np.percentile(img_copy, upper)), (0, 1)).astype('float32')
 
 class normalize(object):
 

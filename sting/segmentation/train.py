@@ -13,6 +13,7 @@ import torch
 from torch.utils.data import Dataset, DataLoader, random_split
 from sting.segmentation.networks import model_dict 
 from sting.segmentation.utils import CosineWarmupScheduler
+from tqdm import tqdm
 
 def parse_args():
     parser = argparse.ArgumentParser(description="Segmentation networks Training Arguments")
@@ -154,7 +155,7 @@ def train_model(param_file: str, device_overwrite: str = None,
     print(f"Train dataset length: {len(train_ds)} -- val: {len(val_ds)} -- test: {len(test_ds)}")
     # setup models and optimizers, loss functions, etc
     #print(model)
-    model, optimizer, criterion, lr_scheduler = setup_trainer(param)
+    model, optimizer, criterion, lr_scheduler = setup_trainer(param, device)
 
     # train loop
     nEpochs = param.HyperParameters.epochs
@@ -167,8 +168,47 @@ def train_model(param_file: str, device_overwrite: str = None,
     for epoch in range(1, nEpochs + 1):
         model.train()
         epoch_loss = []
+        for batch_i, (phase, mask, channel_mask, 
+                    weights, filenames, raw_shapes) in enumerate(tqdm(train_dl, desc=f"Training epoch {epoch}")):
+            optimizer.zero_grad()
+            batches_done = len(train_dl) * epoch + batch_i
+            phase_d = phase.to(device)
+            if not isinstance(mask, list): # basically checking for nones
+                mask_d = mask.to(device)
+            else:
+                mask_d = None
+            if not isinstance(channel_mask, list):
+                channel_mask_d = channel_mask.to(device)
+            else:
+                channel_mask_d = None
+            
+            if not isinstance(weights, list):
+                weights_d = weights_d.to(device)
+            else:
+                weights_d = None
 
-def setup_trainer(param):
+            predictions = model(phase_d)
+            #loss, loss_parts = criterion(predictions, mask, channel_mask, weights)
+
+
+            optimizer.step()
+
+        lr_scheduler.step()
+        current_lr = lr_scheduler.get_last_lr()[0]
+        logger.add_scalar(param.HyperParameters.optimizer.name + '/lr', current_lr, batches_done)
+        print(f"Epoch: {epoch} Train loss: {0.00} lr: {current_lr : .6f}")
+
+        # validation loop
+        model.eval()
+        epoch_val_loss = []
+        for batch_i, (phase, mask, channel_mask,
+                    weights, filenames, raw_shapes) in enumerate(tqdm(val_dl, desc=f"Validation Epoch {epoch}")):
+            
+            batches_val_done = len(val_dl) * epoch + batch_i
+            
+        print(f"Epoch: {epoch} Validation loss: {0.0: .4f}")
+
+def setup_trainer(param, device):
     """
 
     Returns:
@@ -181,7 +221,7 @@ def setup_trainer(param):
     model = model.parse(channels_by_scale=param.HyperParameters.model_params.channels_by_scale,
                         num_outputs=param.HyperParameters.model_params.num_outputs,
                         upsample_type=param.HyperParameters.model_params.upsample_type,
-                        feature_fusion_type=param.HyperParameters.model_params.feature_fusion_type)
+                        feature_fusion_type=param.HyperParameters.model_params.feature_fusion_type).to(device=device)
 
     if param.HyperParameters.optimizer.name == 'AdamW' :
         optimizer = torch.optim.AdamW(model.parameters(),
@@ -226,7 +266,7 @@ def setup_dataloader(param, train_ds, val_ds=None, test_ds=None):
         shuffle=True,
         num_workers=param.Hardware.num_workers,
         pin_memory=True,
-        collate_fn=train_ds.collate_fn
+        collate_fn=train_ds.dataset.collate_fn
     )
     if val_ds is not None:
         val_dl = DataLoader(
@@ -236,7 +276,7 @@ def setup_dataloader(param, train_ds, val_ds=None, test_ds=None):
             shuffle=False,
             num_workers=param.Hardware.num_workers,
             pin_memory=False,
-            collate_fn=val_ds.collate_fn
+            collate_fn=val_ds.dataset.collate_fn
         )
     else:
         val_dl = None

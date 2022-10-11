@@ -230,7 +230,7 @@ class MMDatasetUnetTest(Dataset):
     
     def __getitem__(self, idx):
         
-        phase_img = imread(self.filenames[idx])
+        phase_img = imread(self.filenames[idx]).astype('float32')
         height, width = phase_img.shape
 
         sample = {
@@ -334,7 +334,7 @@ class MMDatasetUnetDual(Dataset):
         height, width = phase_img.shape
 
         sample = {
-            'phase': phase_img,
+            'phase': phase_img.astype('float32'),
             'mask': cell_mask_img,
             'channel_mask': channel_mask_img,
             'weights': weights_img,
