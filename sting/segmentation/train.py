@@ -7,6 +7,7 @@ from art import tprint
 from sting.utils.param_io import ParamHandling, load_params, save_params
 from sting.utils.hardware import get_device_str
 from sting.segmentation.datasets import MMDatasetUnetDual, MMDatasetUnetTest
+from sting.segmentation.loss import UnetDualLoss
 from sting.segmentation.transforms import UnetTestTransforms, UnetTrainTransforms
 from sting.segmentation.logger import SummaryWriter
 import torch
@@ -134,7 +135,8 @@ def train_model(param_file: str, device_overwrite: str = None,
     if param.Datasets.type == 'unet_dual':
         dataset_transformations = UnetTrainTransforms()
         dataset = MMDatasetUnetDual(data_dir= param.Datasets.directory, 
-                                    transform=dataset_transformations)
+                                    transform=dataset_transformations, 
+                                    weights=param.Datasets.weights)
     else:
         dataset = None
     
@@ -172,13 +174,13 @@ def train_model(param_file: str, device_overwrite: str = None,
                     weights, filenames, raw_shapes) in enumerate(tqdm(train_dl, desc=f"Training epoch {epoch}")):
             optimizer.zero_grad()
             batches_done = len(train_dl) * epoch + batch_i
-            phase_d = phase.to(device)
+            phase_d = phase.to(device=device)
             if not isinstance(mask, list): # basically checking for nones
-                mask_d = mask.to(device)
+                mask_d = mask.to(device=device)
             else:
                 mask_d = None
             if not isinstance(channel_mask, list):
-                channel_mask_d = channel_mask.to(device)
+                channel_mask_d = channel_mask.to(device=device)
             else:
                 channel_mask_d = None
             
@@ -188,10 +190,11 @@ def train_model(param_file: str, device_overwrite: str = None,
                 weights_d = None
 
             predictions = model(phase_d)
-            #loss, loss_parts = criterion(predictions, mask, channel_mask, weights)
-
-
+            loss, loss_dict = criterion(predictions, mask_d, channel_mask_d, weights_d)
+            loss.backward()
+            epoch_loss.append(loss.item())
             optimizer.step()
+            logger.add_scalar_dict('train/', loss_dict, global_step=batches_done)
 
         lr_scheduler.step()
         current_lr = lr_scheduler.get_last_lr()[0]
@@ -222,6 +225,10 @@ def setup_trainer(param, device):
                         num_outputs=param.HyperParameters.model_params.num_outputs,
                         upsample_type=param.HyperParameters.model_params.upsample_type,
                         feature_fusion_type=param.HyperParameters.model_params.feature_fusion_type).to(device=device)
+    
+    if param.HyperParameters.loss == "unet_dual":
+        #print("loss function set to dual loss")
+        criterion = UnetDualLoss()
 
     if param.HyperParameters.optimizer.name == 'AdamW' :
         optimizer = torch.optim.AdamW(model.parameters(),
@@ -243,7 +250,7 @@ def setup_trainer(param, device):
     print(f"Optimizer {param.HyperParameters.optimizer.name} lr: {param.HyperParameters.optimizer.learning_rate}")
     print(f"Scheduler: {param.HyperParameters.scheduler.name}, warmup: {param.HyperParameters.scheduler.warmup}")
 
-    return model, optimizer, None, lr_scheduler
+    return model, optimizer, criterion, lr_scheduler
     
 
 def setup_dataloader(param, train_ds, val_ds=None, test_ds=None):

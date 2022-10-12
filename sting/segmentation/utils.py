@@ -11,6 +11,7 @@ import fastremap
 import os
 import matplotlib.pyplot as plt
 from pathlib import Path
+from scipy import ndimage as ndi
 from skimage import io, filters
 from skimage.measure import label, regionprops
 from skimage.filters import gaussian
@@ -766,3 +767,27 @@ class CosineWarmupScheduler(optim.lr_scheduler._LRScheduler):
         if epoch <= self.warmup:
             lr_factor *= epoch * 1.0 / self.warmup
         return lr_factor
+
+def generate_weights(filename, sigma=5, w0=10):
+
+    img = io.imread(filename)
+    # removing objects and calculating distances to objects needs labelled images
+    labeledImg, num = label(img, return_num=True, connectivity=2)
+    # remove small objects
+    labeledImg = remove_small_objects(labeledImg, min_size=250)
+    # unique values == number of blobs
+    unique_values = np.unique(labeledImg) 
+    num_values = len(unique_values)
+    h, w = labeledImg.shape
+    # stack keeps distance maps each blob
+    stack = np.zeros(shape=(num_values, h, w))
+    for i in range(num_values):
+        stack[i] = ndi.distance_transform_edt(~(labeledImg == unique_values[i]))
+    # sort the distance
+    sorted_distance_stack = np.sort(stack, axis=0)
+    # d1 and d2 are the shortest and second shortest distances to each object, 
+    # sorted_distance_stack[0] is distance to the background. One can ignore it
+    distance_sum = sorted_distance_stack[1] + sorted_distance_stack[2]
+    squared_distance = distance_sum ** 2/ (2 * (sigma**2))
+    weightmap = w0 * np.exp(-squared_distance)*(labeledImg == 0)
+    return weightmap
