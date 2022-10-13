@@ -201,8 +201,9 @@ class UnetTrainTransforms:
 
 class padTo(object):
 
-    def __init__(self, pad_to=8):
+    def __init__(self, pad_to=8, pad_value=-0.5):
         self.pad_to = pad_to
+        self.pad_value = pad_value
     
     def __call__(self, sample):
 
@@ -219,7 +220,7 @@ class padTo(object):
             W_t = W
 
         image = np.pad(image, pad_width= ((0, H_t - H), (0, W_t - W)),
-                             mode='constant')
+                             mode='constant', constant_values=self.pad_value)
 
         sample['phase'] = image
         return sample
@@ -233,7 +234,7 @@ class unPad(object):
 
 class UnetTestTransforms:
 
-    def __init__(self, normalize_phase=True, tensorize=True, vflip=False, pad_to=8):
+    def __init__(self, normalize_phase=True, tensorize=True, vflip=False, pad_to=16):
         self.transform = []
         if normalize_phase:
             self.transform.append(normalize())

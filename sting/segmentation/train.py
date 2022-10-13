@@ -4,6 +4,8 @@ import socket
 from pathlib import Path
 from datetime import datetime
 from art import tprint
+import numpy as np
+import matplotlib.pyplot as plt
 from sting.utils.param_io import ParamHandling, load_params, save_params
 from sting.utils.hardware import get_device_str
 from sting.segmentation.datasets import MMDatasetUnetDual, MMDatasetUnetTest
@@ -13,7 +15,7 @@ from sting.segmentation.logger import SummaryWriter
 import torch
 from torch.utils.data import Dataset, DataLoader, random_split
 from sting.segmentation.networks import model_dict 
-from sting.segmentation.utils import CosineWarmupScheduler
+from sting.segmentation.utils import CosineWarmupScheduler, to_cpu, plot_results_batch
 from tqdm import tqdm
 
 def parse_args():
@@ -129,6 +131,11 @@ def train_model(param_file: str, device_overwrite: str = None,
         log_dir_path.mkdir(exist_ok=False)
     logger = SummaryWriter(log_dir=log_dir_path/expt_id)
 
+    # save_test_dir
+    save_test_dir = Path(param.Datasets.test.save_directory) / Path(expt_id)
+    if not save_test_dir.exists():
+        save_test_dir.mkdir(exist_ok=False)
+
     print(param)
     
 
@@ -185,7 +192,7 @@ def train_model(param_file: str, device_overwrite: str = None,
                 channel_mask_d = None
             
             if not isinstance(weights, list):
-                weights_d = weights_d.to(device)
+                weights_d = weights.to(device)
             else:
                 weights_d = None
 
@@ -199,7 +206,7 @@ def train_model(param_file: str, device_overwrite: str = None,
         lr_scheduler.step()
         current_lr = lr_scheduler.get_last_lr()[0]
         logger.add_scalar(param.HyperParameters.optimizer.name + '/lr', current_lr, batches_done)
-        print(f"Epoch: {epoch} Train loss: {0.00} lr: {current_lr : .6f}")
+        print(f"Epoch: {epoch} Train loss: {np.mean(epoch_loss): 0.4f} lr: {current_lr : .6f}")
 
         # validation loop
         model.eval()
@@ -208,8 +215,55 @@ def train_model(param_file: str, device_overwrite: str = None,
                     weights, filenames, raw_shapes) in enumerate(tqdm(val_dl, desc=f"Validation Epoch {epoch}")):
             
             batches_val_done = len(val_dl) * epoch + batch_i
+            phase_d = phase.to(device=device)
+            if not isinstance(mask, list): # basically checking for nones
+                mask_d = mask.to(device=device)
+            else:
+                mask_d = None
+            if not isinstance(channel_mask, list):
+                channel_mask_d = channel_mask.to(device=device)
+            else:
+                channel_mask_d = None
             
-        print(f"Epoch: {epoch} Validation loss: {0.0: .4f}")
+            if not isinstance(weights, list):
+                weights_d = weights.to(device)
+            else:
+                weights_d = None
+
+            predictions = model(phase_d)
+            loss_val, loss_val_dict = criterion(predictions, mask_d, channel_mask_d, weights_d)
+            epoch_val_loss.append(loss_val.item())
+            logger.add_scalar_dict('validation/', loss_val_dict, global_step=batches_val_done)
+        mean_epoch_val_loss = np.mean(epoch_val_loss) 
+        print(f"Epoch: {epoch} Validation loss: {mean_epoch_val_loss: .4f}")
+
+        # save model if 
+        if mean_epoch_val_loss < best_val_loss:
+            best_val_loss = mean_epoch_val_loss
+            torch.save(model.state_dict(), model_out)
+        
+        # Test loop
+        model.eval()
+        for batch_i, (phase, filenames, raw_shapes) in enumerate(tqdm(test_dl, desc=f"Test Epoch {epoch}")):
+            batches_test_done = len(test_dl) * epoch + batch_i
+            with torch.no_grad():
+                predictions = model(phase.to(device, non_blocking=True))
+                predictions = predictions.sigmoid()
+                # log some images to monitor progress
+                if batch_i % 100 == 0:
+                    batch_fig_handles = plot_results_batch(to_cpu(phase).numpy(), to_cpu(predictions).numpy())
+                    for i, figure in enumerate(batch_fig_handles, 0):
+                        logger.add_figure('test/fig' + str(batch_i), figure, global_step=batches_test_done)
+                # on last epoch save figures to directory
+                elif epoch == nEpochs:
+                    batch_fig_handles == plot_results_batch(to_cpu(phase).numpy(), to_cpu(predictions).numpy())
+                    for i, figure in enumerate(batch_fig_handles, 0):
+                        save_path = save_test_dir / Path(filenames[i])
+                        figure.savefig(save_path, bbox_inches='tight')
+                        plt.close(figure)
+    
+    print("\n ---- Training done ----\n")
+
 
 def setup_trainer(param, device):
     """
@@ -272,7 +326,7 @@ def setup_dataloader(param, train_ds, val_ds=None, test_ds=None):
         drop_last=True,
         shuffle=True,
         num_workers=param.Hardware.num_workers,
-        pin_memory=True,
+        pin_memory=False,
         collate_fn=train_ds.dataset.collate_fn
     )
     if val_ds is not None:

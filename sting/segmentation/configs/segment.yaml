@@ -14,7 +14,7 @@ Datasets:
   # duals are when you learn channels and cells in the same model
   type:  'unet_dual'  # used for dataset class
    # Each species data is split into 3 parts train, validation, test.
-  weights: False
+  weights: True
   transformations: 
     type: 'UnetTrainTransforms'
 
@@ -51,14 +51,14 @@ Hardware:
 
 # All network architecture and training related parameters
 HyperParameters:
-  train_batch_size: 32
+  train_batch_size: 16
   validation_batch_size: 8
-  test_batch_size: 2
+  test_batch_size: 1
   architecture: 'Unet'
   epochs: 100
   optimizer:
     name: 'AdamW'
-    learning_rate: 0.00001
+    learning_rate: 0.003
     momentum: 0.9
     weight_decay: 0.0005
   scheduler:

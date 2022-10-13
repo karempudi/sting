@@ -791,3 +791,31 @@ def generate_weights(filename, sigma=5, w0=10):
     squared_distance = distance_sum ** 2/ (2 * (sigma**2))
     weightmap = w0 * np.exp(-squared_distance)*(labeledImg == 0)
     return weightmap
+
+
+def to_cpu(tensor):
+    return tensor.detach().cpu()
+
+def plot_results_batch(phase_batch, predictions_batch):
+    """
+    Gives figures handles for plotting results to tensorboard
+
+    Args:
+        phase_batch: numpy.ndarray (B, C, H, W), C=1 in our case
+        predictions_batch: numpy.ndarray(B, C, H, W), C = 1 or 2 for Unet, more for omni
+        Returns:
+        fig_handles: a list of B fig handles, where each figure has bboxes
+                     plotted on them appropriately 
+    """
+    # return a list of matplotlib figure objects
+    fig_handles = []
+    B, n_outputs, _, _ = predictions_batch.shape
+
+    for i in range(B):
+        fig, ax = plt.subplots(nrows=1, ncols=1 + n_outputs)
+        fig.tight_layout()
+        ax[0].imshow(phase_batch[i][0], cmap='gray')
+        for j in range(n_outputs):
+            ax[1 + j].imshow(predictions_batch[i][j], cmap='gray')
+        fig_handles.append(fig)
+    return fig_handles

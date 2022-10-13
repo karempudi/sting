@@ -45,9 +45,9 @@ class UnetDualLoss(nn.Module):
         if weights is not None:
             weights_reshaped = weights.view(batch_size, -1) + 1.0
             bce_loss = weights_reshaped * F.binary_cross_entropy(predictions_cell_mask, target_cell_mask, reduction='none')
-            weighted_cell_loss = bce_loss.mean()
+            bce_loss_cells = bce_loss.mean()
 
-            loss_cells = dice_batch_loss + 0.5 * weighted_cell_loss
+            loss_cells = dice_batch_loss + 0.5 * bce_loss_cells
         else: # no weights normal cross entropy
             bce_loss = F.binary_cross_entropy(predictions_cell_mask, target_cell_mask, reduction='none')
             bce_loss_cells = bce_loss.mean()
@@ -68,7 +68,7 @@ class UnetDualLoss(nn.Module):
         #print(f"Cells outside channels: {cell_outside_ch_loss.item()}")
         loss_parts_dict = {
             'cell_bce_loss': bce_loss_cells.item(),
-            'channel_bcel_loss': bce_loss_ch.item(),
+            'channel_bce_loss': bce_loss_ch.item(),
             'cells_dice_loss': dice_batch_loss.item(),
             'channels_dice_loss': dice_batch_loss_ch.item(),
             'loss_cells': loss_cells.item(),
