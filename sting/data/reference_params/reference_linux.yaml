@@ -21,7 +21,8 @@ GrowthRates:
   calculation_type: 'exponential_fit'
 
 Save:
-  directory: "/mnt/sda2/Praneeth/outputdump" # Top level directory for saving files.
+  # in this directory you will create a directory with expt-number and time_stamp
+  directory: "/home/pk/Documents/REALTIME/analysis" # Top level directory for saving files.
 
 Experiment:
   number: 'exp-bp-000' # Experiment no
@@ -56,7 +57,6 @@ Experiment:
 Logging:
   to_file: True
   to_console: True
-  directory: "/mnt/sda2/Praneeth/outputdump/logs.log" # Directory to save the logs
 
 
 

@@ -7,9 +7,11 @@ import pathlib
 import logging
 from pathlib import Path
 from typing import Union
+from datetime import datetime
 from sting.utils.types import RecursiveNamespace
 import torch.multiprocessing as tmp
 from sting.utils.logger import logger_listener, setup_root_logger
+from sting.utils.db_ops import create_databases, write_to_db, read_from_db
 
 class ExptRun(object):
     """
@@ -20,6 +22,27 @@ class ExptRun(object):
     """
     def __init__(self, param: Union[RecursiveNamespace, dict]):
         self.param = param
+
+        expt_id = self.param.Experiment.number
+        timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
+        expt_id = expt_id + '-' + timestamp
+        # You have to manually create save directory just to be safe..
+        # main analysis directory is not autmoatically created. You have to
+        # manually do it to be safe
+        expt_save_dir = Path(self.param.Save.directory) / Path(expt_id)
+        if not expt_save_dir.parent.exists():
+            raise FileNotFoundError(f"Experiment save directory {expt_save_dir.parent} doesn't exist\n")
+        
+        expt_save_dir.mkdir(exist_ok=False)
+        sys.stdout.write(f"Experiment save directory: {expt_save_dir} created succesfully ... \n")
+        sys.stdout.flush()
+
+        self.expt_save_dir = expt_save_dir
+
+
+        # create databases to write stuff to depending on the queues preset in 
+        # the experiment
+        create_databases(self.expt_save_dir, param.Experiment.queues)
 
         self.logger_queue = tmp.Queue(-1)
 
@@ -60,7 +83,7 @@ class ExptRun(object):
         pass
 
     def logger_listener(self):
-        setup_root_logger(self.param)
+        setup_root_logger(self.param, self.expt_save_dir)
         name = tmp.current_process().name
         print(f"Starting {name} process ..")
         while not self.logger_kill_event.is_set():
@@ -104,8 +127,24 @@ class ExptRun(object):
     def acquire_sim(self):
         # configure acquire_sim logger
         self.set_process_logger()
-        pass
-
+        name = tmp.current_process().name
+        print(f"Starting {name} simulation process ..")
+        # keep process alive
+        position = 0
+        while not self.acquire_kill_event.is_set():
+            timepoint = 0
+            try:
+                time.sleep(1.0)
+                logger = logging.getLogger(name)
+                logger.log(logging.INFO, "Acquire wait 1.0s")
+                write_to_db({'position': position, 'timepoint': 0}, self.expt_save_dir, 'acquire')
+                position += 1
+            except KeyboardInterrupt:
+                self.acquire_kill_event.set()
+                sys.stdout.write("Acquire process interrupted using keyboard\n")
+                sys.stdout.flush()
+                break
+ 
     
     
     def segment(self):
@@ -124,8 +163,6 @@ class ExptRun(object):
                 sys.stdout.write("Segment process interrupted using keyboard\n")
                 sys.stdout.flush()
                 break
-
-                
     
     def track(self):
         # configure track logger
@@ -227,7 +264,10 @@ def start_live_experiment(expt_run: ExptRun, param: Union[RecursiveNamespace, di
             # create and call an acquire process 
             # that run the acquisition and put the results in segment queue
             expt_run.acquire_kill_event.clear()
-            acquire_process = tmp.Process(target=expt_run.acquire, name='acquire')
+            if sim:
+                acquire_process = tmp.Process(target=expt_run.acquire_sim, name='acquire')
+            else:
+                acquire_process = tmp.Process(target=expt_run.acquire, name='acquire')
             acquire_process.start()
 
         if 'segment' in param.Experiment.queues:

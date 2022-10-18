@@ -1,9 +1,10 @@
 import logging
 import logging.handlers
 import torch.multiprocessing as tmp
+from pathlib import Path
 from .types import RecursiveNamespace
 
-def setup_root_logger(param: RecursiveNamespace):
+def setup_root_logger(param: RecursiveNamespace, expt_save_dir):
     """
     
     Setting up the properties of the root logger of 
@@ -16,7 +17,8 @@ def setup_root_logger(param: RecursiveNamespace):
     root = logging.getLogger()
     f = logging.Formatter('%(asctime)s %(processName)-10s %(levelname)-8s %(message)s')
     if param.Logging.to_file:
-        h = logging.FileHandler(filename=param.Logging.directory, mode='w')
+        logging_directory =  expt_save_dir / Path('logs.log')
+        h = logging.FileHandler(filename=logging_directory, mode='w')
         h.setFormatter(f)
         root.addHandler(h)
 
