@@ -167,7 +167,7 @@
      <string>GPU</string>
     </property>
    </widget>
-   <widget class="QCheckBox" name="islive_check_box">
+   <widget class="QCheckBox" name="run_analysis_check_box">
     <property name="geometry">
      <rect>
       <x>420</x>
@@ -177,7 +177,7 @@
      </rect>
     </property>
     <property name="text">
-     <string>Live</string>
+     <string>Analyze</string>
     </property>
    </widget>
    <widget class="QCheckBox" name="reg_detect_check_box">

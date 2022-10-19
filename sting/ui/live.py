@@ -23,21 +23,50 @@ class LiveWindow(QMainWindow):
         super(LiveWindow, self).__init__()
         self.ui = Ui_LiveWindow()
         self.ui.setupUi(self)
-        self.setWindowTitle("Live analysis loop windwo ...")
+        self.setWindowTitle("Live analysis loop window ...")
 
+        # set default check state
+        # by default, the image processing will do
+        # cells, channels and bboxes around barcodes
+        # if you change the check state, only the viewing 
+        self.ui.cell_seg_check_box.setChecked(True)
+        self.ui.channel_seg_check_box.setChecked(True)
+        self.ui.reg_detect_check_box.setChecked(True)
         self.setup_button_handlers()
 
-        self.param = param
+        self.ui.live_image_graphics.ui.histogram.hide()
+        self.ui.live_image_graphics.ui.roiBtn.hide()
+        self.ui.live_image_graphics.ui.menuBtn.hide()
+        if param != None and 'Live' in param.keys():
+            self.param = param.Live
+        else:
+            self.param = None
 
-
+    # only called from outside
+    def set_params(self, param: RecursiveNamespace):
+        if param!= None and 'Live' in param.keys():
+            self.param = param.Live
+        else:
+            self.param = None
+        print(self.param)
         
     def setup_button_handlers(self):
-        pass
+        # start live acquisition
+        self.ui.start_imaging_button.clicked.connect(self.start_acquire)
+        # stop live acquistion
+        self.ui.stop_imaging_button.clicked.connect(self.stop_acquire)
+        # change set
     
-    def set_params(self, param: RecursiveNamespace):
-        self.param = param
+    def start_acquire(self):
+        sys.stdout.write(f"Started acquiring ... \n")
+        sys.stdout.flush()
 
 
+    def stop_acquire(self):
+        sys.stdout.write(f"Stopped acquiring ... \n")
+        sys.stdout.flush()
+
+    
 def parse_args():
     parser = argparse.ArgumentParser()
     parser.add_argument('-p', '--param_file',

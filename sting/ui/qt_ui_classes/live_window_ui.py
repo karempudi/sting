@@ -69,9 +69,9 @@ class Ui_LiveWindow(object):
         self.gpu_check_box = QtWidgets.QCheckBox(self.centralwidget)
         self.gpu_check_box.setGeometry(QtCore.QRect(300, 80, 92, 23))
         self.gpu_check_box.setObjectName("gpu_check_box")
-        self.islive_check_box = QtWidgets.QCheckBox(self.centralwidget)
-        self.islive_check_box.setGeometry(QtCore.QRect(420, 80, 92, 23))
-        self.islive_check_box.setObjectName("islive_check_box")
+        self.run_analysis_check_box = QtWidgets.QCheckBox(self.centralwidget)
+        self.run_analysis_check_box.setGeometry(QtCore.QRect(420, 80, 92, 23))
+        self.run_analysis_check_box.setObjectName("run_analysis_check_box")
         self.reg_detect_check_box = QtWidgets.QCheckBox(self.centralwidget)
         self.reg_detect_check_box.setGeometry(QtCore.QRect(190, 80, 92, 23))
         self.reg_detect_check_box.setObjectName("reg_detect_check_box")
@@ -100,7 +100,7 @@ class Ui_LiveWindow(object):
         self.cell_seg_check_box.setText(_translate("LiveWindow", "Cells"))
         self.channel_seg_check_box.setText(_translate("LiveWindow", "Channels"))
         self.gpu_check_box.setText(_translate("LiveWindow", "GPU"))
-        self.islive_check_box.setText(_translate("LiveWindow", "Live"))
+        self.run_analysis_check_box.setText(_translate("LiveWindow", "Analyze"))
         self.reg_detect_check_box.setText(_translate("LiveWindow", "Region detect"))
 
 from pyqtgraph import ImageView

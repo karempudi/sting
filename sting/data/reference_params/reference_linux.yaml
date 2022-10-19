@@ -37,7 +37,7 @@ Experiment:
     pass_one_and_wait: True # if you set this to true, set pass_all to False
     pass_all: False # if you set this to true, pass_one_and_wait to False
     from_file: True # Get positions from file, if false, will grab stuff directly from micro-manager
-    pos_fiilename: '/home/pk/Documents/sting/sting/data/reference_position_files/position_list.pos' # positions filename
+    pos_filename: '/home/pk/Documents/sting/sting/data/reference_position_files/position_list.pos' # positions filename
     presets: 
       - 'phaseFast' # presets that are available
       - 'phaseSlow'

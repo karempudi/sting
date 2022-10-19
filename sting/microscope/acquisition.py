@@ -23,6 +23,7 @@ class ExptAcquisition(object):
     def __init__(self, param: Union[dict, RecursiveNamespace]):
         # depending on the motion pattern and microscope preset 
         # behaviour construct
+
         self.events = [1, 2, 3, 4, 5, 6, 7, 8]
         self.max_events = 15
         self.cycle = cycle(self.events)
@@ -42,3 +43,6 @@ class ExptAcquisition(object):
             return x
         else:
             raise StopIteration
+
+def construct_events():
+    pass

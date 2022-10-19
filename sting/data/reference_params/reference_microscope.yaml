@@ -3,8 +3,6 @@
 Motion:
   magnification: 20
 
-Acquisition:
-  timeepoints: 10
 
 CellSeg:
   network: 'Unet' # Network type used for cell seg
@@ -21,7 +19,7 @@ GrowthRates:
   calculation_type: 'exponential_fit'
 
 Save:
-  directory: "C:\\Users\\elflab\\Documents\\Praneeth\\outputdump" # Top level directory for saving files.
+  directory: "C:\\Users\\elflab\\Documents\\Praneeth\\REALTIME\\analysis" # Top level directory for saving files.
 
 Experiment:
   number: 'exp-bp-000' # Experiment no
@@ -32,33 +30,38 @@ Experiment:
     - 'segment'
     - 'track'
     - 'growth'
-  events:
-    pass_one_and_wait: True # if you set this to true, set pass_all to False
-    pass_all: False # if you set this to true, pass_one_and_wait to False
-    from_file: True # Get positions from file, if false, will grab stuff directly from micro-manager
-    pos_fiilename: # positions filename
-    presets: 
-      - 'phaseFast' # presets that are available
-      - 'phaseSlow'
-    rules:
-      - type: 'combinatorial' # combinatorial or sequential
-        positions: # takes positions set in the previous section
-        start: 0 # start t = 0 mins
-        every: '60' # units in seconds
-        end: 5 # end t = 5 mins
-        preset: 'phaseFast'
-        exposure: '10' # Always in ms
-        wait_pfs: False
-        speed: 'dual' # speed can be 'mono' or 'dual' or anything custom you write
-        speed_fn: # custom speed function # not needed for now
+  Acquisition:
+    events:
+      pass_one_and_wait: True # if you set this to true, set pass_all to False
+      pass_all: False # if you set this to true, pass_one_and_wait to False
+      from_file: True # Get positions from file, if false, will grab stuff directly from micro-manager
+      pos_filename: "C:\\Users\\elflab\\Documents\\Praneeth\\sting\\sting\\data\\reference_position_files\\position_list.pos"# positions filename
+      presets: 
+        - 'phaseFast' # presets that are available
+        - 'phaseSlow'
+      rules:
+        - type: 'combinatorial' # combinatorial or sequential
+          positions: # takes positions set in the previous section
+          start: 0 # start t = 0 mins
+          every: '60' # units in seconds
+          end: 5 # end t = 5 mins
+          preset: 'phaseFast'
+          exposure: '10' # Always in ms
+          wait_pfs: False
+          speed: 'dual' # speed can be 'mono' or 'dual' or anything custom you write
+          speed_fn: # custom speed function # not needed for now
 
 
 Logging:
   to_file: True
   to_console: True
-  directory: "C:\\Users\\elflab\\Documents\\Praneeth\\outputdump\\logs.log" # Directory to save the logs
 
-
-
+# All setting for running the live window
+# This will start pycromanager in headless mode and
+# will be used for tweezing overlay window.
+Live:
+  mm_app_path: 'test'
+  mm_config_file_path: 'test_config_path'
+  timeout: 50000
 
 
