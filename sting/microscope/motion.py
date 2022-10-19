@@ -8,6 +8,7 @@ import matplotlib.pyplot as plt
 import torch.multiprocessing as tmp
 import logging
 import json
+import sys
 
 class Motion(ABC):
     """
@@ -129,9 +130,6 @@ class MotionFromFile(Motion):
                 stage positions list
         """
         filename = filename if isinstance(filename, pathlib.Path) else Path(filename)
-        # get the root logger that handles all the logs
-        #name = tmp.current_process().name
-        #logger = logging.getLogger(name)
         
         if not filename.exists():
             raise FileNotFoundError(f"Filename {filename} not found")
@@ -140,15 +138,15 @@ class MotionFromFile(Motion):
             raise ValueError(f"Position file {filename} doesn't have .pos extension")
         
         # log file found
-        logging.info("%s - file read for positions", str(filename))
+        sys.stdout.write(f"{filename} - file read for positions ..\n")
+        sys.stdout.flush()
         
         with open(filename, 'r') as json_handle:
             data = json.load(json_handle)
 
         # log micromanager file read and print the version of 
-        # micromanger found
-
-        #logging.info("Micro-manager version: %s-%s", data['major_version'], data['minor_version'])
+        sys.stdout.write(f"Micro-manager version: {data['major_version']} - {data['minor_version']}\n")
+        sys.stdout.flush()
 
         positions_dicts = data['map']['StagePositions']['array']
 
@@ -164,9 +162,9 @@ class MotionFromFile(Motion):
         }
         positions = []
         for position_item in positions_dicts:
-            X = position_item['DevicePositions']['array'][2]['Position_um']['array'][0] # XYStage device is on list item 2
-            Y = position_item['DevicePositions']['array'][2]['Position_um']['array'][1] # XYStage device is on list item 2
-            Z = position_item['DevicePositions']['array'][1]['Position_um']['array'][0] # PFSoffset device is on list item 0
+            X = position_item['DevicePositions']['array'][1]['Position_um']['array'][0] # XYStage device is on list item 1
+            Y = position_item['DevicePositions']['array'][1]['Position_um']['array'][1] # XYStage device is on list item 1
+            Z = position_item['DevicePositions']['array'][0]['Position_um']['array'][0] # PFSoffset device is on list item 0
             grid_row = position_item['GridRow']['scalar']
             grid_col = position_item['GridCol']['scalar']
             label = position_item['Label']['scalar']

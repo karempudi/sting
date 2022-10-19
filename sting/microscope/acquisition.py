@@ -2,6 +2,7 @@ import pycromanager
 from typing import Union
 from sting.utils.types import RecursiveNamespace
 from itertools import cycle
+from sting.microscope.motion import MotionFromFile 
 
 class ExptAcquisition(object):
     """
