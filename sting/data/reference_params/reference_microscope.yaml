@@ -1,22 +1,21 @@
 # This should contain the complete list of all the parameters.
 --- # Begin
-Motion:
-  magnification: 20
 
+Analysis:
+  CellSeg:
+    network: 'Unet' # Network type used for cell seg
+    model_path: #  model .pt or .pth file containing network weights
 
-CellSeg:
-  network: 'Unet' # Network type used for cell seg
-  model_path: #  model .pt or .pth file containing network weights
+  ChannelSeg:
+    network: 'Unet'
+    model_path: # model .pt or .pth file containing network weights
 
-ChannelSeg:
-  network: 'Unet'
-  model_path: # model .pt or .pth file containing network weights
+  Tracking:
+    network: 'Graphnet'
+    model_path
 
-Tracking:
-  network: 'Graphnet'
-
-GrowthRates:
-  calculation_type: 'exponential_fit'
+  GrowthRates:
+    calculation_type: 'exponential_fit'
 
 Save:
   directory: "C:\\Users\\elflab\\Documents\\Praneeth\\REALTIME\\analysis" # Top level directory for saving files.
@@ -31,6 +30,7 @@ Experiment:
     - 'track'
     - 'growth'
   Acquisition:
+    magnification: 100
     events:
       pass_one_and_wait: True # if you set this to true, set pass_all to False
       pass_all: False # if you set this to true, pass_one_and_wait to False
@@ -63,5 +63,7 @@ Live:
   mm_app_path: 'test'
   mm_config_file_path: 'test_config_path'
   timeout: 50000
+  fake_image: True
+  #fake_image_path: '/home/pk/Documents/REALTIME/data/test_data/Pos100/phaseFast/img_000000000.tiff'
 
 

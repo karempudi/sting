@@ -1,24 +1,20 @@
 # This should contain the complete list of all the parameters.
 --- # Begin
-Motion:
-  magnification: 20
 
-Acquisition:
-  timeepoints: 10
+Analysis:
+  CellSeg:
+    network: 'Unet' # Network type used for cell seg
+    model_path: #  model .pt or .pth file containing network weights
 
-CellSeg:
-  network: 'Unet' # Network type used for cell seg
-  model_path: #  model .pt or .pth file containing network weights
+  ChannelSeg:
+    network: 'Unet'
+    model_path: # model .pt or .pth file containing network weights
 
-ChannelSeg:
-  network: 'Unet'
-  model_path: # model .pt or .pth file containing network weights
+  Tracking:
+    network: 'Graphnet'
 
-Tracking:
-  network: 'Graphnet'
-
-GrowthRates:
-  calculation_type: 'exponential_fit'
+  GrowthRates:
+    calculation_type: 'exponential_fit'
 
 Save:
   # in this directory you will create a directory with expt-number and time_stamp
@@ -33,32 +29,39 @@ Experiment:
     - 'segment'
     - 'track'
     - 'growth'
-  events:
-    pass_one_and_wait: True # if you set this to true, set pass_all to False
-    pass_all: False # if you set this to true, pass_one_and_wait to False
-    from_file: True # Get positions from file, if false, will grab stuff directly from micro-manager
-    pos_filename: '/home/pk/Documents/sting/sting/data/reference_position_files/position_list.pos' # positions filename
-    presets: 
-      - 'phaseFast' # presets that are available
-      - 'phaseSlow'
-    rules:
-      - type: 'combinatorial' # combinatorial or sequential
-        positions: # takes positions set in the previous section
-        start: 0 # start t = 0 mins
-        every: '60' # units in seconds
-        end: 5 # end t = 5 mins
-        preset: 'phaseFast'
-        exposure: '10' # Always in ms
-        wait_pfs: False
-        speed: 'dual' # speed can be 'mono' or 'dual' or anything custom you write
-        speed_fn: # custom speed function # not needed for now
+  Acquisition:
+    magnification: 100
+    events:
+      pass_one_and_wait: True # if you set this to true, set pass_all to False
+      pass_all: False # if you set this to true, pass_one_and_wait to False
+      from_file: True # Get positions from file, if false, will grab stuff directly from micro-manager
+      pos_filename: '/home/pk/Documents/sting/sting/data/reference_position_files/position_list.pos' # positions filename
+      presets: 
+        - 'phaseFast' # presets that are available
+        - 'phaseSlow'
+      rules:
+        - type: 'combinatorial' # combinatorial or sequential
+          positions: # takes positions set in the previous section
+          start: 0 # start t = 0 mins
+          every: '60' # units in seconds
+          end: 5 # end t = 5 mins
+          preset: 'phaseFast'
+          exposure: '10' # Always in ms
+          wait_pfs: False
+          speed: 'dual' # speed can be 'mono' or 'dual' or anything custom you write
+          speed_fn: # custom speed function # not needed for now
 
 
 Logging:
   to_file: True
   to_console: True
 
-
+Live:
+  mm_app_path: 'test'
+  mm_config_file_path: 'test_config_path'
+  timeout: 50000
+  fake_image: True
+  fake_image_path: '/home/pk/Documents/REALTIME/data/test_data/Pos100/phaseFast/img_000000000.tiff'
 
 
 
