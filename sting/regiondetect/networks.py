@@ -315,4 +315,7 @@ class YOLOv3(nn.Module):
         #print(f"After yolo_3 shape: {x.shape}")
         yolo_outputs.append(x)
         return yolo_outputs
-    
+
+model_dict = {
+    'YOLOv3' : YOLOv3
+} 

@@ -2,13 +2,77 @@
 --- # Begin
 
 Analysis:
-  CellSeg:
-    network: 'Unet' # Network type used for cell seg
-    model_path: #  model .pt or .pth file containing network weights
+  Hardware:
+    device: 'cuda:1'
 
-  ChannelSeg:
-    network: 'Unet'
-    model_path: # model .pt or .pth file containing network weights
+  Segmentation:
+    type: 'dual' # if dual predicts, 2 channels at once, if single predicts one item at a time
+    architecture: 'Unet' # Network type used for cell seg
+    output:
+      - 'cells'
+      - 'channels'
+    model_paths: # list .pt or .pth file containing network weights, 
+      both: '/home/pk/Documents/REALTIME/network_expts/seg_models/model.pth'
+      cells: # fill in if you have different model
+      channels: # fill in if you have different model
+    
+    transformations:
+      before_type: 'PreSegTransforms' # write something compatible with networks above
+      after_type: 'PostSegTransforms' # write soemething compatible with networks above
+    model_params:
+      channels_by_scale:
+        - 1
+        - 8
+        - 16
+        - 32
+        - 64
+        - 128
+      num_outputs: 2
+      upsample_type: 'transpose_conv'
+      feature_fusion_type: 'concat' 
+
+  Barcode:
+    thresholds:
+      conf: 0.25
+      iou: 0.45
+    architecture: 'YOLOv3'
+    model_path: '/home/pk/Documents/REALTIME/network_expts/barcode_models/model_100.pth'
+    batch_size: 1
+    transformations:
+      before_type: 'YoloTestAugmentations'
+      after_type: 'YoloTestUnAgumentations'
+    model_params:
+      num_classes: 1
+      anchors: 
+        number: 9
+        sizes:
+        - - 19
+          - 168
+        - - 21
+          - 168
+        - - 29
+          - 178
+        - - 11
+          - 130
+        - - 11
+          - 131
+        - - 15
+          - 165
+        - - 6
+          - 115
+        - - 7
+          - 115
+        - - 7
+          - 125
+        strides:
+          - - 32
+            - 32
+          - - 16
+            - 16
+          - - 8
+            - 8
+      
+
 
   Tracking:
     network: 'Graphnet'
@@ -61,7 +125,7 @@ Live:
   mm_config_file_path: 'test_config_path'
   timeout: 50000
   fake_image: True
-  fake_image_path: '/home/pk/Documents/REALTIME/data/test_data/Pos100/phaseFast/img_000000000.tiff'
+  fake_image_path: '/home/pk/Documents/REALTIME/data/test_data/test_imgs/img_000000001.tiff'
 
 
 
