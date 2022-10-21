@@ -3,7 +3,7 @@
 
 Analysis:
   Hardware:
-    device: 'cuda:1'
+    device: 'cpu'
 
   Segmentation:
     type: 'dual' # if dual predicts, 2 channels at once, if single predicts one item at a time
@@ -12,7 +12,7 @@ Analysis:
       - 'cells'
       - 'channels'
     model_paths: # list .pt or .pth file containing network weights, 
-      both: '/home/pk/Documents/REALTIME/network_expts/seg_models/model.pth'
+      both: 'C:\\Users\\elflab\\Documents\\Praneeth\\models\\seg_models\\model.pth'
       cells: # fill in if you have different model
       channels: # fill in if you have different model
     
@@ -36,7 +36,7 @@ Analysis:
       conf: 0.25
       iou: 0.45
     architecture: 'YOLOv3'
-    model_path: '/home/pk/Documents/REALTIME/network_expts/barcode_models/model_100.pth'
+    model_path: 'C:\\Users\\elflab\\Documents\\Praneeth\\models\\barcode_models\\model_100.pth'
     batch_size: 1
     transformations:
       before_type: 'YoloTestAugmentations'
@@ -87,7 +87,7 @@ Experiment:
   number: 'exp-bp-000' # Experiment no
   analysis_type: 'simlive' # should be 'live' or 'post' or 'simlive'
   # if simlive, then use the images from this directory 
-  sim_directory: '/home/pk/Documents/REALTIME/data/test_data/simstack'
+  sim_directory: 'C:\\Users\\elflab\\Documents\\Praneeth\\data\\simstack'
   analysis_device: 'cuda:0' # defaults to 'cpu' if not available
   queues: # list with 4 things 'acquire', 'segment', 'channel', 'growth'
     - 'acquire'
@@ -129,6 +129,6 @@ Live:
   mm_config_file_path: 'test_config_path'
   timeout: 50000
   fake_image: True
-  fake_image_path: '/home/pk/Documents/REALTIME/data/test_data/Pos100/phaseFast/img_000000000.tiff'
+  fake_image_path: 'C:\\Users\\elflab\\Documents\\Praneeth\\data\\simstack\\img_000000000.tiff'
 
 
