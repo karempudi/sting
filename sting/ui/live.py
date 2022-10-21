@@ -191,6 +191,7 @@ class LiveWindow(QMainWindow):
                 bboxes = outputs_to_bboxes(barcode_pred, self.net.anchors_t, self.net.strides_t)
                 bboxes_cleaned = non_max_suppression(bboxes, conf_thres=0.25, iou_thres=0.45)
                 bboxes_numpy = [bbox.numpy() for bbox in bboxes_cleaned]
+                #seg_out = [seg_sample['phase'].cpu().numpy().squeeze(0), seg_sample['phase'].cpu().numpy().squeeze(0)]
             
             if (self.ui.scroll_bar.value() == 0):
                 #sys.stdout.write(f"slider value is {self.ui.scroll_bar.value()} \n")
