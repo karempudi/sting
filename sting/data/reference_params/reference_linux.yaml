@@ -87,6 +87,8 @@ Save:
 Experiment:
   number: 'exp-bp-000' # Experiment no
   analysis_type: 'simlive' # should be 'live' or 'post' or 'simlive'
+   # if simlive, then use the images from this directory 
+  sim_directory: '/home/pk/Documents/REALTIME/data/test_data/simstack'
   analysis_device: 'cuda:0' # defaults to 'cpu' if not available
   queues: # list with 4 things 'acquire', 'segment', 'channel', 'growth'
     - 'acquire'

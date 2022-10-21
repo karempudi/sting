@@ -1,8 +1,11 @@
 import pycromanager
+import pathlib
+from pathlib import Path
 from typing import Union
 from sting.utils.types import RecursiveNamespace
 from itertools import cycle
 from sting.microscope.motion import MotionFromFile 
+from tifffile import imread
 
 class ExptAcquisition(object):
     """
@@ -46,3 +49,29 @@ class ExptAcquisition(object):
 
 def construct_events():
     pass
+
+class simAcquisition(object):
+
+    def __init__(self, param: Union[dict, RecursiveNamespace]):
+        self.dir = Path(param.Experiment.sim_directory)
+        self.filenames = sorted(list(self.dir.glob('*.tif*')))
+        self.current_filenumber = 0
+
+    @classmethod
+    def parse(cls, param):
+        return cls(param)
+    
+    def __len__(self):
+        return len(self.filenames)
+
+    def __iter__(self):
+        return self
+
+    def __next__(self):
+        if self.current_filenumber < len(self.filenames):
+            img = imread(self.filenames[self.current_filenumber]).astype('float32')
+            self.current_filenumber += 1
+            return img
+        else:
+            raise StopIteration
+            return None

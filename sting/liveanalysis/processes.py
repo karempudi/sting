@@ -10,8 +10,10 @@ from typing import Union
 from datetime import datetime
 from sting.utils.types import RecursiveNamespace
 import torch.multiprocessing as tmp
+from queue import Empty
 from sting.utils.logger import logger_listener, setup_root_logger
 from sting.utils.db_ops import create_databases, write_to_db, read_from_db
+from sting.microscope.acquisition import simAcquisition, ExptAcquisition
 
 class ExptRun(object):
     """
@@ -58,21 +60,29 @@ class ExptRun(object):
                 self.acquire_events = None
             # create a motion object that holds 
             # the motion pattern
+        else:
+            self.acquire_queue = None
 
         if 'segment' in self.param.Experiment.queues:
-            self.segment_kill_event = tmp.Event()
+            #self.segment_kill_event = tmp.Event()
             # set up segmentation queue
-            self.segmentQueue = tmp.Queue()
+            self.segment_queue = tmp.Queue()
+        else:
+            self.segment_queue = None
 
         if 'track' in self.param.Experiment.queues:
-            self.track_kill_event = tmp.Event()
+            #self.track_kill_event = tmp.Event()
             # set up tracker queue
-            self.trackerQueue = tmp.Queue()
+            self.tracker_queue = tmp.Queue()
+        else:
+            self.tracker_queue = None
 
         if 'growth' in self.param.Experiment.queues:
-            self.growth_kill_event = tmp.Event()
+            #self.growth_kill_event = tmp.Event()
             # set up growth queue
-            self.growthQueue = tmp.Queue()
+            self.growth_queue = tmp.Queue()
+        else:
+            self.growth_queue = None
 
             
     @staticmethod
@@ -122,7 +132,7 @@ class ExptRun(object):
                 sys.stdout.write("Acquire process interrupted using keyboard\n")
                 sys.stdout.flush()
                 break
-                
+
     
     def acquire_sim(self):
         # configure acquire_sim logger
@@ -131,21 +141,32 @@ class ExptRun(object):
         print(f"Starting {name} simulation process ..")
         # keep process alive
         position = 0
+        timepoint = 0
+        expt_acq = simAcquisition(self.param)
         while not self.acquire_kill_event.is_set():
-            timepoint = 0
             try:
-                time.sleep(1.0)
+                image = next(expt_acq)
                 logger = logging.getLogger(name)
-                logger.log(logging.INFO, "Acquire wait 1.0s")
-                write_to_db({'position': position, 'timepoint': 0}, self.expt_save_dir, 'acquire')
-                position += 1
+                logger.log(logging.INFO, "Acquired image of shape: %s", image.shape)
+                # metadata and image should be put
+                self.segment_queue.put({'position': position, 
+                                        'time': timepoint,
+                                        'image': image})
+                write_to_db({'position': position, 'timepoint': timepoint}, self.expt_save_dir, 'acquire')
+                timepoint += 1
+                time.sleep(1.0)
             except KeyboardInterrupt:
                 self.acquire_kill_event.set()
                 sys.stdout.write("Acquire process interrupted using keyboard\n")
                 sys.stdout.flush()
                 break
- 
-    
+            except Exception as error:
+                sys.stderr.write(f"Error in acquire sim Pos:{position} - timepoint: {timepoint}\n")
+                sys.stderr.flush()
+
+        self.segment_queue.put(None)
+        sys.stdout.write("AcquireFake process completed successfully\n")
+        sys.stdout.flush()
     
     def segment(self):
         # configure segment logger
@@ -153,16 +174,36 @@ class ExptRun(object):
         name = tmp.current_process().name
         print(f"Starting {name} process ..")
         # keep the process alive
-        while not self.segment_kill_event.is_set():
+        while True:
             try:
-                time.sleep(1.0)
+                if self.segment_queue.qsize() > 0:
+                    data_in_seg_queue = self.segment_queue.get()
+                    if data_in_seg_queue == None:
+                        sys.stdout.write(f"Got None in seg image queue ... aboring segment function ... \n")
+                        sys.stdout.flush()
+                        break
+                else:
+                    continue
                 logger = logging.getLogger(name)
-                logger.log(logging.INFO, "Segment wait 1.0s")
+                logger.log(logging.INFO, "Segment wait 1.0s %s %s %s", 
+                                data_in_seg_queue['position'],
+                                data_in_seg_queue['time'],
+                                data_in_seg_queue['image'].shape)
+                #self.segment_queue.task_done()
+                #del data_in_seg_queue
+                time.sleep(1.0)
+            except Empty:
+                sys.stdout.write(f"Segmentation queue is empty .. but process is still alive\n")
+                sys.stdout.flush()
             except KeyboardInterrupt:
-                self.segment_kill_event.set()
+                self.acquire_kill_event.set()
                 sys.stdout.write("Segment process interrupted using keyboard\n")
                 sys.stdout.flush()
                 break
+
+        sys.stdout.write("Segment process completed successfully\n")
+        sys.stdout.flush()
+    
     
     def track(self):
         # configure track logger
@@ -170,16 +211,19 @@ class ExptRun(object):
         name = tmp.current_process().name
         print(f"Starting {name} process ..")
         # keep the process alive
-        while not self.track_kill_event.is_set():
+        while not self.acquire_kill_event.is_set():
             try:
                 time.sleep(1.0)
                 logger = logging.getLogger(name)
                 logger.log(logging.INFO, "Track wait 1.0s")
             except KeyboardInterrupt:
-                self.track_kill_event.set()
+                self.acquire_kill_event.set()
                 sys.stdout.write("Track process interrupted using keyboard\n")
                 sys.stdout.flush()
                 break
+ 
+        sys.stdout.write("Track process completed successfully\n")
+        sys.stdout.flush()
         
     def growth_rates(self):
         # configure growth logger
@@ -187,34 +231,49 @@ class ExptRun(object):
         name = tmp.current_process().name
         print(f"Starting {name} process ..")
        # keep the process alive
-        while not self.growth_kill_event.is_set():
+        while not self.acquire_kill_event.is_set():
             try:
                 time.sleep(1.0)
                 logger = logging.getLogger(name)
                 logger.log(logging.INFO, "Growth wait 1.0s")
             except KeyboardInterrupt:
-                self.growth_kill_event.set()
+                self.acquire_kill_event.set()
                 sys.stdout.write("Growth process interrupted using keyboard\n")
                 sys.stdout.flush()
                 break
 
+        sys.stdout.write("Growth process completed successfully\n")
+        sys.stdout.flush()
+ 
 
     def stop(self,):
+        # empty queues if they are not empty
+        sys.stdout.write(f"Segment queue size is: {self.segment_queue.qsize()}\n")
+        sys.stdout.flush()
+        #while self.segment_queue.qsize() > 0:
+        #    item = self.segment_queue.get()
+        #    del item
+
+        #if 'growth' in self.param.Experiment.queues:
+        #    self.growth_kill_event.set()
+           
+        #if 'track' in self.param.Experiment.queues:
+        #    self.track_kill_event.set()
+ 
+        #if 'segment' in self.param.Experiment.queues:
+        #    self.segment_kill_event.set()
+ 
+        #if 'acquire' in self.param.Experiment.queues:
+
+        self.acquire_kill_event.set()
         # should kill all processes
+        # ideally you would wait for all queues to finish and then kill the logger
+        time.sleep(1) # max timeout before we kill the logger process
+        self.logger_queue.put(None)
         self.logger_kill_event.set()
-
-        if 'acquire' in self.param.Experiment.queues:
-            self.acquire_kill_event.set()
-
-        if 'segment' in self.param.Experiment.queues:
-            self.segment_kill_event.set()
-            
-        if 'track' in self.param.Experiment.queues:
-            self.track_kill_event.set()
-        
-        if 'growth' in self.param.Experiment.queues:
-            self.growth_kill_event.set()
-        
+        #self.logger_kill_event.set()
+        #self.logger_queue.join()
+       
 
 def worker_configurer(queue):
     h = logging.handlers.QueueHandler(queue)
@@ -272,19 +331,19 @@ def start_live_experiment(expt_run: ExptRun, param: Union[RecursiveNamespace, di
 
         if 'segment' in param.Experiment.queues:
             # create and call segmentation process
-            expt_run.segment_kill_event.clear()
+            #expt_run.segment_kill_event.clear()
             segment_process = tmp.Process(target=expt_run.segment, name='segment')
             segment_process.start()
             
         if 'track' in param.Experiment.queues:
             # create and call tracking process
-            expt_run.track_kill_event.clear()
+            #expt_run.track_kill_event.clear()
             track_process = tmp.Process(target=expt_run.track, name='track')
             track_process.start()
 
         if 'growth' in param.Experiment.queues:
             # create and call growth rates process
-            expt_run.growth_kill_event.clear()
+            #expt_run.growth_kill_event.clear()
             growth_process = tmp.Process(target=expt_run.growth_rates, name='growth')
             growth_process.start()
 

@@ -27,6 +27,11 @@ class RunWindow(QMainWindow):
         self.expt_obj = None
         self.simulation = False
 
+    def closeEvent(self, event):
+        sys.stdout.write(f"Closing and stopping the experiment window if not previously stopped.\n")
+        sys.stdout.flush()
+        self.stop_expt()
+
     def setup_button_handlers(self):
         # button handlers 
         self.ui.load_button.clicked.connect(self.load_expt_params)
@@ -85,7 +90,8 @@ class RunWindow(QMainWindow):
         sys.stdout.flush()
 
         # Stop the experiment and finally set it to None
-        self.expt_obj.stop()
+        if self.expt_obj != None:
+            self.expt_obj.stop()
         time.sleep(3)
         self.ui.load_button.setEnabled(True)
         self.ui.start_button.setEnabled(True)
