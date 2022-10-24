@@ -116,6 +116,7 @@ class LiveWindow(QMainWindow):
         else:
             self.analysis_params = None
         print(self.param)
+        print("Printing analysis parameters ....")
         print(self.analysis_params)
         
     def setup_button_handlers(self):
@@ -183,12 +184,14 @@ class LiveWindow(QMainWindow):
             barcode_sample = self.pre_barcode_transforms(sample_barcode)
             sys.stdout.write(f"{datetime.now()} -- Seg sample shape: {seg_sample['phase'].shape} -- barcode sample shape: {barcode_sample['image'].shape} \n")
             sys.stdout.flush()
+            device = self.net.device
             with torch.no_grad():
-                seg_out = self.net.segment_model(seg_sample['phase'].unsqueeze(0).cuda()).sigmoid().cpu().numpy().squeeze(0)
-                barcode_pred = self.net.barcode_model(barcode_sample['image'].unsqueeze(0).cuda())
+                seg_out = self.net.segment_model(seg_sample['phase'].unsqueeze(0).to(device)).sigmoid().cpu().numpy().squeeze(0)
+                barcode_pred = self.net.barcode_model(barcode_sample['image'].unsqueeze(0).to(device))
                 bboxes = outputs_to_bboxes(barcode_pred, self.net.anchors_t, self.net.strides_t)
                 bboxes_cleaned = non_max_suppression(bboxes, conf_thres=0.25, iou_thres=0.45)
                 bboxes_numpy = [bbox.numpy() for bbox in bboxes_cleaned]
+                #seg_out = [seg_sample['phase'].cpu().numpy().squeeze(0), seg_sample['phase'].cpu().numpy().squeeze(0)]
             
             if (self.ui.scroll_bar.value() == 0):
                 #sys.stdout.write(f"slider value is {self.ui.scroll_bar.value()} \n")

@@ -17,6 +17,8 @@ class LiveNet(nn.Module):
                 torch.cuda.set_device(device)
         else:
             device = 'cpu'
+        
+        self.device = device
 
         if 'Segmentation' in param.keys():
             # load the right type of segmentaiton network
@@ -27,7 +29,7 @@ class LiveNet(nn.Module):
                 self.segment_model = model.parse(channels_by_scale=segment_params.model_params.channels_by_scale,
                                                  num_outputs=segment_params.model_params.num_outputs,
                                                  upsample_type=segment_params.model_params.upsample_type,
-                                                 feature_fusion_type=segment_params.model_params.feature_fusion_type).to(device=device)
+                                                 feature_fusion_type=segment_params.model_params.feature_fusion_type).to(device=self.device)
         else:
             self.segment_model = None
 
@@ -44,7 +46,7 @@ class LiveNet(nn.Module):
             self.anchors_t = tuple(torch.tensor(anch).float().to(device=device) for anch in anchors_list)
             self.strides_t = tuple(torch.tensor(stride).to(device=device) for stride in strides)
 
-            self.barcode_model = barcode_model.parse(anchors=anchors_list, num_classes=num_classes).to(device=device)
+            self.barcode_model = barcode_model.parse(anchors=anchors_list, num_classes=num_classes).to(device=self.device)
         else:
             self.barcode_model = None
 
@@ -54,8 +56,8 @@ class LiveNet(nn.Module):
         # load the model parameters
         segment_model_path = self.param.Segmentation.model_paths.both
         barcode_model_path = self.param.Barcode.model_path
-        self.segment_model.load_state_dict(torch.load(segment_model_path))
-        self.barcode_model.load_state_dict(torch.load(barcode_model_path))
+        self.segment_model.load_state_dict(torch.load(segment_model_path, map_location=self.device))
+        self.barcode_model.load_state_dict(torch.load(barcode_model_path, map_location=self.device))
 
     def eval(self):
         self.segment_model.eval()
