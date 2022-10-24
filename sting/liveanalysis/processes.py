@@ -64,21 +64,21 @@ class ExptRun(object):
             self.acquire_queue = None
 
         if 'segment' in self.param.Experiment.queues:
-            #self.segment_kill_event = tmp.Event()
+            self.segment_killed = tmp.Event()
             # set up segmentation queue
             self.segment_queue = tmp.Queue()
         else:
             self.segment_queue = None
 
         if 'track' in self.param.Experiment.queues:
-            #self.track_kill_event = tmp.Event()
+            self.track_killed = tmp.Event()
             # set up tracker queue
             self.tracker_queue = tmp.Queue()
         else:
             self.tracker_queue = None
 
         if 'growth' in self.param.Experiment.queues:
-            #self.growth_kill_event = tmp.Event()
+            self.growth_killed = tmp.Event()
             # set up growth queue
             self.growth_queue = tmp.Queue()
         else:
@@ -191,6 +191,12 @@ class ExptRun(object):
                                 data_in_seg_queue['image'].shape)
                 #self.segment_queue.task_done()
                 #del data_in_seg_queue
+                if 'track' in self.param.Experiment.queues:
+                    self.tracker_queue.put({
+                        'position': data_in_seg_queue['position'],
+                        'time': data_in_seg_queue['time']
+                    })
+
                 time.sleep(1.0)
             except Empty:
                 sys.stdout.write(f"Segmentation queue is empty .. but process is still alive\n")
@@ -201,6 +207,10 @@ class ExptRun(object):
                 sys.stdout.flush()
                 break
 
+        if 'track' in self.param.Experiment.queues:
+            self.tracker_queue.put(None)
+
+        self.segment_killed.set()
         sys.stdout.write("Segment process completed successfully\n")
         sys.stdout.flush()
     
@@ -211,17 +221,34 @@ class ExptRun(object):
         name = tmp.current_process().name
         print(f"Starting {name} process ..")
         # keep the process alive
-        while not self.acquire_kill_event.is_set():
+        while True:
             try:
-                time.sleep(1.0)
+                if self.tracker_queue.qsize() > 0:
+                    data_tracker_queue = self.tracker_queue.get()
+                    if data_tracker_queue == None:
+                        sys.stdout.write(f"Got None in tracker queue .. aborting tracker function .. \n")
+                        sys.stdout.flush()
+                        break
+                else:
+                    continue
                 logger = logging.getLogger(name)
-                logger.log(logging.INFO, "Track wait 1.0s")
+                logger.log(logging.INFO, "Tracker queue got Pos: %s time: %s", 
+                                    data_tracker_queue['position'], data_tracker_queue['time'])
+                if 'growth' in self.param.Experiment.queues:
+                    self.growth_queue.put({
+                        'position' : data_tracker_queue['position'],
+                        'time': data_tracker_queue['time']
+                    })
+                time.sleep(1.0)
             except KeyboardInterrupt:
                 self.acquire_kill_event.set()
                 sys.stdout.write("Track process interrupted using keyboard\n")
                 sys.stdout.flush()
                 break
- 
+        if 'growth' in self.param.Experiment.queues:
+            self.growth_queue.put(None)
+
+        self.track_killed.set()
         sys.stdout.write("Track process completed successfully\n")
         sys.stdout.flush()
         
@@ -231,48 +258,41 @@ class ExptRun(object):
         name = tmp.current_process().name
         print(f"Starting {name} process ..")
        # keep the process alive
-        while not self.acquire_kill_event.is_set():
+        while True:
             try:
-                time.sleep(1.0)
+                if self.growth_queue.qsize() > 0:
+                    data_growth_queue = self.growth_queue.get()
+                    if data_growth_queue == None:
+                        sys.stdout.write(f"Got None in growth queue .. aborting growth function .. \n")
+                        sys.stdout.flush()
+                        break
+                else:
+                    continue
                 logger = logging.getLogger(name)
-                logger.log(logging.INFO, "Growth wait 1.0s")
+                logger.log(logging.INFO, "Growth queue got Pos: %s time %s",
+                                data_growth_queue['position'], data_growth_queue['time'])
+
+                time.sleep(1.0)
             except KeyboardInterrupt:
                 self.acquire_kill_event.set()
                 sys.stdout.write("Growth process interrupted using keyboard\n")
                 sys.stdout.flush()
                 break
 
+        self.growth_killed.set()
         sys.stdout.write("Growth process completed successfully\n")
         sys.stdout.flush()
  
 
     def stop(self,):
-        # empty queues if they are not empty
-        sys.stdout.write(f"Segment queue size is: {self.segment_queue.qsize()}\n")
-        sys.stdout.flush()
-        #while self.segment_queue.qsize() > 0:
-        #    item = self.segment_queue.get()
-        #    del item
-
-        #if 'growth' in self.param.Experiment.queues:
-        #    self.growth_kill_event.set()
-           
-        #if 'track' in self.param.Experiment.queues:
-        #    self.track_kill_event.set()
- 
-        #if 'segment' in self.param.Experiment.queues:
-        #    self.segment_kill_event.set()
- 
-        #if 'acquire' in self.param.Experiment.queues:
-
         self.acquire_kill_event.set()
-        # should kill all processes
-        # ideally you would wait for all queues to finish and then kill the logger
-        time.sleep(1) # max timeout before we kill the logger process
+        while (('segment' in self.param.Experiment.queues and  not self.segment_killed.is_set()) or 
+                ('track' in self.param.Experiment.queues and not self.track_killed.is_set()) or 
+                ('growth' in self.param.Experiment.queues and not self.growth_killed.is_set())):
+            time.sleep(1)
         self.logger_queue.put(None)
+        time.sleep(1)
         self.logger_kill_event.set()
-        #self.logger_kill_event.set()
-        #self.logger_queue.join()
        
 
 def worker_configurer(queue):
@@ -331,19 +351,19 @@ def start_live_experiment(expt_run: ExptRun, param: Union[RecursiveNamespace, di
 
         if 'segment' in param.Experiment.queues:
             # create and call segmentation process
-            #expt_run.segment_kill_event.clear()
+            expt_run.segment_killed.clear()
             segment_process = tmp.Process(target=expt_run.segment, name='segment')
             segment_process.start()
             
         if 'track' in param.Experiment.queues:
             # create and call tracking process
-            #expt_run.track_kill_event.clear()
+            expt_run.track_killed.clear()
             track_process = tmp.Process(target=expt_run.track, name='track')
             track_process.start()
 
         if 'growth' in param.Experiment.queues:
             # create and call growth rates process
-            #expt_run.growth_kill_event.clear()
+            expt_run.growth_killed.clear()
             growth_process = tmp.Process(target=expt_run.growth_rates, name='growth')
             growth_process.start()
 
