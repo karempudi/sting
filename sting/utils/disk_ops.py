@@ -50,9 +50,14 @@ def write_files(event_data, event_type, param):
     except Exception as e:
         sys.stdout.write(f"Writing failed due to {e} for data {event_data} ..\n")
         sys.stdout.flush()
-    
 
-    
+def read_files(read_keys, read_type, param):
+    """
+    File that will help read data from disk of various types
 
-def read_file(param):
-    pass
+    Arguements:
+
+    Returns:
+
+    """
+    return None

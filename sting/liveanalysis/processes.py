@@ -16,6 +16,7 @@ from sting.utils.db_ops import create_databases, write_to_db, read_from_db
 from sting.microscope.acquisition import simAcquisition, ExptAcquisition
 from sting.utils.param_io import save_params
 from sting.utils.disk_ops import write_files
+from sting.mm.detect import get_loaded_model, process_image
 
 class ExptRun(object):
     """
@@ -149,6 +150,9 @@ class ExptRun(object):
         position = 0
         timepoint = 0
         expt_acq = simAcquisition(self.param)
+        time.sleep(4)
+        sys.stdout.write(f"Starting the acquisition sequence now .. \n")
+        sys.stdout.flush()
         while not self.acquire_kill_event.is_set():
             try:
                 image = next(expt_acq)
@@ -180,6 +184,9 @@ class ExptRun(object):
         name = tmp.current_process().name
         print(f"Starting {name} process ..")
         # keep the process alive
+        net = get_loaded_model(self.param)
+        sys.stdout.write(f"Segmentation and barcode networks loaded on to device ... \n")
+        sys.stdout.flush()
         while True:
             try:
                 if self.segment_queue.qsize() > 0:
@@ -199,6 +206,11 @@ class ExptRun(object):
                 #del data_in_seg_queue
                 # do your image processing on the phase image here
                 write_files(data_in_seg_queue, 'phase', self.param)
+                try:
+                    process_image(data_in_seg_queue, net, self.param)
+                except Exception as e:
+                    sys.stdout.write(f"Error {e} while processing image at Position: {data_in_seg_queue['position']} time: {data_in_seg_queue['time']} \n")
+                    sys.stdout.flush()
 
                 if 'track' in self.param.Experiment.queues:
                     self.tracker_queue.put({
@@ -206,7 +218,7 @@ class ExptRun(object):
                         'time': data_in_seg_queue['time']
                     })
 
-                time.sleep(1.0)
+                #time.sleep(1.0)
             except Empty:
                 sys.stdout.write(f"Segmentation queue is empty .. but process is still alive\n")
                 sys.stdout.flush()
