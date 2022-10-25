@@ -18,7 +18,7 @@ Analysis:
     
     transformations:
       before_type: 'UnetTestTransforms' # write something compatible with networks above
-      after_type: 'PostSegTransforms' # write soemething compatible with networks above
+      after_type: 'PostSegTransforms' # write soemething compatible with networks above # not used for now
     model_params:
       channels_by_scale:
         - 1
@@ -95,6 +95,7 @@ Experiment:
     - 'segment'
     - 'track'
     - 'growth'
+
   Acquisition:
     magnification: 100
     events:
@@ -116,6 +117,8 @@ Experiment:
           wait_pfs: False
           speed: 'dual' # speed can be 'mono' or 'dual' or anything custom you write
           speed_fn: # custom speed function # not needed for now
+  Motion:
+    pattern_type: 
 
 
 Logging:

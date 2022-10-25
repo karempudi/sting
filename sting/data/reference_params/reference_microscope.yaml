@@ -17,8 +17,8 @@ Analysis:
       channels: # fill in if you have different model
     
     transformations:
-      before_type: 'PreSegTransforms' # write something compatible with networks above
-      after_type: 'PostSegTransforms' # write soemething compatible with networks above
+      before_type: 'UnetTestTransforms' # write something compatible with networks above
+      after_type: 'PostSegTransforms' # write soemething compatible with networks above # not used for now
     model_params:
       channels_by_scale:
         - 1
@@ -39,8 +39,8 @@ Analysis:
     model_path: 'C:\\Users\\elflab\\Documents\\Praneeth\\models\\barcode_models\\model_100.pth'
     batch_size: 1
     transformations:
-      before_type: 'YoloTestAugmentations'
-      after_type: 'YoloTestUnAgumentations'
+      before_type: 'YoloLiveAugmentations'
+      after_type: 'YoloLiveUnAgumentations'
     model_params:
       num_classes: 1
       anchors: 
@@ -115,7 +115,8 @@ Experiment:
           wait_pfs: False
           speed: 'dual' # speed can be 'mono' or 'dual' or anything custom you write
           speed_fn: # custom speed function # not needed for now
-
+  Motion:
+    pattern_type: 
 
 Logging:
   to_file: True
