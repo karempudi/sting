@@ -14,6 +14,8 @@ from queue import Empty
 from sting.utils.logger import logger_listener, setup_root_logger
 from sting.utils.db_ops import create_databases, write_to_db, read_from_db
 from sting.microscope.acquisition import simAcquisition, ExptAcquisition
+from sting.utils.param_io import save_params
+from sting.utils.disk_ops import write_files
 
 class ExptRun(object):
     """
@@ -40,6 +42,10 @@ class ExptRun(object):
         sys.stdout.flush()
 
         self.expt_save_dir = expt_save_dir
+        # overwrite the directory for saving with the current one
+        self.param.Save.directory = str(self.expt_save_dir)
+        save_param_path = self.expt_save_dir / Path('param_used.yaml')
+        save_params(save_param_path, self.param)
 
 
         # create databases to write stuff to depending on the queues preset in 
@@ -191,6 +197,9 @@ class ExptRun(object):
                                 data_in_seg_queue['image'].shape)
                 #self.segment_queue.task_done()
                 #del data_in_seg_queue
+                # do your image processing on the phase image here
+                write_files(data_in_seg_queue, 'phase', self.param)
+
                 if 'track' in self.param.Experiment.queues:
                     self.tracker_queue.put({
                         'position': data_in_seg_queue['position'],
