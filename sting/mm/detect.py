@@ -2,7 +2,7 @@ import torch
 from sting.utils.types import RecursiveNamespace
 from typing import Union
 from sting.mm.networks import LiveNet
-from sting.mm.utils import YoloLiveAugmentations
+from sting.mm.utils import YoloLiveAugmentations, YoloLiveUnAugmentations
 from sting.segmentation.transforms import UnetTestTransforms
 from sting.regiondetect.utils import non_max_suppression, to_cpu, outputs_to_bboxes
 import sys
@@ -68,11 +68,26 @@ def process_image(datapoint, model, param):
     sys.stdout.write(f"After Pos: {datapoint['position']} time: {datapoint['time']} , segmentation shape: {seg_pred.shape} -- barcodes_shape: {bboxes_barcode.shape}\n")
     sys.stdout.flush()
 
-    return None
+    yolo_datapoint = {
+        'yolo_size': tuple(param.Analysis.Barcode.img_size),
+        'bboxes': bboxes_barcode
+    }
+    post_barcode_transformations = YoloLiveUnAugmentations(
+        parameters = {'resize': {
+            'height': raw_shape[0],
+            'width': raw_shape[1],
+            'always_apply': True
+            }
+        }
+    )
+    bboxes_final = post_barcode_transformations(yolo_datapoint)
+
+    #return None
 
     return { 
         'cells': seg_pred[0],
         'channels': seg_pred[1],
-        'barcode_locations': bboxes_barcode,
+        'barcode_locations': bboxes_final,
         'channel_locations': None,
+        'raw_shape': seg_sample['raw_shape']
     }# segmented cells, segmented channels, barcode locations, channel locations

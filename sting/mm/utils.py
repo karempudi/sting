@@ -44,7 +44,15 @@ class YoloLiveUnAugmentations:
         parameters: parameters used by various transforms
 
     """
-    def __init__(self):
-        pass
+    def __init__(self, parameters = {
+        'resize' : {'height': 816, 'width': 4096, 'always_apply':True} # this the resize height to ie, the original image
+    }):
+        self.transform = A.Compose([
+            A.Resize(**parameters['resize'])
+        ], bbox_params=A.BboxParams(format='pascal_voc')) #here we would have already converted the bboxes to pascal_voc
+        
     def __call__(self, datapoint):
-        pass
+        # datapoint should have 'bboxes' and 'yolo_size'(size on which bboxes were calculated by the net)
+        yolo_size = datapoint['yolo_size']
+        transformed = self.transform(image = np.zeros(yolo_size), bboxes=datapoint['bboxes'])
+        return transformed['bboxes']

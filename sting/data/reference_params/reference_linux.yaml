@@ -35,6 +35,9 @@ Analysis:
     thresholds:
       conf: 0.25
       iou: 0.45
+    img_size:
+      - 256
+      - 800
     architecture: 'YOLOv3'
     model_path: '/home/pk/Documents/REALTIME/network_expts/barcode_models/model_100.pth'
     batch_size: 1
