@@ -38,6 +38,11 @@ Analysis:
     img_size:
       - 256
       - 800
+    dist_thresholds:
+      min: 600
+      max: 900
+      dist: 780
+      channel_dist: 35
     architecture: 'YOLOv3'
     model_path: '/home/pk/Documents/REALTIME/network_expts/barcode_models/model_100.pth'
     batch_size: 1

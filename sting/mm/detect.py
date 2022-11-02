@@ -6,6 +6,7 @@ from sting.mm.utils import YoloLiveAugmentations, YoloLiveUnAugmentations
 from sting.segmentation.transforms import UnetTestTransforms
 from sting.regiondetect.utils import non_max_suppression, to_cpu, outputs_to_bboxes
 import sys
+from scipy.signal import find_peaks
 
 def get_loaded_model(param: RecursiveNamespace):
     """
@@ -30,9 +31,14 @@ def bboxes_compare_error():
 
 def get_locations_btn_barcodes(channel_img, barcode_bboxes):
     """
-    This will take the channel_img, barcode_bboxes
+
+    This will take the channel_img, barcode_bboxes and gets the locations of the 
+    channels to cut channels stacks out of the image
+
     """
-    pass
+    barcode_centers = []
+
+    return None, False
 
 def process_image(datapoint, model, param):
     """
@@ -83,11 +89,13 @@ def process_image(datapoint, model, param):
     bboxes_final = post_barcode_transformations(yolo_datapoint)
 
     #return None
+    channel_locations, error = get_locations_btn_barcodes(seg_pred[1], bboxes_final)
 
     return { 
         'cells': seg_pred[0],
         'channels': seg_pred[1],
         'barcode_locations': bboxes_final,
-        'channel_locations': None,
-        'raw_shape': seg_sample['raw_shape']
+        'channel_locations': channel_locations,
+        'raw_shape': seg_sample['raw_shape'],
+        'error': error # if error is true we are going to skip the position
     }# segmented cells, segmented channels, barcode locations, channel locations
