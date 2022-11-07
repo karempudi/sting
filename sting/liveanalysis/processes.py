@@ -197,17 +197,14 @@ class ExptRun(object):
                         break
                 else:
                     continue
-                logger = logging.getLogger(name)
-                logger.log(logging.INFO, "Segment wait 1.0s %s %s %s", 
-                                data_in_seg_queue['position'],
-                                data_in_seg_queue['time'],
-                                data_in_seg_queue['image'].shape)
-                #self.segment_queue.task_done()
+               #self.segment_queue.task_done()
                 #del data_in_seg_queue
                 # do your image processing on the phase image here
                 write_files(data_in_seg_queue, 'phase', self.param)
                 try:
-                    process_image(data_in_seg_queue, net, self.param)
+                    result = process_image(data_in_seg_queue, net, self.param)
+                    write_files(result, 'cells_channels', self.param)
+
                 except Exception as e:
                     sys.stdout.write(f"Error {e} while processing image at Position: {data_in_seg_queue['position']} time: {data_in_seg_queue['time']} \n")
                     sys.stdout.flush()
@@ -217,7 +214,15 @@ class ExptRun(object):
                         'position': data_in_seg_queue['position'],
                         'time': data_in_seg_queue['time']
                     })
-
+                logger = logging.getLogger(name)
+                logger.log(logging.INFO, "Segmented Pos: %s, time: %s %s, no ch: %s, error: %s", 
+                                data_in_seg_queue['position'],
+                                data_in_seg_queue['time'],
+                                data_in_seg_queue['image'].shape,
+                                result['total_channels'],
+                                result['error']
+                                )
+ 
                 #time.sleep(1.0)
             except Empty:
                 sys.stdout.write(f"Segmentation queue is empty .. but process is still alive\n")

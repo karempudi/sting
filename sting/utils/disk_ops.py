@@ -6,7 +6,7 @@ import pickle
 import pathlib
 from pathlib import Path
 from sting.utils.types import RecursiveNamespace
-from tifffile import imsave
+from skimage.io import imsave
 
 def write_files(event_data, event_type, param):
     """
@@ -44,6 +44,19 @@ def write_files(event_data, event_type, param):
             image_filename = str(event_data['time']) + '.tiff'
             image_filename = events_dir / Path(image_filename)
             imsave(image_filename, event_data['image'].astype('uint16'))
+        elif event_type == 'cells_channels':
+            #
+            cells_filename = 'cells_' + str(event_data['time']).zfill(4) + '.tiff'
+            cells_filename = events_dir / Path(cells_filename)
+            channels_filename = 'channels_' + str(event_data['time']).zfill(4) + '.tiff'
+            channels_filename = events_dir / Path(channels_filename)
+            cell_prob = param.Analysis.Segmentation.thresholds.cells.probability
+            channel_prob = param.Analysis.Segmentation.thresholds.channels.probability
+            imsave(cells_filename, (event_data['cells'] > cell_prob).astype('float32'),
+                    plugin='tifffile', check_contrast=False)
+            imsave(channels_filename, (event_data['channels'] > channel_prob).astype('float32'), 
+                    plugin='tifffile', check_contrast=False)
+        
     except KeyError:
         sys.stdout.write(f"Writing failed for due to lack of position key in data ..\n")
         sys.stdout.flush()

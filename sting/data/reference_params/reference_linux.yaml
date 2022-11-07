@@ -15,6 +15,11 @@ Analysis:
       both: '/home/pk/Documents/REALTIME/network_expts/seg_models/model.pth'
       cells: # fill in if you have different model
       channels: # fill in if you have different model
+    thresholds:
+      cells: 
+        probability: 0.9
+      channels:
+        probability: 0.9
     
     transformations:
       before_type: 'UnetTestTransforms' # write something compatible with networks above
