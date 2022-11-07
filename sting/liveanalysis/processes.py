@@ -17,6 +17,7 @@ from sting.microscope.acquisition import simAcquisition, ExptAcquisition
 from sting.utils.param_io import save_params
 from sting.utils.disk_ops import write_files
 from sting.mm.detect import get_loaded_model, process_image
+from sting.utils.verify import verify_channel_locations
 
 class ExptRun(object):
     """
@@ -210,6 +211,8 @@ class ExptRun(object):
                     sys.stdout.flush()
 
                 if 'track' in self.param.Experiment.queues:
+                    # verify channels were matched correctly and then
+                    # put the pair of phase and seg diffs somehow  
                     self.tracker_queue.put({
                         'position': data_in_seg_queue['position'],
                         'time': data_in_seg_queue['time']
