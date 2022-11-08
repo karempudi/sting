@@ -145,8 +145,8 @@ def process_image(datapoint, model, param):
         return { 
             'position': datapoint['position'],
             'time': datapoint['time'],
-            'cells': seg_pred[0],
-            'channels': seg_pred[1],
+            'cells': seg_pred[0][:raw_shape[0], :raw_shape[1]],
+            'channels': seg_pred[1][:raw_shape[0], :raw_shape[1]],
             'barcode_locations': bboxes_final,
             'channel_locations': channel_locations,
             'raw_shape': seg_sample['raw_shape'],

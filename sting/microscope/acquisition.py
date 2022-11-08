@@ -73,5 +73,5 @@ class simAcquisition(object):
             self.current_filenumber += 1
             return img
         else:
-            raise StopIteration
+            #raise StopIteration
             return None

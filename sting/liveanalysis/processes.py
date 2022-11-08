@@ -157,13 +157,16 @@ class ExptRun(object):
         while not self.acquire_kill_event.is_set():
             try:
                 image = next(expt_acq)
-                logger = logging.getLogger(name)
-                logger.log(logging.INFO, "Acquired image of shape: %s", image.shape)
                 # metadata and image should be put
-                self.segment_queue.put({'position': position, 
-                                        'time': timepoint,
-                                        'image': image})
-                write_to_db({'position': position, 'timepoint': timepoint}, self.expt_save_dir, 'acquire')
+                if image is not None:
+                    logger = logging.getLogger(name)
+                    logger.log(logging.INFO, "Acquired image of shape: %s", image.shape)
+                    self.segment_queue.put({'position': position, 
+                                            'time': timepoint,
+                                            'image': image})
+                    write_to_db({'position': position, 'timepoint': timepoint}, self.expt_save_dir, 'acquire')
+                else:
+                    break
                 timepoint += 1
                 time.sleep(1.0)
             except KeyboardInterrupt:
@@ -172,7 +175,7 @@ class ExptRun(object):
                 sys.stdout.flush()
                 break
             except Exception as error:
-                sys.stderr.write(f"Error in acquire sim Pos:{position} - timepoint: {timepoint}\n")
+                sys.stderr.write(f"Error {error} in acquire sim Pos:{position} - timepoint: {timepoint}\n")
                 sys.stderr.flush()
 
         self.segment_queue.put(None)
