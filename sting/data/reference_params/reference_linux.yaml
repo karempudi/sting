@@ -116,25 +116,27 @@ Experiment:
     events:
       pass_one_and_wait: True # if you set this to true, set pass_all to False
       pass_all: False # if you set this to true, pass_one_and_wait to False
-      from_file: True # Get positions from file, if false, will grab stuff directly from micro-manager
       pos_filename: '/home/pk/Documents/sting/sting/data/reference_position_files/position_list.pos' # positions filename
+      motion_type: 'all_from_file' # can be 'all_from_file' or 'one_rect_from_file' or 'two_rect_from_file'
+      motion_params:
+        x_space:
+        y_space:
       presets: 
         - 'phaseFast' # presets that are available
         - 'phaseSlow'
       rules:
         - type: 'combinatorial' # combinatorial or sequential
-          positions: # takes positions set in the previous section
           start: 0 # start t = 0 mins
-          every: '60' # units in seconds
-          end: 5 # end t = 5 mins
-          preset: 'phaseFast'
+          every: 9' # units in mins
+          end: 60 # end t = 5 mins
+          preset: 
+            -'phaseFast'
           exposure: '10' # Always in ms
           wait_pfs: False
           speed: 'dual' # speed can be 'mono' or 'dual' or anything custom you write
-          speed_fn: # custom speed function # not needed for now
-  Motion:
-    pattern_type: 
-
+          # speed will vary based on distance, usually first and last positions are
+          # bridged by slow movements  
+      
 
 Logging:
   to_file: True

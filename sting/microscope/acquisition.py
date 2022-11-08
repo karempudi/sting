@@ -4,7 +4,7 @@ from pathlib import Path
 from typing import Union
 from sting.utils.types import RecursiveNamespace
 from itertools import cycle
-from sting.microscope.motion import MotionFromFile 
+from sting.microscope.motion import MotionFromFile, RectGridMotion, TwoRectMotion 
 from tifffile import imread
 
 class ExptAcquisition(object):
@@ -26,8 +26,30 @@ class ExptAcquisition(object):
     def __init__(self, param: Union[dict, RecursiveNamespace]):
         # depending on the motion pattern and microscope preset 
         # behaviour construct
+        self.event_params = param.Experiment.Acquisition.events
+        # based on motion type we interpret the positions filename
+        self.motion_type = self.event_params.motion_type
+        if self.motion_type == 'all_from_file':
+            motion = MotionFromFile()
+        elif self.motion_type == 'one_rect_from_file':
+            motion = RectGridMotion()
+        elif self.motion_type = 'two_rect_from_file':
+            motion = TwoRectMotion
 
-        self.events = [1, 2, 3, 4, 5, 6, 7, 8]
+        self.positions = motion.positions
+        self.microscope_props = motion.microscope_props
+
+        # presets 
+        self.presets = self.event_params.presets
+
+        # which positions should have slow preset loaded 
+        # used for positions that are far away 
+        self.slow_positions = None
+
+        # construct events 
+        self.events = []
+
+        #
         self.max_events = 15
         self.cycle = cycle(self.events)
         self.events_sent = 0
