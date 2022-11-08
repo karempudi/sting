@@ -145,7 +145,7 @@ Live:
   mm_config_file_path: 'test_config_path'
   timeout: 50000
   fake_image: True
-  fake_image_path: '/home/pk/Documents/REALTIME/data/test_data/test_imgs/img_000000000.tiff'
+  fake_image_path: '/home/pk/Documents/REALTIME/data/test_data/test_imgs/img_000000001.tiff'
 
 
 

@@ -154,7 +154,7 @@ def process_image(datapoint, model, param):
             'error': error # if error is true we are going to skip the position
         }# segmented cells, segmented channels, barcode locations, channel locations
     except Exception as e:
-        sys.stdout.write(f"Error {e} in process image function at position: {datapoint['position']} - time: {datapoit['time']}\n")
+        sys.stdout.write(f"Error {e} in process image function at position: {datapoint['position']} - time: {datapoint['time']}\n")
         sys.stdout.flush()
         return {
             'position': datapoint['position'],

@@ -13,11 +13,9 @@ from sting.ui.qt_ui_classes.live_window_ui import Ui_LiveWindow
 from sting.utils.param_io import load_params
 from sting.microscope.utils import fetch_mm_image
 from tifffile import imread
-from sting.mm.networks import LiveNet
-from sting.segmentation.transforms import UnetTestTransforms
-from sting.regiondetect.transforms import YoloTestAugmentations
-from sting.regiondetect.utils import non_max_suppression, to_cpu, outputs_to_bboxes
 from datetime import datetime
+from sting.mm.detect import process_image, get_loaded_model
+from sting.mm.utils import plot_channels_img_pyqtgraph
 import cv2
 
 class LiveImageFetch(QThread):
@@ -85,8 +83,10 @@ class LiveWindow(QMainWindow):
         self.ui.scroll_bar.setEnabled(False)
 
         if param != None and 'Live' in param.keys():
-            self.param = param.Live
+            self.param_live = param.Live
+            self.param = param
         else:
+            self.param_live = None
             self.param = None
         
         if param != None and 'Analysis' in param.keys():
@@ -108,14 +108,16 @@ class LiveWindow(QMainWindow):
     # only called from outside
     def set_params(self, param: RecursiveNamespace):
         if param != None and 'Live' in param.keys():
-            self.param = param.Live
+            self.param_live = param.Live
+            self.param = param
         else:
+            self.param_live = None
             self.param = None
         if param != None and 'Analysis'  in param.keys():
             self.analysis_params = param.Analysis
         else:
             self.analysis_params = None
-        print(self.param)
+        print(self.param.Live)
         print("Printing analysis parameters ....")
         print(self.analysis_params)
         
@@ -132,13 +134,7 @@ class LiveWindow(QMainWindow):
             sys.stdout.write(f"Started acquiring ... \n")
             sys.stdout.flush()
             # Load networks
-            self.net = LiveNet(self.analysis_params)
-            self.net.load_state_dict()
-            self.net.eval()
-
-            # pre segment transforms
-            self.pre_segment_transforms = UnetTestTransforms()
-            self.pre_barcode_transforms = YoloTestAugmentations()
+            self.net = get_loaded_model(self.param)
             
             sys.stdout.write(f"Nets loaded on device\n")
             sys.stdout.flush()
@@ -149,7 +145,7 @@ class LiveWindow(QMainWindow):
     def grab_image(self):
         try:
             # send only live parameters to live image grabbing thread
-            self.img_acq_thread = LiveImageFetch(self.param)
+            self.img_acq_thread = LiveImageFetch(self.param_live)
             self.img_acq_thread.dataFetched.connect(self.update_image)
             self.img_acq_thread.start()
         except Exception as e:
@@ -177,33 +173,29 @@ class LiveWindow(QMainWindow):
     def update_image(self):
         if self.acquiring and self.img_acq_thread.data is not None:
             # update the image with the data
-            image = self.img_acq_thread.data
-            sample = {'phase': image.astype('float32'), 'raw_shape': image.shape}
-            sample_barcode = {'image': cv2.cvtColor(image, cv2.COLOR_BGR2RGB)}
-            seg_sample = self.pre_segment_transforms(sample)
-            barcode_sample = self.pre_barcode_transforms(sample_barcode)
-            sys.stdout.write(f"{datetime.now()} -- Seg sample shape: {seg_sample['phase'].shape} -- barcode sample shape: {barcode_sample['image'].shape} \n")
-            sys.stdout.flush()
-            device = self.net.device
-            with torch.no_grad():
-                seg_out = self.net.segment_model(seg_sample['phase'].unsqueeze(0).to(device)).sigmoid().cpu().numpy().squeeze(0)
-                barcode_pred = self.net.barcode_model(barcode_sample['image'].unsqueeze(0).to(device))
-                bboxes = outputs_to_bboxes(barcode_pred, self.net.anchors_t, self.net.strides_t)
-                bboxes_cleaned = non_max_suppression(bboxes, conf_thres=0.25, iou_thres=0.45)
-                bboxes_numpy = [bbox.numpy() for bbox in bboxes_cleaned]
-                #seg_out = [seg_sample['phase'].cpu().numpy().squeeze(0), seg_sample['phase'].cpu().numpy().squeeze(0)]
-            
-            if (self.ui.scroll_bar.value() == 0):
+            image = self.img_acq_thread.data.copy()
+            datapoint = {
+                'position': 0,
+                'time': 0,
+                'image': image
+            }
+            result = process_image(datapoint, self.net, self.param)
+            #sys.stdout.write(f"Segmented: error: {result['error']} found {result['total_channels']}\n")
+            #sys.stdout.flush()
+
+            barcode_img = np.transpose(plot_channels_img_pyqtgraph(image, result['channel_locations']), (1, 0, 2))
+            if (self.ui.scroll_bar.value() == 0 and (not result['error'])):
                 #sys.stdout.write(f"slider value is {self.ui.scroll_bar.value()} \n")
                 #sys.stdout.flush()
                 self.ui.live_image_graphics.setImage(image.T, autoLevels=True, autoRange=False)
-            elif (self.ui.scroll_bar.value() == 1):
-                self.ui.live_image_graphics.setImage(seg_out[0].T, autoLevels=True, autoRange=False)
-            elif (self.ui.scroll_bar.value() == 2):
-                self.ui.live_image_graphics.setImage(seg_out[1].T, autoLevels=True, autoRange=False)
-            elif (self.ui.scroll_bar.value() == 3):
-                sys.stdout.write(f"Barcodes are: {bboxes_numpy[0].shape} \n")
-                sys.stdout.flush()
+            elif (self.ui.scroll_bar.value() == 1 and (not result['error'])):
+                self.ui.live_image_graphics.setImage(result['cells'].T, autoLevels=True, autoRange=False)
+            elif (self.ui.scroll_bar.value() == 2 and (not result['error'])):
+                self.ui.live_image_graphics.setImage(result['channels'].T, autoLevels=True, autoRange=False)
+            elif (self.ui.scroll_bar.value() == 3 and (not result['error'])):
+                self.ui.live_image_graphics.setImage(barcode_img, autoLevels=True, autoRange=False)
+                #sys.stdout.write(f"Barcodes are: {bboxes_numpy[0].shape} \n")
+                #sys.stdout.flush()
             else:
                 sys.stdout.write(f"slider value is {self.ui.scroll_bar.value()} \n")
                 sys.stdout.flush()

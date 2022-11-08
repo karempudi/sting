@@ -58,10 +58,19 @@ class YoloLiveUnAugmentations:
         return transformed['bboxes']
 
 def plot_channels_img(phase, channel_locations):
-    phase_rescaled = phase_rescaled = 255 * (phase - phase.min()) / (phase.max() - phase.min())
+    phase_rescaled = 255 * (phase - phase.min()) / (phase.max() - phase.min())
     phase_rescaled = phase_rescaled.astype('int')
     phase_rgb = np.stack([phase_rescaled, phase_rescaled, phase_rescaled], axis=-1)
     colors = [[0, 0, 255], [0, 255, 0], [255, 0, 0]]
+    for block in channel_locations:
+        for each_channel in  channel_locations[block]['channel_locations']:
+            phase_rgb[:, each_channel-20:each_channel-16, :] = np.array(colors[block%3])
+            #phase_rgb[:, channel_locations+20:channel_locations+22, :] = np.array(colors[block%3])
+    return phase_rgb
+
+def plot_channels_img_pyqtgraph(phase, channel_locations):
+    phase_rgb = np.stack([phase, phase, phase], axis=-1)
+    colors = [[0, 0, 65535], [0, 65535, 0], [65535, 0, 0]]
     for block in channel_locations:
         for each_channel in  channel_locations[block]['channel_locations']:
             phase_rgb[:, each_channel-20:each_channel-16, :] = np.array(colors[block%3])
