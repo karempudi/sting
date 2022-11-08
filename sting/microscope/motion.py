@@ -160,11 +160,25 @@ class MotionFromFile(Motion):
             'XYStage': defaultXYStage,
             'ZStage': defaultZStage
         }
+        # Find the index of the device in the list 
+        XYDeviceIndex = None
+        ZDeviceIndex = None
+        first_position = positions_dicts[0]['DevicePositions']['array']
+        for i, item in enumerate(first_position, 0):
+            if item['Device']['scalar'] == defaultXYStage:
+                XYDeviceIndex = i
+            elif item['Device']['scalar'] == defaultZStage:
+                ZDeviceIndex = i
+        
+        sys.stdout.write(f"DefaultXYStage device: {defaultXYStage} at index {XYDeviceIndex} found ...\n")
+        sys.stdout.write(f"DefaultZStage device: {defaultZStage} at index {ZDeviceIndex} found ...\n")
+        sys.stdout.flush()
+
         positions = []
         for position_item in positions_dicts:
-            X = position_item['DevicePositions']['array'][1]['Position_um']['array'][0] # XYStage device is on list item 1
-            Y = position_item['DevicePositions']['array'][1]['Position_um']['array'][1] # XYStage device is on list item 1
-            Z = position_item['DevicePositions']['array'][0]['Position_um']['array'][0] # PFSoffset device is on list item 0
+            X = position_item['DevicePositions']['array'][XYDeviceIndex]['Position_um']['array'][0] # XYStage device is on list item 1
+            Y = position_item['DevicePositions']['array'][XYDeviceIndex]['Position_um']['array'][1] # XYStage device is on list item 1
+            Z = position_item['DevicePositions']['array'][ZDeviceIndex]['Position_um']['array'][0] # PFSoffset device is on list item 0
             grid_row = position_item['GridRow']['scalar']
             grid_col = position_item['GridCol']['scalar']
             label = position_item['Label']['scalar']
