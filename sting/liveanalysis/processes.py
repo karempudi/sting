@@ -127,11 +127,13 @@ class ExptRun(object):
         root.setLevel(logging.DEBUG)
 
     def put_image_in_queue(self, image, metadata):
-        self.segment_queue.put({
-            'position': metadata['Axes']['position'],
-            'time': metadata['Axes']['time'],
-            'image': image
-        })
+        sys.stdout.write(f"Acquired image at position: {metadata['Axes']['position']} and time: {metadata['Axes']['time']}\n")
+        sys.stdout.flush()
+        #self.segment_queue.put({
+        #    'position': metadata['Axes']['position'],
+        #    'time': metadata['Axes']['time'],
+        #    'image': image
+        #})
 
     def wait_for_pfs(self,):
         pass
