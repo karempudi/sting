@@ -194,6 +194,8 @@ class MotionFromFile(Motion):
         microscope_props['x_range'] = (min(x_values), max(x_values))
         microscope_props['y_range'] = (min(y_values), max(y_values))
         microscope_props['z_range'] = (min(z_values), max(z_values))
+
+        positions = sorted(positions, key= lambda x: int(x['label'][3:]))
         
         
         return microscope_props, positions

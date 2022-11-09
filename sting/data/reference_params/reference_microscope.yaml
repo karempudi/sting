@@ -3,7 +3,7 @@
 
 Analysis:
   Hardware:
-    device: 'cpu'
+    device: 'cuda:0'
 
   Segmentation:
     type: 'dual' # if dual predicts, 2 channels at once, if single predicts one item at a time
@@ -15,10 +15,16 @@ Analysis:
       both: 'C:\\Users\\elflab\\Documents\\Praneeth\\models\\seg_models\\model.pth'
       cells: # fill in if you have different model
       channels: # fill in if you have different model
+    thresholds:
+      cells:
+        probability: 0.9
+      channels:
+        probability: 0.9
     
     transformations:
       before_type: 'UnetTestTransforms' # write something compatible with networks above
-      after_type: 'PostSegTransforms' # write soemething compatible with networks above # not used for now
+      after_type: 'PostSegTransforms' # write something compatible iwth networks above # not used for now
+    
     model_params:
       channels_by_scale:
         - 1
@@ -35,6 +41,16 @@ Analysis:
     thresholds:
       conf: 0.25
       iou: 0.45
+    img_size:
+      - 256
+      - 800
+    dist_thresholds:
+      min: 600
+      max: 900
+      dist: 780
+      channel_dist: 35
+      size: 20
+      prominences: 300
     architecture: 'YOLOv3'
     model_path: 'C:\\Users\\elflab\\Documents\\Praneeth\\models\\barcode_models\\model_100.pth'
     batch_size: 1
@@ -99,24 +115,31 @@ Experiment:
     events:
       pass_one_and_wait: True # if you set this to true, set pass_all to False
       pass_all: False # if you set this to true, pass_one_and_wait to False
-      from_file: True # Get positions from file, if false, will grab stuff directly from micro-manager
-      pos_filename: "C:\\Users\\elflab\\Documents\\Praneeth\\sting\\sting\\data\\reference_position_files\\position_list.pos"# positions filename
-      presets: 
-        - 'phaseFast' # presets that are available
-        - 'phaseSlow'
-      rules:
-        - type: 'combinatorial' # combinatorial or sequential
-          positions: # takes positions set in the previous section
+      pos_filename: "C:\\Users\\elflab\\Documents\\Praneeth\\sting\\sting\\data\\reference_position_files\\position_list.pos" # positions filename
+      motion_type: 'all_from_file' # can be 'all_from_file' or 'one_rect_from_file' or 'two_rect_from_file'
+      motion_params:
+        x_space:
+        y_space:
+      available_presets:
+        - 'phase_fast'
+        - 'phase_slow'
+
+      rules: # full functionlity not yet done for arbitrary rules
+          units: 'minutes' # units for start, every, end, #minutes or seconds
           start: 0 # start t = 0 mins
-          every: '60' # units in seconds
-          end: 5 # end t = 5 mins
-          preset: 'phaseFast'
-          exposure: '10' # Always in ms
+          every: 9 # units in mins
+          end: 60 # end t = 5 mins
+          group: 'imaging'
+          preset: 'phase_fast'
+          exposure: 10 # Always in ms
           wait_pfs: False
           speed: 'dual' # speed can be 'mono' or 'dual' or anything custom you write
-          speed_fn: # custom speed function # not needed for now
-  Motion:
-    pattern_type: 
+          # speed will vary based on distance, usually first and last positions are
+          # bridged by slow movements  
+          slow_positions: 'first' # will the first position be slow or 'last'  be slow # if auto
+          slow_dist_thres:  #if we have slow positions as 'auto', will move to slow mode if 
+          # distance is greater than this in microns
+          slow_preset: 'phase_slow'
 
 Logging:
   to_file: True
