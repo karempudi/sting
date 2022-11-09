@@ -115,6 +115,7 @@ Experiment:
     magnification: 100
     events:
       pass_one_and_wait: True # if you set this to true, set pass_all to False
+      # for now we only implement pass_one_and_wait feature 
       pass_all: False # if you set this to true, pass_one_and_wait to False
       pos_filename: '/home/pk/Documents/sting/sting/data/reference_position_files/position_list.pos' # positions filename
       motion_type: 'all_from_file' # can be 'all_from_file' or 'one_rect_from_file' or 'two_rect_from_file'

@@ -106,7 +106,7 @@ class ExptAcquisition(object):
                 self.loop_number += 1
             return x
         else:
-            raise StopIteration
+            #raise StopIteration
             return None
 
 class simAcquisition(object):

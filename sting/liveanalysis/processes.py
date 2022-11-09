@@ -11,6 +11,7 @@ from datetime import datetime
 from sting.utils.types import RecursiveNamespace
 import torch.multiprocessing as tmp
 from queue import Empty
+from functools import partial
 from sting.utils.logger import logger_listener, setup_root_logger
 from sting.utils.db_ops import create_databases, write_to_db, read_from_db
 from sting.microscope.acquisition import simAcquisition, ExptAcquisition
@@ -18,6 +19,7 @@ from sting.utils.param_io import save_params
 from sting.utils.disk_ops import write_files
 from sting.mm.detect import get_loaded_model, process_image
 from sting.utils.verify import verify_channel_locations
+from pycromanager import Acquisition, Bridge
 
 class ExptRun(object):
     """
@@ -123,6 +125,16 @@ class ExptRun(object):
         root = logging.getLogger()
         root.addHandler(h)
         root.setLevel(logging.DEBUG)
+
+    def put_image_in_queue(self, image, metadata):
+        self.segment_queue.put({
+            'position': metadata['Axes']['position'],
+            'time': metadata['Axes']['time'],
+            'image': image
+        })
+
+    def wait_for_pfs(self,):
+        pass
     
     def acquire(self):
         # configure acquire logger
@@ -130,17 +142,27 @@ class ExptRun(object):
         name = tmp.current_process().name
         print(f"Starting {name} process ..")
         # keep the process alive
+        expt_acq = ExptAcquisition(self.param)
+        time.sleep(4) # wait for segnets to load on GPU before starting the acquisition loop
         while not self.acquire_kill_event.is_set():
             try:
-                time.sleep(1.0)
-                logger = logging.getLogger(name)
-                logger.log(logging.INFO, "Acquire wait 1.0s")
+                event = next(expt_acq) 
+                # event is None for the last event possible
+                if event is not None:
+                    with Acquisition(image_process_fn=partial(self.put_image_in_queue),
+                         post_hardware_hook_fn=self.wait_for_pfs) as acq: 
+                        acq.acquire(event)
+                    logger = logging.getLogger(name)
+                    logger.log(logging.INFO, "Acquired image of position: %s, time: %s",
+                                event['axes']['position'], event['axes']['time'])
             except KeyboardInterrupt:
                 self.acquire_kill_event.set()
                 sys.stdout.write("Acquire process interrupted using keyboard\n")
                 sys.stdout.flush()
                 break
-
+        self.segment_queue.put(None)
+        sys.stdout.write("Acquire process completed successfully\n")
+        sys.stdout.flush()
     
     def acquire_sim(self):
         # configure acquire_sim logger
