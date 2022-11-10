@@ -115,7 +115,8 @@ Experiment:
     events:
       pass_one_and_wait: True # if you set this to true, set pass_all to False
       pass_all: False # if you set this to true, pass_one_and_wait to False
-      pos_filename: "C:\\Users\\elflab\\Documents\\Praneeth\\sting\\sting\\data\\reference_position_files\\position_list.pos" # positions filename
+      #pos_filename: "C:\\Users\\elflab\\Documents\\Praneeth\\sting\\sting\\data\\reference_position_files\\position_list.pos" # positions filename
+      pos_filename: 'D:\\praneeth\\position_lists\\PositionList.pos'
       motion_type: 'all_from_file' # can be 'all_from_file' or 'one_rect_from_file' or 'two_rect_from_file'
       motion_params:
         x_space:
@@ -127,8 +128,8 @@ Experiment:
       rules: # full functionlity not yet done for arbitrary rules
           units: 'minutes' # units for start, every, end, #minutes or seconds
           start: 0 # start t = 0 mins
-          every: 9 # units in mins
-          end: 60 # end t = 5 mins
+          every: 1 # units in mins
+          end: 2 # end t = 5 mins
           group: 'imaging'
           preset: 'phase_fast'
           exposure: 10 # Always in ms
@@ -136,7 +137,7 @@ Experiment:
           speed: 'dual' # speed can be 'mono' or 'dual' or anything custom you write
           # speed will vary based on distance, usually first and last positions are
           # bridged by slow movements  
-          slow_positions: 'first' # will the first position be slow or 'last'  be slow # if auto
+          slow_positions: 'none' # will the first position be slow or 'last'  be slow # if auto
           slow_dist_thres:  #if we have slow positions as 'auto', will move to slow mode if 
           # distance is greater than this in microns
           slow_preset: 'phase_slow'
