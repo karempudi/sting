@@ -98,6 +98,10 @@ Analysis:
 
 Save:
   directory: "C:\\Users\\elflab\\Documents\\Praneeth\\REALTIME\\analysis" # Top level directory for saving files.
+  save_channels: True
+  small_file_format: '.hdf5' # can be hdf5 or tiff # if tiff will store individual files
+  small_file_compression_level: 6
+  small_file_compression_type: 'gzip'
 
 Experiment:
   number: 'exp-bp-000' # Experiment no

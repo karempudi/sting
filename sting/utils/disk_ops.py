@@ -7,6 +7,8 @@ import pathlib
 from pathlib import Path
 from sting.utils.types import RecursiveNamespace
 from skimage.io import imsave
+from skimage.measure import label
+import h5py
 
 def write_files(event_data, event_type, param):
     """
@@ -44,26 +46,74 @@ def write_files(event_data, event_type, param):
             image_filename = 'phase_' + str(event_data['time']).zfill(4) + '.tiff'
             image_filename = events_dir / Path(image_filename)
             imsave(image_filename, event_data['image'].astype('uint16'))
+        if event_type == 'cells':
+            # create events directory
+            file_type = param.Save.small_file_format
+            if file_type == '.tiff':
+                cells_events_dir = position_dir / Path('segmented_cells')
+                if not cells_events_dir.exists():
+                    cells_events_dir.mkdir(exist_ok=True, parents=True)
+
+                cells_filename = 'cells_' + str(event_data['time']).zfill(4) + '.tiff'
+                cells_filename = cells_events_dir / Path(cells_filename)
+                cell_prob = param.Analysis.Segmentation.thresholds.cells.probability
+                imsave(cells_filename, (event_data['cells'] > cell_prob).astype('float32'),
+                        plugin='tifffile', check_contrast=False, compress=6)
+            elif file_type == '.hdf5':
+                # if the fileformat is hdf5, we will make only one file and 
+                # store each image as a dataset that 
+                cells_events_store = position_dir / Path('segmented_cells.hdf5')
+                cell_prob = param.Analysis.Segmentation.thresholds.cells.probability
+                cells_data = (label(event_data['cells'] > cell_prob) % 255).astype('uint8')
+                with h5py.File(cells_events_store, 'a') as cells_file:
+                    cells_file.create_dataset(str(event_data['time']).zfill(4), data= cells_data,
+                                compression=param.Save.small_file_compression_type,
+                                compression_opts=param.Save.small_file_compression_level)                
+
+
         elif event_type == 'cells_channels':
-            # create event directory
-            cells_events_dir = position_dir / Path('segmented_cells')
-            if not cells_events_dir.exists():
-                cells_events_dir.mkdir(exist_ok=True, parents=True)
+            file_type = param.Save.small_file_format
+            if file_type == '.tiff':
+                # create event directory
+                cells_events_dir = position_dir / Path('segmented_cells')
+                if not cells_events_dir.exists():
+                    cells_events_dir.mkdir(exist_ok=True, parents=True)
 
-            channels_events_dir = position_dir / Path('segmented_channels')            
-            if not channels_events_dir.exists():
-                channels_events_dir.mkdir(exist_ok=True, parents=True)
+                channels_events_dir = position_dir / Path('segmented_channels')            
+                if not channels_events_dir.exists():
+                    channels_events_dir.mkdir(exist_ok=True, parents=True)
 
-            cells_filename = 'cells_' + str(event_data['time']).zfill(4) + '.tiff'
-            cells_filename = cells_events_dir / Path(cells_filename)
-            channels_filename = 'channels_' + str(event_data['time']).zfill(4) + '.tiff'
-            channels_filename = channels_events_dir / Path(channels_filename)
-            cell_prob = param.Analysis.Segmentation.thresholds.cells.probability
-            channel_prob = param.Analysis.Segmentation.thresholds.channels.probability
-            imsave(cells_filename, (event_data['cells'] > cell_prob).astype('float32'),
-                    plugin='tifffile', check_contrast=False, compress=6)
-            imsave(channels_filename, (event_data['channels'] > channel_prob).astype('float32'), 
-                    plugin='tifffile', check_contrast=False, compress=6)
+                cells_filename = 'cells_' + str(event_data['time']).zfill(4) + '.tiff'
+                cells_filename = cells_events_dir / Path(cells_filename)
+                channels_filename = 'channels_' + str(event_data['time']).zfill(4) + '.tiff'
+                channels_filename = channels_events_dir / Path(channels_filename)
+                cell_prob = param.Analysis.Segmentation.thresholds.cells.probability
+                channel_prob = param.Analysis.Segmentation.thresholds.channels.probability
+                imsave(cells_filename, (event_data['cells'] > cell_prob).astype('float32'),
+                        plugin='tifffile', check_contrast=False, compress=6)
+                imsave(channels_filename, (event_data['channels'] > channel_prob).astype('float32'), 
+                        plugin='tifffile', check_contrast=False, compress=6)
+            elif file_type == '.hdf5':
+                # if the fileformat is hdf5, we will make only one file and 
+                # store each image as a dataset that 
+                cells_events_store = position_dir / Path('segmented_cells.hdf5')
+                cell_prob = param.Analysis.Segmentation.thresholds.cells.probability
+                cells_data = (label(event_data['cells'] > cell_prob) % 255).astype('uint8')
+                with h5py.File(cells_events_store, 'a') as cells_file:
+                    cells_file.create_dataset(str(event_data['time']).zfill(4), data= cells_data,
+                                compression=param.Save.small_file_compression_type,
+                                compression_opts=param.Save.small_file_compression_level)                
+
+                # if the fileformat is hdf5, we will make only one file and 
+                # store each image as a dataset that 
+                channels_events_store = position_dir / Path('segmented_channels.hdf5')
+                channel_prob = param.Analysis.Segmentation.thresholds.channels.probability
+                channels_data = (label(event_data['channels'] > channel_prob) % 255).astype('uint8')
+                with h5py.File(channels_events_store, 'a') as channels_file:
+                    channels_file.create_dataset(str(event_data['time']).zfill(4), data= channels_data,
+                                compression=param.Save.small_file_compression_type,
+                                compression_opts=param.Save.small_file_compression_level)                
+
         
     except KeyError:
         sys.stdout.write(f"Writing failed for due to lack of position key in data ..\n")

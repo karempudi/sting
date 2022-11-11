@@ -192,7 +192,7 @@ class ExptRun(object):
                 else:
                     break
                 timepoint += 1
-                time.sleep(0.5)
+                time.sleep(0.3)
             except KeyboardInterrupt:
                 self.acquire_kill_event.set()
                 sys.stdout.write("Acquire process interrupted using keyboard\n")
@@ -231,7 +231,10 @@ class ExptRun(object):
                 write_files(data_in_seg_queue, 'phase', self.param)
                 try:
                     result = process_image(data_in_seg_queue, net, self.param)
-                    #write_files(result, 'cells_channels', self.param)
+                    if self.param.Save.save_channels:
+                        write_files(result, 'cells_channels', self.param)
+                    else:
+                        write_files(result, 'cells', self.param)
                 except Exception as e:
                     sys.stdout.write(f"Error {e} while processing image at Position: {data_in_seg_queue['position']} time: {data_in_seg_queue['time']} \n")
                     sys.stdout.flush()
