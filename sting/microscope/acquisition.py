@@ -114,7 +114,14 @@ class simAcquisition(object):
     def __init__(self, param: Union[dict, RecursiveNamespace]):
         self.dir = Path(param.Experiment.sim_directory)
         self.filenames = sorted(list(self.dir.glob('*.tif*')))
-        self.current_filenumber = 0
+        self.n_files = len(self.filenames)
+
+        self.cycle = cycle(self.filenames)
+
+        self.max_loops = 2
+
+        self.events_sent = 0
+        self.loop_number = 0
 
     @classmethod
     def parse(cls, param):
@@ -127,10 +134,23 @@ class simAcquisition(object):
         return self
 
     def __next__(self):
-        if self.current_filenumber < len(self.filenames):
-            img = imread(self.filenames[self.current_filenumber]).astype('float32')
-            self.current_filenumber += 1
-            return img
+        if self.loop_number < self.max_loops:
+            self.events_sent += 1
+            current_filename = next(self.cycle)
+            img = imread(current_filename).astype('float32')
+            timepoint = self.loop_number
+            if self.events_sent % self.n_files == 0:
+                self.loop_number += 1
+                position = self.n_files
+            else:
+                position = self.events_sent % self.n_files
+
+            return {
+                'image': img,
+                'position': position,
+                'timepoint' : timepoint
+            }
+
         else:
             #raise StopIteration
             return None
