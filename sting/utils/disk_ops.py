@@ -113,8 +113,6 @@ def write_files(event_data, event_type, param):
                     channels_file.create_dataset(str(event_data['time']).zfill(4), data= channels_data,
                                 compression=param.Save.small_file_compression_type,
                                 compression_opts=param.Save.small_file_compression_level)                
-
-        
     except KeyError:
         sys.stdout.write(f"Writing failed for due to lack of position key in data ..\n")
         sys.stdout.flush()

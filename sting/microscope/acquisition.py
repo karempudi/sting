@@ -118,7 +118,7 @@ class simAcquisition(object):
 
         self.cycle = cycle(self.filenames)
 
-        self.max_loops = 2
+        self.max_loops = 1
 
         self.events_sent = 0
         self.loop_number = 0
@@ -138,13 +138,15 @@ class simAcquisition(object):
             self.events_sent += 1
             current_filename = next(self.cycle)
             img = imread(current_filename).astype('float32')
-            timepoint = self.loop_number
+            #timepoint = self.loop_number
+            timepoint = self.events_sent
             if self.events_sent % self.n_files == 0:
                 self.loop_number += 1
                 position = self.n_files
             else:
                 position = self.events_sent % self.n_files
 
+            position = 1
             return {
                 'image': img,
                 'position': position,

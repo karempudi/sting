@@ -3,7 +3,7 @@
 
 Analysis:
   Hardware:
-    device: 'cuda:1'
+    device: 'cuda:0'
 
   Segmentation:
     type: 'dual' # if dual predicts, 2 channels at once, if single predicts one item at a time
