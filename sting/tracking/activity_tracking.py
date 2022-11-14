@@ -8,6 +8,8 @@ from pathlib import Path
 import h5py
 import pickle
 import matplotlib.pyplot as plt
+import sys
+from sting.utils.disk_ops import write_files
 
 def track_one_position(mask, phase):
     # caculate the things needed from one image and paralleize 
@@ -31,6 +33,71 @@ def gaussian_heatmap(center = (2, 2), image_size = (10, 10), sig = 1):
     xx, yy = np.meshgrid(x_axis, y_axis)
     kernel = np.exp(-0.5 * (np.square(xx) + np.square(yy)) / np.square(sig))
     return kernel.T
+
+class activityTrackingPosition(object):
+
+    """
+    To do activity based tracking you need the following thing, that will be put 
+    in the tracking queue to make life easy
+        1. current segmentation mask
+        2. current phase image
+        3. channel locations to grab the correct channel data from the previous frames
+        4. a file that is read from disk that contains information from the previous time
+            point to link to 
+        5.
+    Arguments:
+        tracking_event: a data dictionary containing all the information needed for tracking
+                        one position, the rest will be fetched form the file system, based on
+                        position
+        track_pos: (default: True), if track_pos is false, only segmentation data will be written
+                   and no tracking will be done.
+
+        
+    """
+
+    def __init__(self, tracking_event, param, track_pos=True):
+
+        # the keys that are important are 'position', 'time', 'phase', 'cells', 
+        # and 'channel_locations'
+        self.position = tracking_event['position']
+        self.timepoint = tracking_event['time']
+        self.param = param
+
+        # we will write data to disk here 
+        sys.stdout.write(f"Inside activity tracking got data for Position: {self.position} and timepoint: {self.timepoint} id: {id(tracking_event)} ...\n")
+        sys.stdout.flush()
+        if tracking_event['error'] == True:
+            if self.param.Save.save_channels:
+                write_files(tracking_event, 'cells_channels', self.param)
+            else:
+                write_files(tracking_event, 'cells', self.param)
+        else:
+            if self.param.Save.save_channels:
+                write_files(tracking_event, 'cells_channels', self.param)
+            else:
+                write_files(tracking_event, 'cells', self.param)
+
+
+        # check for error if there is one, then you don't have anything to track and 
+        # write to a different file instead of writing to the main line and corrupt 
+        # tracking, if there is more than a few frames missing, we write by default
+        # to the error save files instead of the main line
+
+    def track(self,):
+        # run a bunch of threads and start a tracking of all the channels
+        # pool the results into one file per position
+        if self.timepoint == 0:
+            # do something
+            pass
+        else:
+            # do something
+            pass
+
+
+class activtiyTrackingChannel(object):
+
+    def __init__(self, position, channel):
+        pass
 
 
 

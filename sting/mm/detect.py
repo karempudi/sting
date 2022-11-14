@@ -143,6 +143,7 @@ def process_image(datapoint, model, param):
             total_channels += channel_locations[block]['num_channels']
 
         return { 
+            'phase': datapoint['image'],
             'position': datapoint['position'],
             'time': datapoint['time'],
             'cells': seg_pred[0][:raw_shape[0], :raw_shape[1]],
@@ -157,6 +158,7 @@ def process_image(datapoint, model, param):
         sys.stdout.write(f"Error {e} in process image function at position: {datapoint['position']} - time: {datapoint['time']}\n")
         sys.stdout.flush()
         return {
+            'phase': datapoint['image'],
             'position': datapoint['position'],
             'time': datapoint['time'],
             'total_channels': -1,

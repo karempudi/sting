@@ -18,6 +18,7 @@ from sting.microscope.acquisition import simAcquisition, ExptAcquisition
 from sting.utils.param_io import save_params
 from sting.utils.disk_ops import write_files
 from sting.mm.detect import get_loaded_model, process_image
+from sting.tracking.activity_tracking import activityTrackingPosition
 from sting.utils.verify import verify_channel_locations
 from pycromanager import Acquisition, Bridge
 
@@ -230,34 +231,30 @@ class ExptRun(object):
                 write_files(data_in_seg_queue, 'phase', self.param)
                 try:
                     result = process_image(data_in_seg_queue, net, self.param)
-                    if self.param.Save.save_channels:
-                        write_files(result, 'cells_channels', self.param)
-                    else:
-                        write_files(result, 'cells', self.param)
+                    #if self.param.Save.save_channels:
+                    #    write_files(result, 'cells_channels', self.param)
+                    #else:
+                    #    write_files(result, 'cells', self.param)
                 except Exception as e:
                     sys.stdout.write(f"Error {e} while processing image at Position: {data_in_seg_queue['position']} time: {data_in_seg_queue['time']} \n")
                     sys.stdout.flush()
 
                 if 'track' in self.param.Experiment.queues:
-                    # verify channels were matched correctly and then
-                    # put the pair of phase and seg diffs somehow  
-                    self.tracker_queue.put({
-                        'position': data_in_seg_queue['position'],
-                        'time': data_in_seg_queue['time']
-                    })
+                    # put the result in the tracker queue and this should process
+                    # it
+                    self.tracker_queue.put(result)
+
                 logger = logging.getLogger(name)
-                logger.log(logging.INFO, "Segmented Pos: %s, time: %s %s, no ch: %s, error: %s", 
+                logger.log(logging.INFO, "Segmented Pos: %s, time: %s %s, no ch: %s, error: %s %s", 
                                 data_in_seg_queue['position'],
                                 data_in_seg_queue['time'],
                                 data_in_seg_queue['image'].shape,
                                 result['total_channels'],
-                                result['error']
+                                result['error'],
+                                id(result),
                                 )
  
                 #time.sleep(1.0)
-            except Empty:
-                sys.stdout.write(f"Segmentation queue is empty .. but process is still alive\n")
-                sys.stdout.flush()
             except KeyboardInterrupt:
                 self.acquire_kill_event.set()
                 sys.stdout.write("Segment process interrupted using keyboard\n")
@@ -288,9 +285,14 @@ class ExptRun(object):
                         break
                 else:
                     continue
+
+                track_one_position = activityTrackingPosition(data_tracker_queue, self.param)
+
                 logger = logging.getLogger(name)
-                logger.log(logging.INFO, "Tracker queue got Pos: %s time: %s", 
-                                    data_tracker_queue['position'], data_tracker_queue['time'])
+                logger.log(logging.INFO, "Tracker queue got Pos: %s time: %s %s", 
+                                    data_tracker_queue['position'], 
+                                    data_tracker_queue['time'],
+                                    id(data_tracker_queue))
                 if 'growth' in self.param.Experiment.queues:
                     self.growth_queue.put({
                         'position' : data_tracker_queue['position'],
