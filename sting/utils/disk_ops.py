@@ -113,6 +113,37 @@ def write_files(event_data, event_type, param):
                     channels_file.create_dataset(str(event_data['time']).zfill(4), data= channels_data,
                                 compression=param.Save.small_file_compression_type,
                                 compression_opts=param.Save.small_file_compression_level)                
+
+        elif event_type == 'cells_cut_track_init':
+            # here were write something that is useful for tracking
+            # no writing tiffs for this format, 
+            sys.stdout.write(f"Trying to write cut channels ...\n")
+            sys.stdout.flush()
+            cells_events_store = position_dir / Path('cells_tracks.hdf5')
+            cell_prob = param.Analysis.Segmentation.thresholds.cells.probability
+            cells_data = (event_data['cells'] > cell_prob)
+            # for each channel iterate over and create groups and datasets
+            channel_locations = []
+            for block in event_data['channel_locations']:
+                channel_locations.extend(event_data['channel_locations'][block]['channel_locations'])
+            channel_width = param.Save.channel_width
+
+            # we only grab stuff between barcodes and ignore the ends, so this operation will not result in errors
+            with h5py.File(cells_events_store, 'a') as cells_file:
+                for i, location in enumerate(channel_locations, 0):
+                    img_slice = cells_data[:, max(location-channel_width, 0): 
+                                    min(event_data['raw_shape'][1], location+channel_width)]
+                    # label regions and make them uints for good fast compression
+                    img_slice = (label(img_slice) % 255).astype('uint8')
+                    # chanel no, cells + _ time.zfil(4)
+                    write_string = str(i) + '/cells/cells_' + str(event_data['time']).zfill(4)
+                    cells_file.create_dataset(write_string, data=img_slice,
+                            compression=param.Save.small_file_compression_type,
+                            compression_opts=param.Save.small_file_compression_level)
+    except Exception as e:
+        sys.stdout.write(f"Writing failed due to {e} for data {event_data} ..\n")
+        sys.stdout.flush()
+
     except KeyError:
         sys.stdout.write(f"Writing failed for due to lack of position key in data ..\n")
         sys.stdout.flush()

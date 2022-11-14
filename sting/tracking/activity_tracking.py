@@ -10,6 +10,7 @@ import pickle
 import matplotlib.pyplot as plt
 import sys
 from sting.utils.disk_ops import write_files
+from skimage.measure import label
 
 def track_one_position(mask, phase):
     # caculate the things needed from one image and paralleize 
@@ -63,20 +64,54 @@ class activityTrackingPosition(object):
         self.timepoint = tracking_event['time']
         self.param = param
 
+        save_dir = Path(param.Save.directory) if isinstance(param.Save.directory, str) else param.Save.directory
+        self.position_dir = save_dir / Path('Pos' + str(self.position))
         # we will write data to disk here 
         sys.stdout.write(f"Inside activity tracking got data for Position: {self.position} and timepoint: {self.timepoint} id: {id(tracking_event)} ...\n")
         sys.stdout.flush()
+
+        # if there is a failure to detect channels, write the data and quit, no tracking is done
         if tracking_event['error'] == True:
             if self.param.Save.save_channels:
                 write_files(tracking_event, 'cells_channels', self.param)
             else:
                 write_files(tracking_event, 'cells', self.param)
         else:
+
+            # do tracking here
+            # read two files here previous full phase_image to calculate the diffs
+            # and the tracking channels file, that contains the segmented blobs and other information
+                # just write the cut channels to files
+            #write_files(tracking_event, 'cells_cut_track_init', self.param)
+            self.filename = self.position_dir / Path('cells_tracks.hdf5')
+            #self.file_handle = h5py.File(self.filename, 'a')
+
+            cell_prob = param.Analysis.Segmentation.thresholds.cells.probability
+            cells_data = (tracking_event['cells'] > cell_prob)
+            # for each channel iterate over and create groups and datasets
+            channel_locations = []
+            for block in tracking_event['channel_locations']:
+                channel_locations.extend(tracking_event['channel_locations'][block]['channel_locations'])
+            channel_width = param.Save.channel_width
+
+            # we only grab stuff between barcodes and ignore the ends, so this operation will not result in errors
+            with h5py.File(self.filename, 'a') as cells_file:
+                for i, location in enumerate(channel_locations, 0):
+                    img_slice = cells_data[:, max(location-channel_width, 0): 
+                                    min(tracking_event['raw_shape'][1], location+channel_width)]
+                    # label regions and make them uints for good fast compression
+                    img_slice = (label(img_slice) % 255).astype('uint8')
+                    # chanel no, cells + _ time.zfil(4)
+                    write_string = str(i) + '/cells/cells_' + str(tracking_event['time']).zfill(4)
+                    cells_file.create_dataset(write_string, data=img_slice,
+                            compression=param.Save.small_file_compression_type,
+                            compression_opts=param.Save.small_file_compression_level)
+            
+
             if self.param.Save.save_channels:
                 write_files(tracking_event, 'cells_channels', self.param)
             else:
                 write_files(tracking_event, 'cells', self.param)
-
 
         # check for error if there is one, then you don't have anything to track and 
         # write to a different file instead of writing to the main line and corrupt 
@@ -92,6 +127,10 @@ class activityTrackingPosition(object):
         else:
             # do something
             pass
+    
+    def load_required_objects(self,):
+        pass
+        
 
 
 class activtiyTrackingChannel(object):

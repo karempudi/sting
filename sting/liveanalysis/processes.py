@@ -285,7 +285,8 @@ class ExptRun(object):
                         break
                 else:
                     continue
-
+                
+                # here we the data need to analyze this position, crop the channels and call tracker
                 track_one_position = activityTrackingPosition(data_tracker_queue, self.param)
 
                 logger = logging.getLogger(name)
