@@ -18,22 +18,110 @@ def track_one_position(mask, phase):
 
     pass
 
+@njit
+def activtiy_map(mask, diff):
+    """
+    For mask at time t, diff is the phase[t+1] - phase[t]
+    We use this diff to make activity map of each cell in the mask
+    """
+    activity_mask =  np.zeros(mask.shape)
+    active_map = 0.5 * np.abs(diff)
+    for i in range(1, int(mask.max()+1)):
+        ma = (mask == i) # isolate a single instacne of a cell
+        area = np.sum(ma) # sum of all the ones
+        cell_activity = np.sum(active_map * ma) / (area + 0.0001) # just to avoid 0 in denominator
+        activity_mask += cell_activity * ma
+    return activity_mask
 
+def frame_dict(mask):
+    """
+    For each cell mark the activity and some indices and return a dict.
+    Activity field is not filled and will have to be filled once you
+    get the next frame.
+    """
+    frame_dict = {}
+    for i in range(1, int(mask.max() + 1)):
+        one_cell = (mask == i)
+        cell_area = np.sum(one_cell)
+        if cell_area > 0:
+            cell = {}
+            # center of mass
+            cell['cm'] = np.mean(np.where(one_cell), axis = 1)
+            # activity of the cell is the activity of its center of mass  
+            #cell['activity'] = activity_mask[cell['cm'][0].astype(int), cell['cm'][1].astype(int)]
+            cell['activity'] = 1.0
+            # area
+            cell['area'] = cell_area
+            cell['mother'] = None
+            cell['index'] = None
+            cell['dob'] = 0
+            cell['initial_mother'] = 0
+        frame_dict[i] = cell
+    return frame_dict
+
+def set_activities(frame_dict, mask, diff):
+    """
+
+    Fill in the activity field once you have enough information that arrives
+    in the future
+    Arguements:
+        frame_dict: dictionary containing information corresponding to the mask
+        mask: a labelled mask 
+        diff: a phase diff of the corresponding mask
+    Returns:
+        frame_dict: after filling in the activity field 
+
+    """
+    #activity_mask =  np.zeros(mask.shape)
+    active_map = 0.5 * np.abs(diff)
+    for key in frame_dict:
+        ma = (mask == key) # isolate a single instacne of a cell
+        area = np.sum(ma) # sum of all the ones
+        cell_activity = np.sum(active_map * ma) / (area + 0.0001) # just to avoid 0 in denominator
+        #activity_mask += cell_activity * ma
+        frame_dict[key] = cell_activity
+    return frame_dict
+ 
+
+@njit
 def gaussian_heatmap(center = (2, 2), image_size = (10, 10), sig = 1):
     """
     It produces single gaussian at expected center
-    Arguments:
-        param center:  the mean position (X, Y) - where high value expected
-        param image_size: The total image size (width, height)
-        param sig: The sigma value
-    Returns:
-        a guassian kernel centersd around center with given sigma
+    :param center:  the mean position (X, Y) - where high value expected
+    :param image_size: The total image size (width, height)
+    :param sig: The sigma value
+    :return:
     """
     x_axis = np.linspace(0, image_size[0]-1, image_size[0]) - center[0]
     y_axis = np.linspace(0, image_size[1]-1, image_size[1]) - center[1]
     xx, yy = np.meshgrid(x_axis, y_axis)
     kernel = np.exp(-0.5 * (np.square(xx) + np.square(yy)) / np.square(sig))
     return kernel.T
+ 
+
+@njit
+def generate_gaussian_maps(frame_dict, image_size, k=2.5):
+    """
+    For each cell around the center of mass, put a gaussian kernel and return
+    the image slice of the correspoinding
+
+    """
+    gaussian_maps = {}
+    for key in frame_dict:
+        gaussian_maps[key] = gaussian_heatmap(center=(int(frame_dict[key]['cm'][0]), int(frame_dict[key]['cm'][1])),
+                            image_size=image_size, sig=frame_dict[key]['activity']/k)
+    return gaussian_maps
+
+def track_a_bundle():
+    """
+        A bundle should be self contained in everything that is need to track 
+        2 masks of cells and return a dictionary
+
+    Arguments:
+
+    Returns:
+
+    """
 
 class activityTrackingPosition(object):
 
@@ -64,6 +152,10 @@ class activityTrackingPosition(object):
         self.timepoint = tracking_event['time']
         self.param = param
 
+        # each bundle has the diff of phase and current seg_mask, prev_seg_mask and
+        # dictionary object of the previous frame
+        self.bundles_to_track = []
+
         save_dir = Path(param.Save.directory) if isinstance(param.Save.directory, str) else param.Save.directory
         self.position_dir = save_dir / Path('Pos' + str(self.position))
         # we will write data to disk here 
@@ -80,6 +172,11 @@ class activityTrackingPosition(object):
 
             # do tracking here
             # read two files here previous full phase_image to calculate the diffs
+            if self.timepoint == 0:
+                # do something
+
+            else:
+                # do something else
             # and the tracking channels file, that contains the segmented blobs and other information
                 # just write the cut channels to files
             #write_files(tracking_event, 'cells_cut_track_init', self.param)
@@ -106,8 +203,10 @@ class activityTrackingPosition(object):
                     cells_file.create_dataset(write_string, data=img_slice,
                             compression=param.Save.small_file_compression_type,
                             compression_opts=param.Save.small_file_compression_level)
-            
 
+            # find a good way to put together a bundle to track
+                    
+            
             if self.param.Save.save_channels:
                 write_files(tracking_event, 'cells_channels', self.param)
             else:
