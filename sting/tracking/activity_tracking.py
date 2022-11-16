@@ -83,12 +83,19 @@ def set_activities(frame_dict, mask, diff):
     """
     #activity_mask =  np.zeros(mask.shape)
     active_map = 0.5 * np.abs(diff)
+    # loop over cells
     for key in frame_dict:
-        ma = (mask == key) # isolate a single instacne of a cell
-        area = np.sum(ma) # sum of all the ones
+        ma = (mask == int(key)) # isolate a single instacne of a cell
+        area = frame_dict[key]['area']# sum of all the ones
         cell_activity = np.sum(active_map * ma) / (area + 0.0001) # just to avoid 0 in denominator
         #activity_mask += cell_activity * ma
-        frame_dict[key] = cell_activity
+        frame_dict[key]['activity'] = cell_activity
+        #sys.stdout.write(f"Activity: of {key} is {area} -- {np.sum(ma)} \n")
+        #sys.stdout.flush()
+    #for key in frame_dict:
+    #    sys.stdout.write(f"{key} --> {frame_dict[key]['activity']} ..")
+    #sys.stdout.write("\n")
+    #sys.stdout.flush()
     return frame_dict
  
 
@@ -256,29 +263,49 @@ class activityTrackingPosition(object):
                     phase_diff = tracking_event['phase'] - prev_phase_img
                     # we only grab stuff between barcodes and ignore the ends, so this operation will not result in errors
                     for i, location in enumerate(channel_locations, 0):
+                        bundle_item = {}
                         img_slice2 = cells_data[:, max(location-channel_width, 0): 
                                         min(tracking_event['raw_shape'][1], location+channel_width)]
                         # label regions and make them uints for good fast compression
                         img_slice2 = (label(img_slice2) % 255).astype('uint8')
                         read_string_slice1 = str(i) + '/cells/cells_' + prev_time_str
                         read_string_dict1 = str(i) + '/tracks/tracks_' + prev_time_str
-                        img_slice1 = cells_file.get(read_string_slice1)
+                        img_slice1 = cells_file.get(read_string_slice1)[()]
                         img_slice_dict1 = json.loads(cells_file.get(read_string_dict1)[()])
                         img_slice_dict2 = frame_dict(img_slice2)
                         diff_slice = phase_diff[:, max(location-channel_width, 0):
                                         min(tracking_event['raw_shape'][1], location+channel_width)]
+                    
+                        img_slice_dict1 = set_activities(img_slice_dict1, img_slice1, diff_slice)
 
                         # Now you have everything you need to track a slice
                         # put them in somewhere and track them
-
+                        bundle_item = {
+                            'channel_no': i,
+                            'frame1': img_slice1,
+                            'frame2': img_slice2,
+                            'frame_dict1': img_slice_dict1,
+                            'frame_dict2': img_slice_dict2,
+                            'diff': diff_slice
+                        }
                         
                         # chanel no, cells + _ time.zfil(4)
                         write_string_slice = str(i) + '/cells/cells_' + str(tracking_event['time']).zfill(4)
                         write_string_dict = str(i) + '/tracks/tracks_' + str(tracking_event['time']).zfill(4)
+                        write_string_dict_prev = str(i) + '/tracks/tracks_' + prev_time_str
                         cells_file.create_dataset(write_string_slice, data=img_slice2,
                                 compression=param.Save.small_file_compression_type,
                                 compression_opts=param.Save.small_file_compression_level)
                         cells_file.create_dataset(write_string_dict, data=json.dumps(img_slice_dict2, cls=CellsDictEncoder))
+
+                        # overwrite the cells dict with activities for now
+                        #if i == 0:
+                        #    sys.stdout.write(f"{img_slice_dict1} ... {diff_slice}\n")
+                        #    sys.stdout.flush()
+
+                        cells_file[write_string_dict_prev][()] = json.dumps(img_slice_dict1, cls=CellsDictEncoder)
+                        
+                        bundles.append(bundle_item)
                     cells_file['/prev_phase'][...] = tracking_event['phase']
                         
             
