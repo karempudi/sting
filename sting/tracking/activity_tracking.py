@@ -112,16 +112,36 @@ def generate_gaussian_maps(frame_dict, image_size, k=2.5):
                             image_size=image_size, sig=frame_dict[key]['activity']/k)
     return gaussian_maps
 
-def track_a_bundle():
+def track_a_bundle(bundle):
     """
         A bundle should be self contained in everything that is need to track 
         2 masks of cells and return a dictionary
 
     Arguments:
+        bundle is a dictionary containing the following keys
+            channel_number:
+            frame_dict1: updating the frames' activity and the linking states 
+            mask1: used to generate gaussian maps based on activities
+            mask2: to figure out centroids in frame2
+            diff: diff is the phase diff used to assign activities in frame1
 
     Returns:
+        Two frame dictionaries, that are serialized and stored as tracking data
+        which has all the links between frames and ways to iterate over the cells
+        channel_number: just to help the thread to know which channel to put the resutl in
+        frame_dict1 : dictionary of cells in frame1
+        frame_dict2 : dictionary of cells in frame2
 
     """
+    # 1. calculate activities of cells in frame1 and fill them in the frame_dict
+    # 2. Generate gaussian maps for all the cells in frame1 
+    # 3. Iterate over the cells and link them and solve the problem of linking
+    #    in 2 stages, first based on just activity and second by solving the splitting problem
+
+
+    frame_dict2 = None
+    channel_number = None
+    return (channel_number, frame_dict1, frame_dict2)
 
 class activityTrackingPosition(object):
 
@@ -174,9 +194,16 @@ class activityTrackingPosition(object):
             # read two files here previous full phase_image to calculate the diffs
             if self.timepoint == 0:
                 # do something
+                # 1. make a frame dict and write the files
+                pass
 
             else:
-                # do something else
+                # 1. make frame dict for the current mask
+                # 2. calculate the diff after getting the previous phase image
+                # 3. fetch the previous mask and fill in their activities
+                # 4. Put them in a bundle and call tracking functions for all channels
+                pass
+
             # and the tracking channels file, that contains the segmented blobs and other information
                 # just write the cut channels to files
             #write_files(tracking_event, 'cells_cut_track_init', self.param)
