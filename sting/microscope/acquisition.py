@@ -150,7 +150,7 @@ class simAcquisition(object):
             return {
                 'image': img,
                 'position': position,
-                'timepoint' : timepoint
+                'timepoint' : timepoint - 1
             }
 
         else:

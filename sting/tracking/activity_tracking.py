@@ -10,7 +10,21 @@ import pickle
 import matplotlib.pyplot as plt
 import sys
 from sting.utils.disk_ops import write_files
+from skimage.io import imread
 from skimage.measure import label
+import json
+
+
+class CellsDictEncoder(json.JSONEncoder):
+
+    def default(self, obj):
+        if isinstance(obj, np.integer):
+            return int(obj)
+        if isinstance(obj, np.floating):
+            return float(obj)
+        if isinstance(obj, np.ndarray):
+            return obj.tolist()
+        return json.JSONEncoder.default(self, obj)
 
 def track_one_position(mask, phase):
     # caculate the things needed from one image and paralleize 
@@ -49,7 +63,7 @@ def frame_dict(mask):
             cell['cm'] = np.mean(np.where(one_cell), axis = 1)
             # activity of the cell is the activity of its center of mass  
             #cell['activity'] = activity_mask[cell['cm'][0].astype(int), cell['cm'][1].astype(int)]
-            cell['activity'] = 1.0
+            cell['activity'] = 0.0
             # area
             cell['area'] = cell_area
             cell['mother'] = None
@@ -174,7 +188,7 @@ class activityTrackingPosition(object):
 
         # each bundle has the diff of phase and current seg_mask, prev_seg_mask and
         # dictionary object of the previous frame
-        self.bundles_to_track = []
+        #self.bundles_to_track = []
 
         save_dir = Path(param.Save.directory) if isinstance(param.Save.directory, str) else param.Save.directory
         self.position_dir = save_dir / Path('Pos' + str(self.position))
@@ -189,50 +203,89 @@ class activityTrackingPosition(object):
             else:
                 write_files(tracking_event, 'cells', self.param)
         else:
+            # threshold cells_data 
+            cell_prob = param.Analysis.Segmentation.thresholds.cells.probability
+            cells_data = (tracking_event['cells'] > cell_prob)
+ 
+            # aggregate channel locations
+            channel_locations = []
+            for block in tracking_event['channel_locations']:
+                channel_locations.extend(tracking_event['channel_locations'][block]['channel_locations'])
+            channel_width = param.Save.channel_width
 
+            filename = self.position_dir / Path('cells_tracks.hdf5')
             # do tracking here
             # read two files here previous full phase_image to calculate the diffs
             if self.timepoint == 0:
                 # do something
                 # 1. make a frame dict and write the files
-                pass
+                with h5py.File(filename, 'a') as cells_file:
+                    write_string_phase = '/prev_phase'
+                    cells_file.create_dataset(write_string_phase, data=tracking_event['phase'].astype('uint16'))
+                    for i, location in enumerate(channel_locations, 0):
+                        img_slice = cells_data[:, max(location-channel_width, 0): 
+                                        min(tracking_event['raw_shape'][1], location+channel_width)]
+                        # label regions and make them uints for good fast compression
+                        img_slice = (label(img_slice) % 255).astype('uint8')
+                        # calculate properties, everything other than activities, which will
+                        # be filled when you get the next frame
+                        img_slice_dict = frame_dict(img_slice)
+                        # write the slice and the dictionary
+                        write_string_slice =  str(i) + '/cells/cells_' + str(tracking_event['time']).zfill(4)
+                        write_string_dict = str(i) + '/tracks/tracks_' + str(tracking_event['time']).zfill(4)
+                        cells_file.create_dataset(write_string_slice, data=img_slice, 
+                                compression=param.Save.small_file_compression_type,
+                                compression_opts=param.Save.small_file_compression_level)
+                        cells_file.create_dataset(write_string_dict, data=json.dumps(img_slice_dict, cls=CellsDictEncoder))
 
             else:
                 # 1. make frame dict for the current mask
                 # 2. calculate the diff after getting the previous phase image
                 # 3. fetch the previous mask and fill in their activities
                 # 4. Put them in a bundle and call tracking functions for all channels
-                pass
 
-            # and the tracking channels file, that contains the segmented blobs and other information
-                # just write the cut channels to files
-            #write_files(tracking_event, 'cells_cut_track_init', self.param)
-            self.filename = self.position_dir / Path('cells_tracks.hdf5')
-            #self.file_handle = h5py.File(self.filename, 'a')
+                #write_files(tracking_event, 'cells_cut_track_init', self.param)
 
-            cell_prob = param.Analysis.Segmentation.thresholds.cells.probability
-            cells_data = (tracking_event['cells'] > cell_prob)
-            # for each channel iterate over and create groups and datasets
-            channel_locations = []
-            for block in tracking_event['channel_locations']:
-                channel_locations.extend(tracking_event['channel_locations'][block]['channel_locations'])
-            channel_width = param.Save.channel_width
+                # calculate the diff of phase images here
+                # read the previous phase image
+                prev_time_str = str(self.timepoint-1).zfill(4)
+                #phase_img_filename = self.position_dir / Path('phase') / Path('phase_' + prev_time_str + '.tiff')
+                #prev_phase_img = imread(phase_img_filename).astype('float32')
+                #phase_diff = tracking_event['phase'] - prev_phase_img
 
-            # we only grab stuff between barcodes and ignore the ends, so this operation will not result in errors
-            with h5py.File(self.filename, 'a') as cells_file:
-                for i, location in enumerate(channel_locations, 0):
-                    img_slice = cells_data[:, max(location-channel_width, 0): 
-                                    min(tracking_event['raw_shape'][1], location+channel_width)]
-                    # label regions and make them uints for good fast compression
-                    img_slice = (label(img_slice) % 255).astype('uint8')
-                    # chanel no, cells + _ time.zfil(4)
-                    write_string = str(i) + '/cells/cells_' + str(tracking_event['time']).zfill(4)
-                    cells_file.create_dataset(write_string, data=img_slice,
-                            compression=param.Save.small_file_compression_type,
-                            compression_opts=param.Save.small_file_compression_level)
+                bundles = [] 
 
-            # find a good way to put together a bundle to track
-                    
+                with h5py.File(filename, 'a') as cells_file:
+                    # read the prev_phase
+                    prev_phase_img = cells_file['/prev_phase'][()]
+                    phase_diff = tracking_event['phase'] - prev_phase_img
+                    # we only grab stuff between barcodes and ignore the ends, so this operation will not result in errors
+                    for i, location in enumerate(channel_locations, 0):
+                        img_slice2 = cells_data[:, max(location-channel_width, 0): 
+                                        min(tracking_event['raw_shape'][1], location+channel_width)]
+                        # label regions and make them uints for good fast compression
+                        img_slice2 = (label(img_slice2) % 255).astype('uint8')
+                        read_string_slice1 = str(i) + '/cells/cells_' + prev_time_str
+                        read_string_dict1 = str(i) + '/tracks/tracks_' + prev_time_str
+                        img_slice1 = cells_file.get(read_string_slice1)
+                        img_slice_dict1 = json.loads(cells_file.get(read_string_dict1)[()])
+                        img_slice_dict2 = frame_dict(img_slice2)
+                        diff_slice = phase_diff[:, max(location-channel_width, 0):
+                                        min(tracking_event['raw_shape'][1], location+channel_width)]
+
+                        # Now you have everything you need to track a slice
+                        # put them in somewhere and track them
+
+                        
+                        # chanel no, cells + _ time.zfil(4)
+                        write_string_slice = str(i) + '/cells/cells_' + str(tracking_event['time']).zfill(4)
+                        write_string_dict = str(i) + '/tracks/tracks_' + str(tracking_event['time']).zfill(4)
+                        cells_file.create_dataset(write_string_slice, data=img_slice2,
+                                compression=param.Save.small_file_compression_type,
+                                compression_opts=param.Save.small_file_compression_level)
+                        cells_file.create_dataset(write_string_dict, data=json.dumps(img_slice_dict2, cls=CellsDictEncoder))
+                    cells_file['/prev_phase'][...] = tracking_event['phase']
+                        
             
             if self.param.Save.save_channels:
                 write_files(tracking_event, 'cells_channels', self.param)
