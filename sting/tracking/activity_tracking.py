@@ -11,7 +11,7 @@ import matplotlib.pyplot as plt
 import sys
 from sting.utils.disk_ops import write_files
 from skimage.io import imread
-from skimage.measure import label
+from skimage.measure import label, regionprops
 import json
 
 
@@ -53,24 +53,19 @@ def frame_dict(mask):
     Activity field is not filled and will have to be filled once you
     get the next frame.
     """
+    img_props = regionprops(mask)
     frame_dict = {}
-    for i in range(1, int(mask.max() + 1)):
-        one_cell = (mask == i)
-        cell_area = np.sum(one_cell)
-        if cell_area > 0:
+    for i, props in enumerate(img_props):
+        if (props['area'] > 0):
             cell = {}
-            # center of mass
-            cell['cm'] = np.mean(np.where(one_cell), axis = 1)
-            # activity of the cell is the activity of its center of mass  
-            #cell['activity'] = activity_mask[cell['cm'][0].astype(int), cell['cm'][1].astype(int)]
-            cell['activity'] = 0.0
-            # area
-            cell['area'] = cell_area
+            cell['area'] = props['area']
+            cell['cm'] = props['centroid']
+            cell['activity'] = 0
             cell['mother'] = None
             cell['index'] = None
             cell['dob'] = 0
             cell['initial_mother'] = 0
-        frame_dict[i] = cell
+            frame_dict[props['label']] = cell
     return frame_dict
 
 def set_activities(frame_dict, mask, diff):
