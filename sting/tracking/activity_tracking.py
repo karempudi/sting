@@ -99,7 +99,6 @@ def set_activities(frame_dict, mask, diff):
     return frame_dict
  
 
-@njit
 def gaussian_heatmap(center = (2, 2), image_size = (10, 10), sig = 1):
     """
     It produces single gaussian at expected center
@@ -113,7 +112,18 @@ def gaussian_heatmap(center = (2, 2), image_size = (10, 10), sig = 1):
     xx, yy = np.meshgrid(x_axis, y_axis)
     kernel = np.exp(-0.5 * (np.square(xx) + np.square(yy)) / np.square(sig))
     return kernel.T
- 
+
+def gaussian_heatmap_cell(center=(2, 2), image_size=(10, 10), sigma=(1.0, 2.0)):
+    """
+    This function produces gauissians that have different sigmas, the activity 
+    sigma is used for the x-axis (row numbers) and we keep constant sigma on
+    the y-axis (column numbers)
+    """
+    x_axis = np.linspace(0, image_size[0] - 1, image_size[0]) - center[0]
+    y_axis = np.linspace(0, image_size[1] - 1, image_size[1]) - center[1]
+    xx, yy = np.meshgrid(x_axis, y_axis)
+    kernel = np.exp(-0.5 * ((np.square(xx)/np.square(sigma[0])) + (np.square(yy)/np.square(sigma[1]))))
+    return kernel.T
 
 @njit
 def generate_gaussian_maps(frame_dict, image_size, k=2.5):
