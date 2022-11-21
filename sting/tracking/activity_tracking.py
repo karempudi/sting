@@ -10,6 +10,7 @@ import pickle
 import matplotlib.pyplot as plt
 import sys
 from sting.utils.disk_ops import write_files
+from scipy.optimize import linear_sum_assignment
 from skimage.io import imread
 from skimage.measure import label, regionprops
 import json
@@ -97,9 +98,19 @@ def set_activities(frame_dict, mask, diff):
     #sys.stdout.write("\n")
     #sys.stdout.flush()
     return frame_dict
- 
 
-def gaussian_heatmap(center = (2, 2), image_size = (10, 10), sig = 1):
+def find_max_index(cells_frame_dict) :
+    cell_indices = []
+    for cell_no in cells_frame_dict.keys():
+        if cells_frame_dict[cell_no]['index'] is not None:
+            cell_indices.append(cells_frame_dict[cell_no]['index'])
+    #print(cell_indices)
+    if len(cell_indices) == 0:
+        return 0
+    else:
+        return np.max(cell_indices)
+
+def gaussian_heatmap(center = (2, 2), image_size = (10, 10), sigma = 1):
     """
     It produces single gaussian at expected center
     :param center:  the mean position (X, Y) - where high value expected
@@ -110,7 +121,7 @@ def gaussian_heatmap(center = (2, 2), image_size = (10, 10), sig = 1):
     x_axis = np.linspace(0, image_size[0]-1, image_size[0]) - center[0]
     y_axis = np.linspace(0, image_size[1]-1, image_size[1]) - center[1]
     xx, yy = np.meshgrid(x_axis, y_axis)
-    kernel = np.exp(-0.5 * (np.square(xx) + np.square(yy)) / np.square(sig))
+    kernel = np.exp(-0.5 * (np.square(xx) + np.square(yy)) / np.square(sigma))
     return kernel.T
 
 def gaussian_heatmap_cell(center=(2, 2), image_size=(10, 10), sigma=(1.0, 2.0)):
@@ -125,8 +136,7 @@ def gaussian_heatmap_cell(center=(2, 2), image_size=(10, 10), sigma=(1.0, 2.0)):
     kernel = np.exp(-0.5 * ((np.square(xx)/np.square(sigma[0])) + (np.square(yy)/np.square(sigma[1]))))
     return kernel.T
 
-@njit
-def generate_gaussian_maps(frame_dict, image_size, k=2.5):
+def generate_gaussian_maps(frame_dict, image_size, k=50.0):
     """
     For each cell around the center of mass, put a gaussian kernel and return
     the image slice of the correspoinding
@@ -134,11 +144,12 @@ def generate_gaussian_maps(frame_dict, image_size, k=2.5):
     """
     gaussian_maps = {}
     for key in frame_dict:
-        gaussian_maps[key] = gaussian_heatmap(center=(int(frame_dict[key]['cm'][0]), int(frame_dict[key]['cm'][1])),
-                            image_size=image_size, sig=frame_dict[key]['activity']/k)
+        gaussian_maps[key] = gaussian_heatmap_cell(center=(int(frame_dict[key]['cm'][0]), int(frame_dict[key]['cm'][1])),
+                            image_size=image_size, sigma=(frame_dict[key]['activity']/k, image_size[1]/2))
     return gaussian_maps
+ 
 
-def track_a_bundle(bundle):
+def track_a_bundle(bundle, area_thres=0.75):
     """
         A bundle should be self contained in everything that is need to track 
         2 masks of cells and return a dictionary
@@ -147,8 +158,9 @@ def track_a_bundle(bundle):
         bundle is a dictionary containing the following keys
             channel_number:
             frame_dict1: updating the frames' activity and the linking states 
-            mask1: used to generate gaussian maps based on activities
-            mask2: to figure out centroids in frame2
+            frame_dict2: 
+            frame1: used to generate gaussian maps based on activities
+            frame2: to figure out centroids in frame2
             diff: diff is the phase diff used to assign activities in frame1
 
     Returns:
@@ -164,9 +176,145 @@ def track_a_bundle(bundle):
     # 3. Iterate over the cells and link them and solve the problem of linking
     #    in 2 stages, first based on just activity and second by solving the splitting problem
 
+    img1 = bundle['frame1']
+    img2 = bundle['frame2']
+    channel_number = bundle['channel_no']
+    frame_dict1 = bundle['frame_dict1']
+    frame_dict2 = bundle['frame_dict2']
+    frame1_no = bundle['t1']
+    frame2_no = bundle['t2']
 
-    frame_dict2 = None
-    channel_number = None
+    # Startig the tracking function
+    none_keys = []
+    adjacent_dict = {}
+    # sort the indices of the first frame based on activity
+    new_index = sorted(frame_dict1, key=lambda x: frame_dict1[x]['activity'])
+    leftover1 = list(new_index)
+    leftover2 = list(frame_dict2.keys())
+    # generate gaussian heatmap for all cells in frame1,
+    # gm will have the same keys as frame_dict1
+    gm = generate_gaussian_maps(frame_dict1, img1.shape, k=50.0)
+    
+    # setting the max index
+    max_prev_cell_index = find_max_index(frame_dict1)
+    if max_prev_cell_index == 0:
+        # no tracking if there are not cells in previous frame
+        return (channel_number, frame_dict1, frame_dict2)
+    #print(channel_number, max_prev_cell_index)
+    max_max = [max_prev_cell_index + 1]
+    
+    # stage 1: link cells with highest activity if they meet area threshold
+    for key1 in new_index:
+        # has all the possible 
+        subdic = {}
+        for key2 in leftover2:
+            pr = gm[key1][int(frame_dict2[key2]['cm'][0]), int(frame_dict2[key2]['cm'][1])]
+            if pr > 0.01:
+                subdic[key2] = pr
+        # all possible cells that could be connnected to key1
+        #print(key1, "----> ", subdic)
+        #print("---------------------")
+        
+        if len(subdic) == 0:
+            # no cells cross the threshold of probablity in frame2, so we don't link
+            # this cell to anything in frame 2
+            leftover1.remove(key1)
+        else:
+            # find the cell that matches with the maximum probability
+            key2 = max(subdic, key=subdic.get)
+            # check if the area threshold matches
+            # if the cell in frame2 has atleast area_thres fraction of the area in frame1
+            if area_thres * frame_dict1[key1]['area'] < frame_dict2[key2]['area']:
+                # if the area is increasing match
+                #print(f"Area frame1: {frame_dict1[key1]['area']} ---> frame2: {frame_dict2[key2]['area']}")
+                # now adjsut the indices of the cells
+                if frame_dict1[key1]['index'] is not None:
+                    # if it is not None, it is assigned a number
+                    # indices of cells are global and are assigned at birth 
+                    # until death
+                    # mother is the index of the cell it is connected
+                    frame_dict2[key2]['mother'] = 1 * frame_dict1[key1]['index']
+                    frame_dict2[key2]['index'] = frame_dict2[key2]['mother']
+                    # when was the cell born
+                    frame_dict2[key2]['dob'] = frame_dict1[key1]['dob']
+                    frame_dict2[key2]['initial_mother'] = frame_dict1[key1]['initial_mother']
+                    max_max.append(frame_dict1[key1]['index'])
+                else:
+                    # if for some reason, the cell in the previous frame is not assigned
+                    none_keys.append(key2)
+                
+                # remove the maximum from frame2
+                leftover2.remove(key2)
+                # remove the cell from the first frame as well, if there are daughters we will
+                # see it below
+                leftover1.remove(key1)
+                
+            # sort the list of possible candidates still available + the linked one if you linked
+            subdic = sorted(subdic.items(), key=operator.itemgetter(1), reverse=True)
+            # add the possible adjacent cells in increasing probability 
+            # subdic has [key2]-> [activity]
+            adjacent_dict[key1] = dict(subdic)
+    
+    # stage2: we loop over and remove things that are already linked
+    #print("Stage2: ------------")
+    #print("Adjacent dict: ", adjacent_dict)
+    #print("Leftover1: ", leftover1)
+    #print("Leftover2: ", leftover2)
+    # This is sort of irrelevant to do, as we don't alter leftover1 or leftover 2
+    # stage2 can be scrapped in my opinion
+    for key1 in adjacent_dict.copy().keys():
+        # remove everything that is assigned in first frame
+        #print("Looking at key1: ", key1)
+        if key1 not in leftover1:
+            del adjacent_dict[key1]
+        # if itis not assigned, remove everything that is already assigned
+        # in frame2 for this cell
+        else:
+            for key2 in leftover2:
+                if key2 not in leftover2:
+                    #print("Deleting: ", key1 , "---", key2)
+                    del adjacent_dict[key1][key2]
+    
+            
+    # stage 3: linking daughter and splits
+    daughters = leftover2
+    mothers = leftover1
+    mothers_twice = mothers + mothers # double so that each mother can have 2 daughters at most
+    C = np.zeros([len(mothers_twice), len(daughters)])
+    # fill in the cost matrix 
+    row = 0
+    for mother_idx in mothers_twice:
+        column = 0
+        for daughter_idx in daughters:
+            if daughter_idx in set(adjacent_dict[mother_idx].keys()):
+                C[row, column] = 1 - adjacent_dict[mother_idx][daughter_idx]
+            else:
+                C[row, column] = 1
+        column += 1
+    row += 1
+    
+    # solve the linear assignment problem, this will give indices into 
+    # mothers_twice and daughters
+    pairs_mother, pairs_daughter = linear_sum_assignment(C)
+    max_max = np.max(max_max) + 1 # not sure why we are adding 1 here, but will see if needed
+    found = []
+    for i in range(len(pairs_mother)):
+        frame_dict2[daughters[pairs_daughter[i]]]['mother'] = frame_dict1[mothers_twice[pairs_mother[i]]]['index']
+        frame_dict2[daughters[pairs_daughter[i]]]['dob'] = frame2_no
+        frame_dict2[daughters[pairs_daughter[i]]]['index'] = max_max
+        frame_dict2[daughters[pairs_daughter[i]]]['initial_mother'] = frame_dict1[mothers_twice[pairs_mother[i]]]['index']
+        frame_dict1[mothers_twice[pairs_mother[i]]]['dod'] = True
+        found.append(daughters[pairs_daughter[i]])
+        max_max += 1
+    
+    # stage 4: clean up of unassigned
+    still_leftover2 = set(leftover2).difference(set(found))
+    none_keys  += list(still_leftover2)
+    for k in none_keys:
+        frame_dict2[k]['index'] = max_max
+        max_max += 1
+        
+
     return (channel_number, frame_dict1, frame_dict2)
 
 class activityTrackingPosition(object):
@@ -242,6 +390,9 @@ class activityTrackingPosition(object):
                         # calculate properties, everything other than activities, which will
                         # be filled when you get the next frame
                         img_slice_dict = frame_dict(img_slice)
+                        # write cell number for t = 0 frame
+                        for cell_no in img_slice_dict:
+                            img_slice_dict[cell_no]['index'] = int(cell_no)
                         # write the slice and the dictionary
                         write_string_slice =  str(i) + '/cells/cells_' + str(tracking_event['time']).zfill(4)
                         write_string_dict = str(i) + '/tracks/tracks_' + str(tracking_event['time']).zfill(4)
@@ -291,6 +442,8 @@ class activityTrackingPosition(object):
                         # Now you have everything you need to track a slice
                         # put them in somewhere and track them
                         bundle_item = {
+                            't1': self.timepoint-1,
+                            't2': self.timepoint,
                             'channel_no': i,
                             'frame1': img_slice1,
                             'frame2': img_slice2,
@@ -298,7 +451,7 @@ class activityTrackingPosition(object):
                             'frame_dict2': img_slice_dict2,
                             'diff': diff_slice
                         }
-                        
+                        (channel_no, img_slice_dict1, img_slice_dict2) = track_a_bundle(bundle_item)
                         # chanel no, cells + _ time.zfil(4)
                         write_string_slice = str(i) + '/cells/cells_' + str(tracking_event['time']).zfill(4)
                         write_string_dict = str(i) + '/tracks/tracks_' + str(tracking_event['time']).zfill(4)
