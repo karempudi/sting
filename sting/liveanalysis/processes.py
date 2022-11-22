@@ -192,7 +192,7 @@ class ExptRun(object):
                 else:
                     break
 
-                time.sleep(0.35)
+                time.sleep(0.500)
             except KeyboardInterrupt:
                 self.acquire_kill_event.set()
                 sys.stdout.write("Acquire process interrupted using keyboard\n")

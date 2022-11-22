@@ -13,8 +13,11 @@ from sting.utils.disk_ops import write_files
 from scipy.optimize import linear_sum_assignment
 from skimage.io import imread
 from skimage.measure import label, regionprops
+import concurrent.futures
+from concurrent.futures import ThreadPoolExecutor, ProcessPoolExecutor
 import json
 
+np.seterr(divide='ignore', invalid='ignore')
 
 class CellsDictEncoder(json.JSONEncoder):
 
@@ -179,8 +182,11 @@ def track_a_bundle(bundle, area_thres=0.75):
     img1 = bundle['frame1']
     img2 = bundle['frame2']
     channel_number = bundle['channel_no']
+    diff_slice = bundle['diff']
     frame_dict1 = bundle['frame_dict1']
-    frame_dict2 = bundle['frame_dict2']
+    frame_dict1 = set_activities(frame_dict1, img1, diff_slice)
+    frame_dict2 = frame_dict(img2)
+    #frame_dict2 = bundle['frame_dict2']
     frame1_no = bundle['t1']
     frame2_no = bundle['t2']
 
@@ -423,59 +429,69 @@ class activityTrackingPosition(object):
                     prev_phase_img = cells_file['/prev_phase'][()]
                     phase_diff = tracking_event['phase'] - prev_phase_img
                     # we only grab stuff between barcodes and ignore the ends, so this operation will not result in errors
-                    for i, location in enumerate(channel_locations, 0):
-                        bundle_item = {}
-                        img_slice2 = cells_data[:, max(location-channel_width, 0): 
-                                        min(tracking_event['raw_shape'][1], location+channel_width)]
-                        # label regions and make them uints for good fast compression
-                        img_slice2 = (label(img_slice2) % 255).astype('uint8')
-                        read_string_slice1 = str(i) + '/cells/cells_' + prev_time_str
-                        read_string_dict1 = str(i) + '/tracks/tracks_' + prev_time_str
-                        img_slice1 = cells_file.get(read_string_slice1)[()]
-                        img_slice_dict1 = json.loads(cells_file.get(read_string_dict1)[()])
-                        img_slice_dict2 = frame_dict(img_slice2)
-                        diff_slice = phase_diff[:, max(location-channel_width, 0):
-                                        min(tracking_event['raw_shape'][1], location+channel_width)]
-                    
-                        img_slice_dict1 = set_activities(img_slice_dict1, img_slice1, diff_slice)
+                    futures = []
+                    with ProcessPoolExecutor(max_workers=32) as executor:
+                        for i, location in enumerate(channel_locations, 0):
+                            bundle_item = {}
+                            img_slice2 = cells_data[:, max(location-channel_width, 0): 
+                                            min(tracking_event['raw_shape'][1], location+channel_width)]
+                            # label regions and make them uints for good fast compression
+                            img_slice2 = (label(img_slice2) % 255).astype('uint8')
+                            read_string_slice1 = str(i) + '/cells/cells_' + prev_time_str
+                            read_string_dict1 = str(i) + '/tracks/tracks_' + prev_time_str
+                            img_slice1 = cells_file.get(read_string_slice1)[()]
+                            img_slice_dict1 = json.loads(cells_file.get(read_string_dict1)[()])
 
-                        # Now you have everything you need to track a slice
-                        # put them in somewhere and track them
-                        bundle_item = {
-                            't1': self.timepoint-1,
-                            't2': self.timepoint,
-                            'channel_no': i,
-                            'frame1': img_slice1,
-                            'frame2': img_slice2,
-                            'frame_dict1': img_slice_dict1,
-                            'frame_dict2': img_slice_dict2,
-                            'diff': diff_slice
-                        }
-                        (channel_no, img_slice_dict1, img_slice_dict2) = track_a_bundle(bundle_item)
+                            # this can be calculated inside the thread, save 5 ms
+                            # img_slice_dict2 = frame_dict(img_slice2)
+                            diff_slice = phase_diff[:, max(location-channel_width, 0):
+                                            min(tracking_event['raw_shape'][1], location+channel_width)]
+                        
+                            #img_slice_dict1 = set_activities(img_slice_dict1, img_slice1, diff_slice)
+
+                            # Now you have everything you need to track a slice
+                            # put them in somewhere and track them
+                            bundle_item = {
+                                't1': self.timepoint-1,
+                                't2': self.timepoint,
+                                'channel_no': i,
+                                'frame1': img_slice1,
+                                'frame2': img_slice2,
+                                'frame_dict1': img_slice_dict1,
+                                #'frame_dict2': img_slice_dict2,
+                                'diff': diff_slice
+                            }
+                            write_string_slice = str(i) + '/cells/cells_' + str(tracking_event['time']).zfill(4)
+                            cells_file.create_dataset(write_string_slice, data=img_slice2,
+                                    compression=param.Save.small_file_compression_type,
+                                    compression_opts=param.Save.small_file_compression_level)
+
+                            future = executor.submit(track_a_bundle, bundle_item)
+                            futures.append(future)
+                        cells_file['/prev_phase'][...] = tracking_event['phase']
+
+                        # done constructing the bundles to track
+                    #with ProcessPoolExecutor(max_workers=20) as executor:
+                    #    for one_bundle in bundles:
+                    #        future = executor.submit(track_a_bundle, one_bundle)
+                    #        futures.append(future)
+
+                    futures, _ = concurrent.futures.wait(futures)
+                    for future in futures:
+                        result = future.result()
+                        # result is (channel_no, img_slice_dict1, img_slice_dict2)
                         # chanel no, cells + _ time.zfil(4)
-                        write_string_slice = str(i) + '/cells/cells_' + str(tracking_event['time']).zfill(4)
-                        write_string_dict = str(i) + '/tracks/tracks_' + str(tracking_event['time']).zfill(4)
-                        write_string_dict_prev = str(i) + '/tracks/tracks_' + prev_time_str
-                        cells_file.create_dataset(write_string_slice, data=img_slice2,
-                                compression=param.Save.small_file_compression_type,
-                                compression_opts=param.Save.small_file_compression_level)
-                        cells_file.create_dataset(write_string_dict, data=json.dumps(img_slice_dict2, cls=CellsDictEncoder))
-
-                        # overwrite the cells dict with activities for now
-                        #if i == 0:
-                        #    sys.stdout.write(f"{img_slice_dict1} ... {diff_slice}\n")
-                        #    sys.stdout.flush()
-
-                        cells_file[write_string_dict_prev][()] = json.dumps(img_slice_dict1, cls=CellsDictEncoder)
-                        
-                        bundles.append(bundle_item)
-                    cells_file['/prev_phase'][...] = tracking_event['phase']
-                        
-            
-            if self.param.Save.save_channels:
-                write_files(tracking_event, 'cells_channels', self.param)
-            else:
-                write_files(tracking_event, 'cells', self.param)
+                        write_string_dict = str(result[0]) + '/tracks/tracks_' + str(tracking_event['time']).zfill(4)
+                        write_string_dict_prev = str(result[0]) + '/tracks/tracks_' + prev_time_str
+                        cells_file.create_dataset(write_string_dict, data=json.dumps(result[2], cls=CellsDictEncoder))
+                        cells_file[write_string_dict_prev][()] = json.dumps(result[1], cls=CellsDictEncoder)
+                        #sys.stdout.write(f"Doing result of channel: {result[0]} ..\n")
+                        #sys.stdout.flush()
+        
+            #if self.param.Save.save_channels:
+            #    write_files(tracking_event, 'cells_channels', self.param)
+            #else:
+            #    write_files(tracking_event, 'cells', self.param)
 
         # check for error if there is one, then you don't have anything to track and 
         # write to a different file instead of writing to the main line and corrupt 
@@ -497,78 +513,6 @@ class activityTrackingPosition(object):
         
 
 
-class activtiyTrackingChannel(object):
-
-    def __init__(self, position, channel):
-        pass
-
-
-
-def track_one_channel(mask1, mask2, activity1, activity2):
-    """
-    Function that tracks objects between 2 frames and returns a dictionary
-    containing some results about the cells linked between these two frames
-
-    Arguments:
-        mask1: mask at time 't'
-        mask2: mask at time  't+1'
-        activity1: activity mask at time 't'
-        activity2: activity mask at time 't+1'
-    Returns
-        tracking_results: dictionary
-    """
-    frame_dict1 = {}
-    # for each cell in frame t make a dictionary object for each cell
-    for i in range(1, int(mask1.max() + 1)):
-        # if there are enough pixels, here you can write cell size cutoffs already
-        one_cell = (mask1 == i)
-        area = np.sum(one_cell)
-        if area > 0:
-            cell = {}
-            # center of mass
-            cell['cm'] = np.mean(one_cell, axis=1)
-            # get activity of the center of mass pixel
-            cell['activity'] = activity1[cell['cm'][0].astype(int), cell['cm'][1].astype(int)]
-            # area
-            cell['area'] = area
-            cell['mother'] = None
-            cell['index'] = None
-            cell['dob'] = 0
-            cell['initial_mother'] = 0
-            frame_dict1[i] = cell
-        
-    frame_dict2 = {}
-
-    # for each cell in frame t+1 make a dictionary object for each cell
-    for i in range(1, int(mask2.max() + 1)):
-        # if there are enough pixels, here you can write cell size cutoffs already
-        one_cell = (mask2 == i)
-        area = np.sum(one_cell)
-        if area > 0:
-            cell = {}
-            # center of mass
-            cell['cm'] = np.mean(one_cell, axis=1)
-            # get activity of the center of mass pixel
-            cell['activity'] = activity2[cell['cm'][0].astype(int), cell['cm'][1].astype(int)]
-            # area
-            cell['area'] = area
-            cell['mother'] = None
-            cell['index'] = None
-            cell['dob'] = 0
-            cell['initial_mother'] = 0
-            frame_dict2[i] = cell
-
-    # sort cells in the curretn frame based on activity
-    new_index = sorted(frame_dict1, key=lambda x: frame_dict1[x]['activity'])
-
-    # arrays to kept track of cells already linked
-    leftover1 = list(new_index)
-    lefover2 = list(frame_dict2.keys())
-
-
-
-
-    
-        
+      
 
 
