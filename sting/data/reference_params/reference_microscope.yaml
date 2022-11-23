@@ -102,6 +102,7 @@ Save:
   small_file_format: '.hdf5' # can be hdf5 or tiff # if tiff will store individual files
   small_file_compression_level: 6
   small_file_compression_type: 'gzip'
+  channel_width: 20
 
 Experiment:
   number: 'exp-bp-000' # Experiment no
