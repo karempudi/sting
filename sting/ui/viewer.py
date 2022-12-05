@@ -6,6 +6,7 @@ import pathlib
 from pathlib import Path
 from PyQt5.QtWidgets import (QApplication, QMainWindow, 
                 QMessageBox, QFileDialog)
+from PyQt5.QtCore import QTimer, QFile, QThread
 from sting.ui.qt_ui_classes.main_window_ui import Ui_MainWindow
 from sting.utils.param_io import load_params, save_params
 from sting.ui.tweezer import TweezerWindow 
@@ -13,6 +14,7 @@ from sting.ui.live import LiveWindow
 from datetime import datetime
 from sting.liveanalysis.processes import start_live_experiment
 from sting.analysis.processes import start_post_analysis
+from sting.utils.db_ops import read_from_db
 
 class MainWindow(QMainWindow):
 
@@ -30,7 +32,7 @@ class MainWindow(QMainWindow):
         self.param = None
         self.written_param_file = None
 
-        
+        self.timer = None
         # initialize a tweezer window
         # set it's parameters when you have them
         self.tweezer_window = TweezerWindow() 
@@ -124,10 +126,15 @@ class MainWindow(QMainWindow):
         sys.stdout.flush()
     
     def start_status_update(self):
-        pass
+        #print("Clicked button")
+        #if self.timer != None:
+        self.timer = QTimer()
+        self.timer.setInterval(1000)
+        self.timer.timeout.connect(self.update_progress_bars)
+        self.timer.start()
     
     def stop_status_update(self):
-        pass
+        self.timer.stop()
 
     def show_tweeze_window(self):
         self.tweezer_window.show()
@@ -140,6 +147,23 @@ class MainWindow(QMainWindow):
     
     def show_dead_alive(self):
         pass
+
+    def update_progress_bars(self):
+        sys.stdout.write(f"Onre more second passed {datetime.now()} ..\n")
+        sys.stdout.flush()
+        # get data from all the databases of the experiment and set status
+        # of the bars and boxes
+        expt_save_dir = Path(self.param.Save.directory)
+        print(f"Acquired: {read_from_db('acquire', expt_save_dir)}")
+        print(f"Segment: {read_from_db('segment', expt_save_dir)}")
+        print(f"Track: {read_from_db('track', expt_save_dir)}")
+        self.ui.acq_pos_bar.setValue(50)
+        self.ui.acq_time_bar.setValue(50)
+        self.ui.seg_pos_bar.setValue(50)
+        self.ui.seg_time_bar.setValue(50)
+        self.ui.track_pos_bar.setValue(50)
+        self.ui.track_time_bar.setValue(50)
+        
     
 
 def main():

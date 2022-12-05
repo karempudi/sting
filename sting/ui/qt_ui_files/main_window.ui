@@ -135,7 +135,7 @@
        </widget>
       </item>
       <item>
-       <widget class="QProgressBar" name="acq_position_bar">
+       <widget class="QProgressBar" name="acq_pos_bar">
         <property name="value">
          <number>24</number>
         </property>
@@ -188,9 +188,9 @@
        <height>221</height>
       </rect>
      </property>
-     <layout class="QVBoxLayout" name="image_processing">
+     <layout class="QVBoxLayout" name="segmentation">
       <item>
-       <widget class="QLabel" name="img_process_label">
+       <widget class="QLabel" name="seg_process_label">
         <property name="font">
          <font>
           <pointsize>13</pointsize>
@@ -205,7 +205,7 @@
        </widget>
       </item>
       <item>
-       <widget class="QLabel" name="img_pos_label">
+       <widget class="QLabel" name="seg_pos_label">
         <property name="font">
          <font>
           <pointsize>13</pointsize>
@@ -220,21 +220,21 @@
        </widget>
       </item>
       <item>
-       <widget class="QProgressBar" name="img_pos_bar">
+       <widget class="QProgressBar" name="seg_pos_bar">
         <property name="value">
          <number>24</number>
         </property>
        </widget>
       </item>
       <item>
-       <widget class="QLineEdit" name="img_n_pos">
+       <widget class="QLineEdit" name="seg_n_pos">
         <property name="readOnly">
          <bool>true</bool>
         </property>
        </widget>
       </item>
       <item>
-       <widget class="QLabel" name="img_time_label">
+       <widget class="QLabel" name="seg_time_label">
         <property name="font">
          <font>
           <pointsize>13</pointsize>
@@ -249,14 +249,14 @@
        </widget>
       </item>
       <item>
-       <widget class="QProgressBar" name="img_time_bar">
+       <widget class="QProgressBar" name="seg_time_bar">
         <property name="value">
          <number>24</number>
         </property>
        </widget>
       </item>
       <item>
-       <widget class="QLineEdit" name="img_n_time">
+       <widget class="QLineEdit" name="seg_n_time">
         <property name="readOnly">
          <bool>true</bool>
         </property>
@@ -273,9 +273,9 @@
        <height>221</height>
       </rect>
      </property>
-     <layout class="QVBoxLayout" name="channel_properties">
+     <layout class="QVBoxLayout" name="tracking">
       <item>
-       <widget class="QLabel" name="cprop_label">
+       <widget class="QLabel" name="track_label">
         <property name="font">
          <font>
           <pointsize>13</pointsize>
@@ -290,7 +290,7 @@
        </widget>
       </item>
       <item>
-       <widget class="QLabel" name="cprop_pos_label">
+       <widget class="QLabel" name="track_pos_label">
         <property name="font">
          <font>
           <pointsize>13</pointsize>
@@ -305,21 +305,21 @@
        </widget>
       </item>
       <item>
-       <widget class="QProgressBar" name="cprop_pos_bar">
+       <widget class="QProgressBar" name="track_pos_bar">
         <property name="value">
          <number>24</number>
         </property>
        </widget>
       </item>
       <item>
-       <widget class="QLineEdit" name="cprop_n_pos">
+       <widget class="QLineEdit" name="track_n_pos">
         <property name="readOnly">
          <bool>true</bool>
         </property>
        </widget>
       </item>
       <item>
-       <widget class="QLabel" name="cprop_time_label">
+       <widget class="QLabel" name="track_time_label">
         <property name="font">
          <font>
           <pointsize>13</pointsize>
@@ -334,14 +334,14 @@
        </widget>
       </item>
       <item>
-       <widget class="QProgressBar" name="cprop_time_bar">
+       <widget class="QProgressBar" name="track_time_bar">
         <property name="value">
          <number>24</number>
         </property>
        </widget>
       </item>
       <item>
-       <widget class="QLineEdit" name="cprop_n_time">
+       <widget class="QLineEdit" name="track_n_time">
         <property name="readOnly">
          <bool>true</bool>
         </property>

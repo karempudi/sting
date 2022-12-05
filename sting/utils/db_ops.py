@@ -173,12 +173,65 @@ def write_to_db(event_data, dir_name, event_type):
  
  
 
-def read_from_db(event_type, event_args):
+def read_from_db(event_type, dir_name):
     if event_type == 'acquire':
-        pass
+        con = None
+        position, timepoint = None, None
+        db_file = dir_name / Path('acquire.db')
+        try:
+            con = sqlite3.connect(db_file, detect_types=sqlite3.PARSE_DECLTYPES, isolation_level=None)
+            cur = con.cursor()
+            cur.execute("SELECT position, timepoint FROM acquire ORDER BY id DESC LIMIT 1")
+
+            position, timepoint = cur.fetchone()
+        except Exception as e:
+            sys.stdout.write(f"Error {e} while fetching from table {event_type} -- {dir_name}\n")
+            sys.stdout.flush()
+
+        finally:
+            if con:
+                con.close()
+            return position, timepoint
+            
     elif event_type == 'segment':
-        pass
+        con = None
+        position, timepoint = None, None
+        db_file = dir_name / Path('segment.db')
+        try:
+            con = sqlite3.connect(db_file, detect_types=sqlite3.PARSE_DECLTYPES, isolation_level=None)
+            cur = con.cursor()
+            cur.execute("SELECT position, timepoint FROM segment ORDER BY id DESC LIMIT 1")
+
+            position, timepoint = cur.fetchone()
+
+        except Exception as e:
+            sys.stdout.write(f"Error {e} while fetching from table {event_type} -- {dir_name}\n")
+            sys.stdout.flush()
+
+        finally:
+            if con:
+                con.close()
+            return position, timepoint
+
     elif event_type == 'track':
-        pass
+        con = None
+        position, timepoint = None, None
+        db_file = dir_name / Path('track.db')
+        try:
+            con = sqlite3.connect(db_file, detect_types=sqlite3.PARSE_DECLTYPES, isolation_level=None)
+            cur = con.cursor()
+            cur.execute("SELECT position, timepoint FROM track ORDER BY id DESC LIMIT 1")
+
+            position, timepoint = cur.fetchone()
+
+        except Exception as e:
+            sys.stdout.write(f"Error {e} while fetching from table {event_type} -- {dir_name}\n")
+            sys.stdout.flush()
+
+        finally:
+            if con:
+                con.close()
+            return position, timepoint
+
     elif event_type == 'growth':
         pass
