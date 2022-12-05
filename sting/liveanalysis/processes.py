@@ -65,7 +65,7 @@ class ExptRun(object):
         # and also kill events
         if 'acquire' in self.param.Experiment.queues:
             self.acquire_kill_event = tmp.Event()
-            if self.param.Experiment.events.pass_one_and_wait:
+            if self.param.Experiment.Acquisition.events.pass_one_and_wait:
                 self.acquire_queue = tmp.Queue()
             else:
                 self.acquire_events = None

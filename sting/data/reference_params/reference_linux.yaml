@@ -115,7 +115,8 @@ Experiment:
     - 'segment'
     - 'track'
     - 'growth'
-
+  max_positions: 1 # here for dummy placement
+  max_timepoints: 108 # here for dummy placement
   Acquisition:
     magnification: 100
     events:
@@ -130,23 +131,23 @@ Experiment:
       available_presets:
         - 'phase_fast'
         - 'phase_slow'
-
-      rules: # full functionlity not yet done for arbitrary rules
-          units: 'minutes' # units for start, every, end, #minutes or seconds
-          start: 0 # start t = 0 mins
-          every: 9 # units in mins
-          end: 60 # end t = 5 mins
-          group: 'imaging'
-          preset: 'phase_fast'
-          exposure: 10 # Always in ms
-          wait_pfs: False
-          speed: 'dual' # speed can be 'mono' or 'dual' or anything custom you write
-          # speed will vary based on distance, usually first and last positions are
-          # bridged by slow movements  
-          slow_positions: 'first' # will the first position be slow or 'last'  be slow # if auto
-          slow_dist_thres:  #if we have slow positions as 'auto', will move to slow mode if 
-          # distance is greater than this in microns
-          slow_preset: 'phase_slow'
+      rules: 
+      # full functionlity not yet done for arbitrary rules
+        units: 'minutes' # units for start, every, end, #minutes or seconds
+        start: 0 # start t = 0 mins
+        every: 9 # units in mins
+        end: 60 # end t = 5 mins
+        group: 'imaging'
+        preset: 'phase_fast'
+        exposure: 10 # Always in ms
+        wait_pfs: False
+        speed: 'dual' # speed can be 'mono' or 'dual' or anything custom you write
+        # speed will vary based on distance, usually first and last positions are
+        # bridged by slow movements  
+        slow_positions: 'first' # will the first position be slow or 'last'  be slow # if auto
+        slow_dist_thres:  #if we have slow positions as 'auto', will move to slow mode if 
+        # distance is greater than this in microns
+        slow_preset: 'phase_slow'
 
       
 

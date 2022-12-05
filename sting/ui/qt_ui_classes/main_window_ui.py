@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Form implementation generated from reading ui file 'qt_ui_files/main_window.ui'
+# Form implementation generated from reading ui file './qt_ui_files/main_window.ui'
 #
 # Created by: PyQt5 UI code generator 5.15.6
 #
@@ -207,7 +207,7 @@ class Ui_MainWindow(object):
         self.dead_alive_button.setObjectName("dead_alive_button")
         MainWindow.setCentralWidget(self.centralwidget)
         self.menubar = QtWidgets.QMenuBar(MainWindow)
-        self.menubar.setGeometry(QtCore.QRect(0, 0, 669, 21))
+        self.menubar.setGeometry(QtCore.QRect(0, 0, 669, 22))
         self.menubar.setObjectName("menubar")
         MainWindow.setMenuBar(self.menubar)
         self.statusbar = QtWidgets.QStatusBar(MainWindow)
@@ -228,10 +228,10 @@ class Ui_MainWindow(object):
         self.acq_label.setText(_translate("MainWindow", "Acquisition"))
         self.acq_pos_label.setText(_translate("MainWindow", "Positions"))
         self.acq_time_label.setText(_translate("MainWindow", "Time points"))
-        self.img_process_label.setText(_translate("MainWindow", "Image Processing"))
+        self.img_process_label.setText(_translate("MainWindow", "Segmentation"))
         self.img_pos_label.setText(_translate("MainWindow", "Positions"))
         self.img_time_label.setText(_translate("MainWindow", "Time points"))
-        self.cprop_label.setText(_translate("MainWindow", "Channel Properties"))
+        self.cprop_label.setText(_translate("MainWindow", "Tracking"))
         self.cprop_pos_label.setText(_translate("MainWindow", "Positions"))
         self.cprop_time_label.setText(_translate("MainWindow", "Time points"))
         self.controls.setTitle(_translate("MainWindow", "Controls"))

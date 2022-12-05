@@ -197,7 +197,7 @@
          </font>
         </property>
         <property name="text">
-         <string>Image Processing</string>
+         <string>Segmentation</string>
         </property>
         <property name="alignment">
          <set>Qt::AlignCenter</set>
@@ -282,7 +282,7 @@
          </font>
         </property>
         <property name="text">
-         <string>Channel Properties</string>
+         <string>Tracking</string>
         </property>
         <property name="alignment">
          <set>Qt::AlignCenter</set>
@@ -489,7 +489,7 @@
      <x>0</x>
      <y>0</y>
      <width>669</width>
-     <height>21</height>
+     <height>22</height>
     </rect>
    </property>
   </widget>
