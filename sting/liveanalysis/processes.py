@@ -235,6 +235,7 @@ class ExptRun(object):
                     #    write_files(result, 'cells_channels', self.param)
                     #else:
                     #    write_files(result, 'cells', self.param)
+                    write_to_db(result, self.expt_save_dir, 'segment')
                 except Exception as e:
                     sys.stdout.write(f"Error {e} while processing image at Position: {data_in_seg_queue['position']} time: {data_in_seg_queue['time']} \n")
                     sys.stdout.flush()

@@ -135,12 +135,14 @@ def process_image(datapoint, model, param):
             }
         )
         bboxes_final = post_barcode_transformations(yolo_datapoint)
-
+        #print(bboxes_final)
         #return None
         channel_locations, error = get_locations_btn_barcodes(seg_pred[1], bboxes_final, param, raw_shape)
         total_channels = 0
+        list_channel_locations = []
         for block in channel_locations:
             total_channels += channel_locations[block]['num_channels']
+            list_channel_locations.extend(channel_locations[block]['channel_locations'].tolist())
 
         return { 
             'phase': datapoint['image'],
@@ -150,6 +152,7 @@ def process_image(datapoint, model, param):
             'channels': seg_pred[1][:raw_shape[0], :raw_shape[1]],
             'barcode_locations': bboxes_final,
             'channel_locations': channel_locations,
+            'channel_locations_list': list_channel_locations,
             'raw_shape': seg_sample['raw_shape'],
             'total_channels': total_channels,
             'error': error # if error is true we are going to skip the position

@@ -5,8 +5,22 @@
 
 import sys
 import sqlite3
+import numpy as np
 from datetime import datetime
 from pathlib import Path
+import json
+
+
+class NpEncoder(json.JSONEncoder):
+    def default(self, obj):
+        if isinstance(obj, np.integer):
+            return int(obj)
+        if isinstance(obj, np.floating):
+            # 👇️ alternatively use str()
+            return float(obj)
+        if isinstance(obj, np.ndarray):
+            return obj.tolist()
+        return json.JSONEncoder.default(self, obj)
 
 def create_databases(dir_name, db_names):
     """
@@ -43,7 +57,7 @@ def create_databases(dir_name, db_names):
             elif db == 'segment':
                 cur.execute("""CREATE TABLE if not exists segment
                     (id INTEGER PRIMARY KEY AUTOINCREMENT, time TIMESTAMP, position INTEGER, timepoint INTEGER,
-                    segmentedpath TEXT, rawpath TEXT, barcodes INTEGER, locations BLOB, numchannels BLOB)""")
+                    rawpath TEXT, barcodes INTEGER, barcodelocations TEXT, numchannels INTEGER, channellocations TEXT)""")
             elif db == 'track':
                 cur.execute("""CREATE TABLE if not exists track
                     (id INTEGER PRIMARY KEY AUTOINCREMENT, time TIMESTAMP, position INTEGER, timepoint INTEGER,
@@ -80,22 +94,37 @@ def write_to_db(event_data, dir_name, event_type):
                 con.close()
         
     elif event_type == 'segment':
-        keys = ['position', 'timepoint', 'segmentedpath', 'rawpath', 'barcodes', 'locations', 'numchannels']
+        keys = ['position', 'time', 'total_channels', 'error']
         for key in keys:
             if key not in event_data:
-                event_data[key] = None
+                raise ValueError("Segmentation Database write received an invalid input ...")
+        
+        event_data['rawpath'] = dir_name / Path('Pos'+ str(event_data['position'])) / Path('phase') /Path('phase_' + str(event_data['time']).zfill(4)+ '.tiff')
+        event_data['barcodes'] = len(event_data['barcode_locations'])  
+    
+        if event_data['error']:
+            event_data['barcodes'] = 0
+            event_data['barcode_locations'] = [(0.0, 0.0, 0.0, 0.0, 0.0, 0.0)]
+            event_data['channel_locations_list'] = [-1.]
+
+        #print(json.dumps(event_data['barcode_locations']))
+        #print(str(event_data['rawpath']))
+        #print(type(event_data['barcode_locations']))
+        #print(json.dumps(event_data['barcode_locations']))
+        
         con = None
         db_file = dir_name / Path('segment.db')
         try:
             con = sqlite3.connect(db_file, detect_types=sqlite3.PARSE_DECLTYPES, isolation_level=None) 
             cur = con.cursor()
-            cur.execute("""INSERT into segment (time, position, timepoint, segmentedpath, rawpath, barcodes,
-                        locations, numchannels) VALUES (?, ?, ?, ?, ?, ?, ?, ?)""", 
-                        (datetime.now(), event_data['position'], event_data['timepoint'], event_data['segmentedpath'],
-                        event_data['rawpath'], event_data['barcodes'], event_data['locations'], event_data['numchannels'],)
+            cur.execute("""INSERT into segment (time, position, timepoint, rawpath, barcodes,
+                        barcodelocations, numchannels, channellocations) VALUES (?, ?, ?, ?, ?, ?, ?, ?)""", 
+                        (datetime.now(), event_data['position'], event_data['time'],
+                        str(event_data['rawpath']), event_data['barcodes'], json.dumps(event_data['barcode_locations'], cls=NpEncoder), 
+                        int(event_data['total_channels']), json.dumps(event_data['channel_locations_list']))
                     )
         except Exception as e:
-            sys.stderr.write(f"Error while writing to table {event_type} -- {event_data}\n")
+            sys.stderr.write(f"Error {e} while writing to table {event_type} -- {event_data}\n")
             sys.stderr.flush()
         finally:
             if con:
@@ -117,7 +146,7 @@ def write_to_db(event_data, dir_name, event_type):
                         event_data['beforebarcode'], event_data['afterbarcode'], event_data['location'],)
                     )
         except Exception as e:
-            sys.stderr.write(f"Error while writing to table {event_type} -- {event_data}\n")
+            sys.stderr.write(f"Error {e} while writing to table {event_type} -- {event_data}\n")
             sys.stderr.flush()
         finally:
             if con:
@@ -139,7 +168,7 @@ def write_to_db(event_data, dir_name, event_type):
                         event_data['beforebarcode'], event_data['afterbarcode'], event_data['location'],)
                     )
         except Exception as e:
-            sys.stderr.write(f"Error while writing to table {event_type} -- {event_data}\n")
+            sys.stderr.write(f"Error {e} while writing to table {event_type} -- {event_data}\n")
             sys.stderr.flush()
         finally:
             if con:
