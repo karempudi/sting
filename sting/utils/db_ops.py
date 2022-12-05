@@ -60,8 +60,7 @@ def create_databases(dir_name, db_names):
                     rawpath TEXT, barcodes INTEGER, barcodelocations TEXT, numchannels INTEGER, channellocations TEXT)""")
             elif db == 'track':
                 cur.execute("""CREATE TABLE if not exists track
-                    (id INTEGER PRIMARY KEY AUTOINCREMENT, time TIMESTAMP, position INTEGER, timepoint INTEGER,
-                    channelno INTEGER, beforebarcode INTEGER, afterbarcode INTEGER, location INTEGER)""")
+                    (id INTEGER PRIMARY KEY AUTOINCREMENT, time TIMESTAMP, position INTEGER, timepoint INTEGER) """)
             elif db == 'growth':
                 cur.execute("""CREATE TABLE if not exists growth
                     (id INTEGER PRIMARY KEY AUTOINCREMENT, time TIMESTAMP, position INTEGER, timepoint INTEGER,
@@ -131,7 +130,7 @@ def write_to_db(event_data, dir_name, event_type):
                 con.close()
  
     elif event_type == 'track':
-        keys = ['position', 'timepoint', 'channelno', 'beforebarcode', 'afterbarcode', 'location']
+        keys = ['position', 'time']
         for key in keys:
             if key not in event_data:
                 event_data[key] = None
@@ -140,10 +139,8 @@ def write_to_db(event_data, dir_name, event_type):
         try:
             con = sqlite3.connect(db_file, detect_types=sqlite3.PARSE_DECLTYPES, isolation_level=None) 
             cur = con.cursor()
-            cur.execute("""INSERT into segment (time, position, timepoint, channelno, beforebarcode, afterbarcode,
-                        location) VALUES (?, ?, ?, ?, ?, ?, ?)""", 
-                        (datetime.now(), event_data['position'], event_data['timepoint'], event_data['channelno'],
-                        event_data['beforebarcode'], event_data['afterbarcode'], event_data['location'],)
+            cur.execute("""INSERT into track (time, position, timepoint) VALUES (?, ?, ?)""", 
+                        (datetime.now(), event_data['position'], event_data['time'])
                     )
         except Exception as e:
             sys.stderr.write(f"Error {e} while writing to table {event_type} -- {event_data}\n")

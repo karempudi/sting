@@ -289,7 +289,10 @@ class ExptRun(object):
                 
                 # here we the data need to analyze this position, crop the channels and call tracker
                 track_one_position = activityTrackingPosition(data_tracker_queue, self.param)
-
+                write_to_db({
+                    'position': data_tracker_queue['position'],
+                    'time': data_tracker_queue['time']
+                }, self.expt_save_dir, 'track')
                 logger = logging.getLogger(name)
                 logger.log(logging.INFO, "Tracker queue got Pos: %s time: %s %s", 
                                     data_tracker_queue['position'], 
