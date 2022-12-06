@@ -3,7 +3,7 @@ import pathlib
 from pathlib import Path
 from typing import Union
 from sting.utils.types import RecursiveNamespace
-from itertools import cycle
+from itertools import cycle, repeat
 from sting.microscope.motion import MotionFromFile, RectGridMotion, TwoRectMotion 
 from tifffile import imread
 
@@ -155,4 +155,44 @@ class simAcquisition(object):
 
         else:
             #raise StopIteration
+            return None
+
+class simFullExpt(object):
+
+    def __init__(self, param: Union[dict, RecursiveNamespace],
+                n_positions=10):
+
+        self.dir = Path(param.Experiment.sim_directory)
+        self.filenames = sorted(list(self.dir.glob('*.tif*')))
+        self.n_timepoints = len(self.filenames)
+        self.n_positions = n_positions
+        self.pos_time = []
+        for j in range(self.n_timepoints):
+            for i in range(1, self.n_positions+1):
+                self.pos_time.append((j, i))
+        self.max_events = len(self.pos_time)
+        self.events_sent = 0
+    @classmethod
+    def parse(cls, param):
+        return cls(param)
+
+    def __len__(self):
+        return len(self.pos_time)
+
+    def __iter__(self):
+        return self
+
+    def __next__(self):
+        if self.events_sent < self.max_events: 
+            time, pos = self.pos_time[self.events_sent]
+            self.events_sent += 1
+            current_filename = self.filenames[time]
+            img = imread(current_filename).astype('float32')
+            return {
+                'image': img,
+                'position': pos,
+                'timepoint': time,
+                'last': (pos == self.n_positions)
+            }
+        else:
             return None

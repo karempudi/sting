@@ -14,7 +14,7 @@ from queue import Empty
 from functools import partial
 from sting.utils.logger import logger_listener, setup_root_logger
 from sting.utils.db_ops import create_databases, write_to_db, read_from_db
-from sting.microscope.acquisition import simAcquisition, ExptAcquisition
+from sting.microscope.acquisition import simAcquisition, ExptAcquisition, simFullExpt
 from sting.utils.param_io import save_params
 from sting.utils.disk_ops import write_files
 from sting.mm.detect import get_loaded_model, process_image
@@ -173,7 +173,8 @@ class ExptRun(object):
         name = tmp.current_process().name
         print(f"Starting {name} simulation process ..")
         # keep process alive
-        expt_acq = simAcquisition(self.param)
+        #expt_acq = simAcquisition(self.param)
+        expt_acq = simFullExpt(self.param, n_positions=10)
         time.sleep(4)
         sys.stdout.write(f"Starting the acquisition sequence now .. \n")
         sys.stdout.flush()
@@ -189,6 +190,10 @@ class ExptRun(object):
                                             'time': data['timepoint'],
                                             'image': data['image']})
                     write_to_db({'position': data['position'], 'timepoint': data['timepoint']}, self.expt_save_dir, 'acquire')
+                    if data['last']:
+                        time.sleep(1)
+                        sys.stdout.write(f"Sleeping after acquiring one loop ...\n")
+                        sys.stdout.flush()
                 else:
                     break
 
