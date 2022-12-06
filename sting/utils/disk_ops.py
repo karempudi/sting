@@ -1,6 +1,7 @@
 
 # File containing function that help you
 # write file generated during the experiment
+import numpy as np
 import sys
 import pickle
 import pathlib
@@ -151,13 +152,51 @@ def write_files(event_data, event_type, param):
         sys.stdout.write(f"Writing failed due to {e} for data {event_data} ..\n")
         sys.stdout.flush()
 
-def read_files(read_keys, read_type, param):
+def read_files(read_type, param, position, channel_no, max_imgs=20):
     """
-    File that will help read data from disk of various types
+    File that will help read data from disk of various types for
+    visualization purposes only
 
     Arguements:
+        read_type: 'phase
 
     Returns:
 
     """
-    return None
+    try:
+        dir_name = Path(param.Save.directory) if isinstance(param.Save.directory, str) else param.Save.directory
+        if read_type == 'phase':
+            phase_dir = dir_name / Path('phase')
+            return np.random.rand((100, 100)) * 255
+        elif read_type == 'cell_seg':
+            # get cell segmentation data image from reading the cell images data
+            # check if cells_tracks.hdf5 exists
+            filename = dir_name / Path('Pos' + str(position)) / Path('cells_tracks.hdf5')
+            print(filename)
+            if not filename.exists():
+                raise FileNotFoundError(f"File not found error at Pos{position} for readtype {cell_seg} ...:( ")
+            with h5py.File(filename, 'r') as cells_file:
+                n_images = len(cells_file[str(channel_no) + '/cells'])
+                keys = [key for key in cells_file[str(channel_no) + '/cells'].keys()]
+                if len(keys) == 0:
+                    raise KeyError("n_keys is 0")
+                height, width = cells_file[str(channel_no) + '/cells/' + keys[0]][()].shape
+                keys_to_get = keys[-max_imgs:]
+                print(keys_to_get)
+                full_img = np.zeros((height, len(keys_to_get)*width))
+                for i, key in enumerate(keys_to_get, 0):
+                    img_str = str(channel_no) + '/cells/' + key
+                    full_img[:, i*width: (i+1)*width] = cells_file[img_str][()]
+
+            return full_img
+        
+        elif read_type == 'cell_tracks':
+            return np.random.rand((100, 100)) * 255
+        
+
+    except KeyError as k:
+        sys.stdout.write(f"Reading failded to lay of some key {k}...\n")
+        sys.stdout.flush()
+    except Exception as e:
+        sys.stdout.write(f"Reading data failed due to {e} for {read_type} ..\n")
+        sys.stdout.flush()

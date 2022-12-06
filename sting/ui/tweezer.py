@@ -3,9 +3,12 @@ import sys
 import argparse
 from PyQt5.QtWidgets import (QApplication, QMainWindow, 
                 QFileDialog, QMessageBox)
+from PyQt5.QtGui import QIntValidator
+from PyQt5.QtCore import QThread, pyqtSignal
 from sting.utils.types import RecursiveNamespace
 from sting.ui.qt_ui_classes.tweezer_window_ui import Ui_TweezerWindow
 from sting.utils.param_io import load_params
+
                 
 class TweezerWindow(QMainWindow):
     """
@@ -25,14 +28,31 @@ class TweezerWindow(QMainWindow):
 
         self.param = param
 
+        self.current_pos = None
+        self.current_ch_no = None
+        self.position_no_validator =  None
+        self.channel_no_validator = None
+
+        self.expt_running = False
+
     
     def setup_button_handlers(self):
-        # button handlers
-        pass
+        # plotting settings hide defaults
+        self.ui.image_plot.ui.histogram.hide()
+        self.ui.image_plot.ui.roiBtn.hide()
+        self.ui.image_plot.ui.menuBtn.hide()
+        self.ui.barcode_plot_1.ui.histogram.hide()
+        self.ui.barcode_plot_1.ui.roiBtn.hide()
+        self.ui.barcode_plot_1.ui.menuBtn.hide()
+        self.ui.barcode_plot_2.ui.histogram.hide()
+        self.ui.barcode_plot_2.ui.roiBtn.hide()
+        self.ui.barcode_plot_2.ui.menuBtn.hide()
 
     def set_params(self, param: RecursiveNamespace):
         self.param = param
-
+        self.position_no_validator = QIntValidator(0, self.param.Experiment.max_positions, self.ui.pos_no_edit)
+        self.channel_no_validator = QIntValidator(0, 120, self.ui, self.ui.ch_no_edit)
+ 
 def parse_args():
     parser = argparse.ArgumentParser()
     parser.add_argument('-p', '--param_file',

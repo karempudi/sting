@@ -74,7 +74,7 @@
      <rect>
       <x>20</x>
       <y>110</y>
-      <width>541</width>
+      <width>451</width>
       <height>561</height>
      </rect>
     </property>
@@ -82,10 +82,10 @@
    <widget class="QGroupBox" name="filter_params_box">
     <property name="geometry">
      <rect>
-      <x>610</x>
+      <x>660</x>
       <y>80</y>
-      <width>341</width>
-      <height>261</height>
+      <width>291</width>
+      <height>251</height>
      </rect>
     </property>
     <property name="title">
@@ -189,10 +189,10 @@
    <widget class="PlotWidget" name="properties_view">
     <property name="geometry">
      <rect>
-      <x>610</x>
-      <y>410</y>
+      <x>650</x>
+      <y>440</y>
       <width>321</width>
-      <height>241</height>
+      <height>211</height>
      </rect>
     </property>
    </widget>
@@ -266,32 +266,6 @@
       <widget class="QRadioButton" name="cell_tracks_image">
        <property name="text">
         <string>Tracking</string>
-       </property>
-      </widget>
-     </item>
-    </layout>
-   </widget>
-   <widget class="QWidget" name="horizontalLayoutWidget_3">
-    <property name="geometry">
-     <rect>
-      <x>570</x>
-      <y>340</y>
-      <width>391</width>
-      <height>61</height>
-     </rect>
-    </property>
-    <layout class="QHBoxLayout" name="filter_update">
-     <item>
-      <widget class="QPushButton" name="update_filters_button">
-       <property name="text">
-        <string>Update Filter Parameters</string>
-       </property>
-      </widget>
-     </item>
-     <item>
-      <widget class="QPushButton" name="find_tweezable_pos_button">
-       <property name="text">
-        <string>Find All Tweezable Channels</string>
        </property>
       </widget>
      </item>
@@ -420,6 +394,52 @@
      <string>Plot Properties</string>
     </property>
    </widget>
+   <widget class="QWidget" name="verticalLayoutWidget">
+    <property name="geometry">
+     <rect>
+      <x>670</x>
+      <y>350</y>
+      <width>281</width>
+      <height>80</height>
+     </rect>
+    </property>
+    <layout class="QVBoxLayout" name="verticalLayout">
+     <item>
+      <widget class="QPushButton" name="find_tweezable_pos_button">
+       <property name="text">
+        <string>Find All Tweezable Channels</string>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QPushButton" name="update_filters_button">
+       <property name="text">
+        <string>Update Filter Parameters</string>
+       </property>
+      </widget>
+     </item>
+    </layout>
+   </widget>
+   <widget class="ImageView" name="barcode_plot_1">
+    <property name="geometry">
+     <rect>
+      <x>490</x>
+      <y>150</y>
+      <width>51</width>
+      <height>471</height>
+     </rect>
+    </property>
+   </widget>
+   <widget class="ImageView" name="barcode_plot_2">
+    <property name="geometry">
+     <rect>
+      <x>550</x>
+      <y>150</y>
+      <width>51</width>
+      <height>471</height>
+     </rect>
+    </property>
+   </widget>
   </widget>
   <widget class="QMenuBar" name="menubar">
    <property name="geometry">
@@ -427,7 +447,7 @@
      <x>0</x>
      <y>0</y>
      <width>1551</width>
-     <height>21</height>
+     <height>22</height>
     </rect>
    </property>
   </widget>

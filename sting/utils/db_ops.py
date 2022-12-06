@@ -232,6 +232,9 @@ def read_from_db(event_type, dir_name):
             if con:
                 con.close()
             return position, timepoint
+    elif event_type == 'barcode_locations':
+        pass
+
 
     elif event_type == 'growth':
         pass
