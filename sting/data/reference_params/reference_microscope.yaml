@@ -115,6 +115,8 @@ Experiment:
     - 'segment'
     - 'track'
     - 'growth'
+  max_positions: 10 # here for dummy placement
+  max_timepoints: 108 # here for dummy placement
   Acquisition:
     magnification: 100
     events:
