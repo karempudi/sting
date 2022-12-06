@@ -24,6 +24,16 @@ class MainWindow(QMainWindow):
         self.ui.setupUi(self)
         self.setWindowTitle("Experiment Analysis")
 
+        # set progress bars to 0
+        self.ui.acq_pos_bar.setValue(0)
+        self.ui.acq_time_bar.setValue(0)
+        self.ui.seg_pos_bar.setValue(0)
+        self.ui.seg_time_bar.setValue(0)
+        self.ui.track_pos_bar.setValue(0)
+        self.ui.track_time_bar.setValue(0)
+    
+    
+
         # setup button handlers()
         self.setup_button_handlers()
 
@@ -149,21 +159,23 @@ class MainWindow(QMainWindow):
         pass
 
     def update_progress_bars(self):
-        sys.stdout.write(f"Onre more second passed {datetime.now()} ..\n")
-        sys.stdout.flush()
+        #sys.stdout.write(f"Onre more second passed {datetime.now()} ..\n")
+        #sys.stdout.flush()
         # get data from all the databases of the experiment and set status
         # of the bars and boxes
         expt_save_dir = Path(self.param.Save.directory)
-        print(f"Acquired: {read_from_db('acquire', expt_save_dir)}")
-        print(f"Segment: {read_from_db('segment', expt_save_dir)}")
-        print(f"Track: {read_from_db('track', expt_save_dir)}")
-        self.ui.acq_pos_bar.setValue(50)
-        self.ui.acq_time_bar.setValue(50)
-        self.ui.seg_pos_bar.setValue(50)
-        self.ui.seg_time_bar.setValue(50)
-        self.ui.track_pos_bar.setValue(50)
-        self.ui.track_time_bar.setValue(50)
-        
+        acq_pos, acq_time = read_from_db('acquire', expt_save_dir)
+        seg_pos, seg_time = read_from_db('segment', expt_save_dir)
+        track_pos, track_time = read_from_db('track', expt_save_dir)
+        #print(f"Acquired: {read_from_db('acquire', expt_save_dir)}")
+        #print(f"Segment: {read_from_db('segment', expt_save_dir)}")
+        #print(f"Track: {read_from_db('track', expt_save_dir)}")
+        self.ui.acq_pos_bar.setValue(int(100 * (acq_pos/self.param.Experiment.max_positions)))
+        self.ui.acq_time_bar.setValue(int(100 * ((acq_time+1)/self.param.Experiment.max_timepoints)))
+        self.ui.seg_pos_bar.setValue(int(100 * (seg_pos/self.param.Experiment.max_positions)))
+        self.ui.seg_time_bar.setValue(int(100 * ((seg_time+1)/self.param.Experiment.max_timepoints)))
+        self.ui.track_pos_bar.setValue(int(100 * (track_pos/self.param.Experiment.max_positions)))
+        self.ui.track_time_bar.setValue(int(100 * ((track_time+1)/self.param.Experiment.max_timepoints)))
     
 
 def main():
