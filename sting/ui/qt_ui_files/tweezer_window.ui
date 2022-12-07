@@ -251,7 +251,7 @@
         <string>Phase</string>
        </property>
        <property name="checked">
-        <bool>true</bool>
+        <bool>false</bool>
        </property>
       </widget>
      </item>
@@ -259,6 +259,9 @@
       <widget class="QRadioButton" name="cell_seg_image">
        <property name="text">
         <string>Cell Seg</string>
+       </property>
+       <property name="checked">
+        <bool>true</bool>
        </property>
       </widget>
      </item>

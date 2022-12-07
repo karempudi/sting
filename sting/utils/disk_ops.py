@@ -192,7 +192,7 @@ def read_files(read_type, param, position, channel_no, max_imgs=20):
         
         elif read_type == 'cell_tracks':
             return np.random.rand((100, 100)) * 255
-        
+
 
     except KeyError as k:
         sys.stdout.write(f"Reading failded to lay of some key {k}...\n")
