@@ -16,7 +16,7 @@ class NpEncoder(json.JSONEncoder):
         if isinstance(obj, np.integer):
             return int(obj)
         if isinstance(obj, np.floating):
-            # 👇️ alternatively use str()
+            # alternatively use str()
             return float(obj)
         if isinstance(obj, np.ndarray):
             return obj.tolist()
@@ -173,7 +173,7 @@ def write_to_db(event_data, dir_name, event_type):
  
  
 
-def read_from_db(event_type, dir_name):
+def read_from_db(event_type, dir_name, position=None, timepoint=None):
     if event_type == 'acquire':
         con = None
         position, timepoint = None, None
@@ -233,8 +233,27 @@ def read_from_db(event_type, dir_name):
                 con.close()
             return position, timepoint
     elif event_type == 'barcode_locations':
-        pass
-
+        con = None
+        # position and timepoint are the key work args
+        db_file = dir_name / Path('segment.db')
+        data = None
+        #print(f"Getting barcode locations form {db_file}, position: {position}, timepoint: {timepoint}")
+        try:
+            con = sqlite3.connect(db_file)
+            cur = con.cursor()
+            cur.execute("""SELECT barcodes, barcodelocations, numchannels, channellocations FROM segment WHERE (position=? AND timepoint=?)""", (position, timepoint))
+            data = cur.fetchone()
+            data = {'numbarcodes': int(data[0]),
+                    'barcode_locations': json.loads(data[1]),
+                    'numchannels': int(data[2]),
+                    'channel_locations': json.loads(data[3])}   
+        except Exception as e:
+            sys.stdout.write(f"Error {e} while fetching from table segment: barcode_locations -- {dirname}\n")
+            sys.stdout.flush()
+        finally:
+            if con:
+                con.close()
+            return data
 
     elif event_type == 'growth':
         pass

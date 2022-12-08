@@ -135,6 +135,7 @@ def process_image(datapoint, model, param):
             }
         )
         bboxes_final = post_barcode_transformations(yolo_datapoint)
+        bboxes_final = sorted(bboxes_final, key=lambda x: x[0]) # sort according to top left corner
         #print(bboxes_final)
         #return None
         channel_locations, error = get_locations_btn_barcodes(seg_pred[1], bboxes_final, param, raw_shape)

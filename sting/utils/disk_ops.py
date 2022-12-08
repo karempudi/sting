@@ -7,9 +7,10 @@ import pickle
 import pathlib
 from pathlib import Path
 from sting.utils.types import RecursiveNamespace
-from skimage.io import imsave
+from skimage.io import imsave, imread
 from skimage.measure import label
 import h5py
+from sting.utils.db_ops import read_from_db
 
 def write_files(event_data, event_type, param):
     """
@@ -165,14 +166,54 @@ def read_files(read_type, param, position, channel_no, max_imgs=20):
     """
     try:
         dir_name = Path(param.Save.directory) if isinstance(param.Save.directory, str) else param.Save.directory
+
+        sys.stdout.write(f"Read files called with Pos:{position}, Ch no: {channel_no}..\n")
+        sys.stdout.flush()
+
         if read_type == 'phase':
-            phase_dir = dir_name / Path('phase')
-            return np.random.rand((100, 100)) * 255
+            phase_dir = dir_name / Path('Pos' + str(position)) / Path('phase')
+            # read all the files 
+            phase_filenames = sorted(list(phase_dir.glob('*.tiff')))
+            #print(phase_filenames)
+            #print(phase_filenames[-1].name)
+            last_key = int(phase_filenames[-1].name.split('_')[-1].split('.')[0])
+            #print("Last phase image key", last_key)
+            prev_phase_img = imread(phase_filenames[-1])
+            height, _ = prev_phase_img.shape
+            barcode_data = read_from_db('barcode_locations', dir_name, position=position, timepoint=last_key)
+            #print(f"Last key: {last_key}, barcode_data: {barcode_data}")
+            # get the barcode locations and grab barcode images from the phase image
+            channel_location = barcode_data['channel_locations'][channel_no]
+            for i, barcode in enumerate(barcode_data['barcode_locations'], 0):
+                if (((barcode[0] + barcode[2])/2) > channel_location):
+                    break
+            left_barcode =  barcode_data['barcode_locations'][i-1]
+            right_barcode = barcode_data['barcode_locations'][i]
+            left_barcode_img = prev_phase_img[int(left_barcode[1]): int(left_barcode[3]), int(left_barcode[0]): int(left_barcode[2])]
+            right_barcode_img = prev_phase_img[int(right_barcode[1]): int(right_barcode[3]), int(right_barcode[0]): int(right_barcode[2])]
+            
+            # depending upon no of images needed grab the filenames, iterate and stack
+            if max_imgs != None:
+                files_2_iter = phase_filenames[-max_imgs:]
+            else:
+                files_2_iter = phase_filenames
+            channel_width = 2 * param.Save.channel_width 
+            full_img = np.zeros((height, len(files_2_iter)*channel_width)) 
+            for i, filename in enumerate(files_2_iter, 0):
+                phase_slice = imread(filename)[:, channel_location-(channel_width//2): channel_location+(channel_width//2)]
+                full_img[:, (i)*channel_width: (i+1)*channel_width] = phase_slice
+
+            return {
+                'image': full_img,
+                'left_barcode': left_barcode_img,
+                'right_barcode': right_barcode_img,
+            }
         elif read_type == 'cell_seg':
             # get cell segmentation data image from reading the cell images data
             # check if cells_tracks.hdf5 exists
+
             filename = dir_name / Path('Pos' + str(position)) / Path('cells_tracks.hdf5')
-            print(filename)
+            #print(filename)
             if not filename.exists():
                 raise FileNotFoundError(f"File not found error at Pos{position} for readtype {cell_seg} ...:( ")
             with h5py.File(filename, 'r') as cells_file:
@@ -181,14 +222,37 @@ def read_files(read_type, param, position, channel_no, max_imgs=20):
                 if len(keys) == 0:
                     raise KeyError("n_keys is 0")
                 height, width = cells_file[str(channel_no) + '/cells/' + keys[0]][()].shape
-                keys_to_get = keys[-max_imgs:]
-                print(keys_to_get)
+                if max_imgs != None:
+                    keys_to_get = keys[-max_imgs:]
+                else:
+                    keys_to_get = keys
+                #print(keys_to_get)
                 full_img = np.zeros((height, len(keys_to_get)*width))
                 for i, key in enumerate(keys_to_get, 0):
                     img_str = str(channel_no) + '/cells/' + key
                     full_img[:, i*width: (i+1)*width] = cells_file[img_str][()]
+                
+                prev_phase_img = cells_file['/prev_phase'][()]
+                last_key = int(keys_to_get[-1].split('_')[1])
 
-            return full_img
+                barcode_data = read_from_db('barcode_locations', dir_name, position=position, timepoint=last_key)
+                #print(f"Last key: {last_key}, barcode_data: {barcode_data}")
+                # get the barcode locations and grab barcode images from the phase image
+                channel_location = barcode_data['channel_locations'][channel_no]
+                for i, barcode in enumerate(barcode_data['barcode_locations'], 0):
+                    if (((barcode[0] + barcode[2])/2) > channel_location):
+                        break
+                left_barcode =  barcode_data['barcode_locations'][i-1]
+                right_barcode = barcode_data['barcode_locations'][i]
+                left_barcode_img = prev_phase_img[int(left_barcode[1]): int(left_barcode[3]), int(left_barcode[0]): int(left_barcode[2])]
+                right_barcode_img = prev_phase_img[int(right_barcode[1]): int(right_barcode[3]), int(right_barcode[0]): int(right_barcode[2])]
+
+            #print(f"Image shape: {full_img.shape}, channel location: {channel_location} left_barcode: {left_barcode}, right_barcode: {right_barcode}")
+            return {
+                'image': full_img, 
+                'left_barcode': left_barcode_img,
+                'right_barcode': right_barcode_img,
+            }
         
         elif read_type == 'cell_tracks':
             return np.random.rand((100, 100)) * 255

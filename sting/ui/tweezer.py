@@ -29,6 +29,9 @@ class DataFetchThread(QThread):
         sys.stdout.flush()
         try:
             a = 1 + 1
+            image_data = read_files(self.read_type, self.param, self.position, self.channel_no, self.max_imgs)
+            #print(image.shape)
+            self.data = image_data
         except Exception as e:
             sys.stdout.write(f"Data couldn't be fetched due to {e}\n")
             sys.stdout.flush()
@@ -107,8 +110,13 @@ class TweezerWindow(QMainWindow):
 
     def set_params(self, param: RecursiveNamespace):
         self.param = param
-        self.position_no_validator = QIntValidator(0, self.param.Experiment.max_positions, self.ui.pos_no_edit)
-        self.channel_no_validator = QIntValidator(0, 120, self.ui, self.ui.ch_no_edit)
+        self.max_positions = int(self.param.Experiment.max_positions)
+        sys.stdout.write(f"Max positions set to {self.max_positions} ..\n")
+        sys.stdout.flush()
+        #self.position_no_validator = QIntValidator(1, self.max_positions)
+        #self.channel_no_validator = QIntValidator(0, 120)
+        #self.ui.pos_no_edit.setValidator(QIntValidator(1, self.max_positions))
+        #self.ui.ch_no_edit.setValidator(QIntValidator(0, 120))
     
     def position_changed(self):
         position = self.ui.pos_no_edit.text()
@@ -139,17 +147,17 @@ class TweezerWindow(QMainWindow):
         self.show_phase = self.ui.phase_image.isChecked()
         self.show_seg = self.ui.cell_seg_image.isChecked()
         self.show_tracks = self.ui.cell_tracks_image.isChecked()
-        sys.stdout.write(f"Phase: {self.show_phase}, Seg: {self.show_seg}, Tracks: {self.show_tracks}\n")
-        sys.stdout.flush()
+        #sys.stdout.write(f"Phase: {self.show_phase}, Seg: {self.show_seg}, Tracks: {self.show_tracks}\n")
+        #sys.stdout.flush()
     
     def set_no_images2get(self):
         if self.ui.get_last20_radio.isChecked():
             self.max_imgs = 20
-            sys.stdout.write(f"Getting only {self.max_imgs} images\n")
+            #sys.stdout.write(f"Getting only {self.max_imgs} images\n")
         else:
             self.max_imgs = None
-            sys.stdout.write(f"Getting all images\n")
-        sys.stdout.flush()
+            #sys.stdout.write(f"Getting all images\n")
+        #sys.stdout.flush()
     
     def fetch_data(self):
         if self.show_phase:
@@ -169,6 +177,11 @@ class TweezerWindow(QMainWindow):
     def update_image(self):
         sys.stdout.write(f"Image updated ...\n")
         sys.stdout.flush()
+        img_data = self.data_fetch_thread.get_data()
+        if img_data != None:
+            self.ui.image_plot.setImage(img_data['image'].T, autoLevels=True, autoRange=True)
+            self.ui.barcode_plot_1.setImage(img_data['left_barcode'].T, autoLevels=True, autoRange=True)
+            self.ui.barcode_plot_2.setImage(img_data['right_barcode'].T, autoLevels=True, autoRange=True)
         self.data_fetch_thread.quit()
         self.data_fetch_thread.wait()
         self.data_fetch_thread = None
