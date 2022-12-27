@@ -99,7 +99,7 @@ class ExptAcquisition(object):
         return len(self.events)
 
     def get_events(self):
-        return self.all_events
+        return self.events
 
 class simAcquisition(object):
 
