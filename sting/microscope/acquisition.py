@@ -59,31 +59,31 @@ class ExptAcquisition(object):
         self.n_loops = len(self.min_loop_start_times)
         self.loop_interval = self.rules.every * self.time_factor
 
-        for i, position_data in enumerate(self.positions, 0):
-            event = {}
-            # grab position number from the 
-            event['axes']  = {'time': 0, 'position': int(position_data['label'][3:])}
-            event['x'] = position_data['x']
-            event['y'] = position_data['y']
-            event['z'] = position_data['z']
-            event['channel'] = {'group': self.rules.group, 'config': self.rules.preset}
-            event['exposure'] = self.rules.exposure 
-            event['min_start_time'] = 0
-            self.events.append(event)
-        if self.rules.slow_positions == 'first':
-            self.events[0]['channel']['config'] = self.rules.slow_preset
-        elif self.rules.slow_positions == 'last':
-            self.events[-1]['channel']['config'] = self.rules.slow_preset
-        elif self.rules.slow_positions == 'auto':
-            # write checks for max distance between consecutive positions and 
-            # set approriately
-            pass
-        elif self.rules.slow_positions == 'none':
-            pass
+        for loop_no in range(self.n_loops):
+            for i, position_data in enumerate(self.positions, 0):
+                event = {}
+                # grab position number from the 
+                event['axes']  = {'time': loop_no, 'position': int(position_data['label'][3:])}
+                event['x'] = position_data['x']
+                event['y'] = position_data['y']
+                event['z'] = position_data['z']
+                event['channel'] = {'group': self.rules.group, 'config': self.rules.preset}
+                event['exposure'] = self.rules.exposure 
+                event['min_start_time'] = self.min_loop_start_times[loop_no] * self.loop_interval
+                self.events.append(event)
+            if self.rules.slow_positions == 'first':
+                self.events[0]['channel']['config'] = self.rules.slow_preset
+            elif self.rules.slow_positions == 'last':
+                self.events[-1]['channel']['config'] = self.rules.slow_preset
+            elif self.rules.slow_positions == 'auto':
+                # write checks for max distance between consecutive positions and 
+                # set approriately
+                pass
+            elif self.rules.slow_positions == 'none':
+                pass
 
         # calculate max events based on the rules
-        self.max_events = self.n_loops * len(self.events)
-        self.cycle = cycle(self.events)
+        self.max_events = len(self.events)
 
         self.events_sent = 0
         self.loop_number = 0
@@ -91,23 +91,15 @@ class ExptAcquisition(object):
     @classmethod
     def parse(cls, param):
         return cls(param)
+    
+    def __getitem__(self, idx):
+        return self.events[idx]
+    
+    def __len__(self):
+        return len(self.events)
 
-    def __iter__(self):
-        return self
-
-    def __next__(self):
-        if self.events_sent < self.max_events:
-            self.events_sent += 1 
-            x = next(self.cycle)
-            x['axes']['time'] = self.loop_number
-            x['min_start_time'] = self.loop_number * self.loop_interval # has to be changed if the loop changes
-            if self.events_sent % len(self.events) == 0:
-                # we completed one loop
-                self.loop_number += 1
-            return x
-        else:
-            #raise StopIteration
-            return None
+    def get_events(self):
+        return self.all_events
 
 class simAcquisition(object):
 
