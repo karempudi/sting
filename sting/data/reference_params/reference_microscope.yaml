@@ -123,7 +123,8 @@ Experiment:
       pass_one_and_wait: True # if you set this to true, set pass_all to False
       pass_all: False # if you set this to true, pass_one_and_wait to False
       #pos_filename: "C:\\Users\\elflab\\Documents\\Praneeth\\sting\\sting\\data\\reference_position_files\\position_list.pos" # positions filename
-      pos_filename: 'D:\\praneeth\\position_lists\\PositionList.pos'
+      #pos_filename: 'D:\\praneeth\\position_lists\\PositionList.pos'
+      pos_filename: "F:\\position_lists\\positions_20.pos"
       motion_type: 'all_from_file' # can be 'all_from_file' or 'one_rect_from_file' or 'two_rect_from_file'
       motion_params:
         x_space:

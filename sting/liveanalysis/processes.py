@@ -9,7 +9,8 @@ from pathlib import Path
 from typing import Union
 from datetime import datetime
 from sting.utils.types import RecursiveNamespace
-import torch.multiprocessing as tmp
+#import torch.multiprocessing as tmp
+import multiprocessing as tmp
 from queue import Empty
 from functools import partial
 from sting.utils.logger import logger_listener, setup_root_logger
@@ -20,7 +21,8 @@ from sting.utils.disk_ops import write_files
 from sting.mm.detect import get_loaded_model, process_image
 from sting.tracking.activity_tracking import activityTrackingPosition
 from sting.utils.verify import verify_channel_locations
-from pycromanager import Acquisition, Bridge
+from pycromanager import Acquisition, Core
+from skimage import io
 
 class ExptRun(object):
     """
@@ -95,6 +97,12 @@ class ExptRun(object):
         else:
             self.growth_queue = None
 
+        self.expt_acq = None
+        self.events = None
+        self.core = None
+        self.counter = 0
+        self.max_events = None
+
             
     @staticmethod
     def make_events(pos_filename):
@@ -127,17 +135,41 @@ class ExptRun(object):
         root.addHandler(h)
         root.setLevel(logging.DEBUG)
 
-    def put_image_in_queue(self, image, metadata):
+    def put_image_in_queue(self, image, metadata, event_queue):
         sys.stdout.write(f"Acquired image at position: {metadata['Axes']['position']} and time: {metadata['Axes']['time']}\n")
         sys.stdout.flush()
-        #self.segment_queue.put({
-        #    'position': metadata['Axes']['position'],
-        #    'time': metadata['Axes']['time'],
-        #    'image': image
-        #})
+        path = Path("C:\\Users\\elflab\\Documents\\Praneeth\\data\\simstack")
+        image_number = 'img_' + str(int(metadata['Axex']['time'])).zfill(9) + '.tiff'
+        image_path = path / Path(image_number)
+        sys.stdout.write(f"Image filename to put in queue: {image_path}... \n")
+        sys.stdout.flush()
+        image = io.imread(image_path)
+        self.segment_queue.put({
+            'position': metadata['Axes']['position'],
+            'time': metadata['Axes']['time'],
+            'image': image
+        })
+        event_number = self.counter
+        self.counter += 1
 
-    def wait_for_pfs(self,):
-        pass
+        # put None when you hit the max events
+        if self.counter > self.max_events:
+            event_queue.put(None)
+        # if you press stop you kill the request for the next event
+        elif self.acquire_kill_event.is_set():
+            event_queue.put(None)
+
+        # place the request for next even acquistion event
+        else:
+            event_queue.put(self.events[event_number+1])
+        name = tmp.current_process
+        logger = logging.getLogger(name)
+        logger.log(logging.INFO, "Acquired image of position: %s, time: %s",
+                    metadata['Axes']['position'], metadata['Axes']['time'])
+
+    def wait_for_pfs(self, event):
+        self.core.full_focus()
+        return event    
     
     def acquire(self):
         # configure acquire logger
@@ -145,24 +177,25 @@ class ExptRun(object):
         name = tmp.current_process().name
         print(f"Starting {name} process ..")
         # keep the process alive
-        expt_acq = ExptAcquisition(self.param)
+        self.expt_acq = ExptAcquisition(self.param)
+        events = self.expt_acq.get_events()
+        self.events = [events[0]] + events
+        self.core = Core()
+        self.max_events = len(events)
         time.sleep(4) # wait for segnets to load on GPU before starting the acquisition loop
-        while not self.acquire_kill_event.is_set():
-            try:
-                event = next(expt_acq) 
-                # event is None for the last event possible
-                if event is not None:
-                    with Acquisition(image_process_fn=partial(self.put_image_in_queue),
-                         post_hardware_hook_fn=self.wait_for_pfs) as acq: 
-                        acq.acquire(event)
-                    logger = logging.getLogger(name)
-                    logger.log(logging.INFO, "Acquired image of position: %s, time: %s",
-                                event['axes']['position'], event['axes']['time'])
-            except KeyboardInterrupt:
-                self.acquire_kill_event.set()
-                sys.stdout.write("Acquire process interrupted using keyboard\n")
-                sys.stdout.flush()
-                break
+        try:
+
+            microscope_acq = Acquisition(image_process_fn=self.put_image_in_queue,
+                                    post_hardware_hook_fn=self.wait_for_pfs)
+            microscope_acq.acquire(self.events[:2])
+            #logger = logging.getLogger(name)
+            #logger.log(logging.INFO, "Acquired image of position: %s, time: %s",
+            #            event['axes']['position'], event['axes']['time'])
+        except KeyboardInterrupt:
+            self.acquire_kill_event.set()
+            sys.stdout.write("Acquire process interrupted using keyboard\n")
+            sys.stdout.flush()
+            
         self.segment_queue.put(None)
         sys.stdout.write("Acquire process completed successfully\n")
         sys.stdout.flush()
@@ -174,13 +207,13 @@ class ExptRun(object):
         print(f"Starting {name} simulation process ..")
         # keep process alive
         #expt_acq = simAcquisition(self.param)
-        expt_acq = simFullExpt(self.param, n_positions=10)
+        self.expt_acq = simFullExpt(self.param, n_positions=10)
         time.sleep(4)
         sys.stdout.write(f"Starting the acquisition sequence now .. \n")
         sys.stdout.flush()
         while not self.acquire_kill_event.is_set():
             try:
-                data = next(expt_acq)
+                data = next(self.expt_acq)
                 # metadata and image should be put
                 if data is not None:
                     logger = logging.getLogger(name)
