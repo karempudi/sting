@@ -64,7 +64,7 @@ class ExptAcquisition(object):
             for i, position_data in enumerate(self.positions, 0):
                 event = {}
                 # grab position number from the 
-                event['axes']  = {'time': loop_no+1, 'position': int(position_data['label'][3:])}
+                event['axes']  = {'time': loop_no, 'position': int(position_data['label'][3:])}
                 event['x'] = position_data['x']
                 event['y'] = position_data['y']
                 event['z'] = position_data['z']

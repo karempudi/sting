@@ -139,22 +139,25 @@ class ExptRun(object):
         sys.stdout.write(f"Acquired image at position: {metadata['Axes']['position']} and time: {metadata['Axes']['time']}\n")
         sys.stdout.flush()
         path = Path("C:\\Users\\elflab\\Documents\\Praneeth\\data\\simstack")
-        image_number = 'img_' + str(int(metadata['Axex']['time'])).zfill(9) + '.tiff'
+        image_number = 'img_' + str(int(metadata['Axes']['time'])).zfill(9) + '.tiff'
         image_path = path / Path(image_number)
         sys.stdout.write(f"Image filename to put in queue: {image_path}... \n")
         sys.stdout.flush()
-        image = io.imread(image_path)
+        image = io.imread(image_path).astype('float32')
         self.segment_queue.put({
             'position': metadata['Axes']['position'],
             'time': metadata['Axes']['time'],
             'image': image
         })
+        sys.stdout.write(f"Put image in the image queue for segmentation ... \n")
+        sys.stdout.flush()
         event_number = self.counter
         self.counter += 1
 
         # put None when you hit the max events
         if self.counter > self.max_events:
             event_queue.put(None)
+            self.acquire_kill_event.set()
         # if you press stop you kill the request for the next event
         elif self.acquire_kill_event.is_set():
             event_queue.put(None)
@@ -162,13 +165,22 @@ class ExptRun(object):
         # place the request for next even acquistion event
         else:
             event_queue.put(self.events[event_number+1])
-        name = tmp.current_process
-        logger = logging.getLogger(name)
-        logger.log(logging.INFO, "Acquired image of position: %s, time: %s",
-                    metadata['Axes']['position'], metadata['Axes']['time'])
+            sys.stdout.write(f"Put next event in the acquire queue {self.events[event_number+1]}... \n")
+            sys.stdout.flush()
+
+        #name = tmp.current_process
+        #logger = logging.getLogger(name)
+        #logger.log(logging.INFO, "Acquired image of position: %s, time: %s",
+        #            metadata['Axes']['position'], metadata['Axes']['time'])
+        sys.stdout.write(f"Logging acquired of position: {metadata['Axes']['position']} -- {metadata['Axes']['time']} .. \n")
+        sys.stdout.flush()
+        write_to_db({'position': metadata['Axes']['position'],
+                     'timepoint': metadata['Axes']['time']}, self.expt_save_dir, 'acquire')
 
     def wait_for_pfs(self, event):
         self.core.full_focus()
+        sys.stdout.write(f"Inside pfs wait for {event['axes']} ... \n")
+        sys.stdout.flush()
         return event    
     
     def acquire(self):
@@ -195,7 +207,9 @@ class ExptRun(object):
             self.acquire_kill_event.set()
             sys.stdout.write("Acquire process interrupted using keyboard\n")
             sys.stdout.flush()
-            
+        while not self.acquire_kill_event.is_set():
+            time.sleep(1)
+
         self.segment_queue.put(None)
         sys.stdout.write("Acquire process completed successfully\n")
         sys.stdout.flush()
@@ -387,7 +401,8 @@ class ExptRun(object):
  
 
     def stop(self,):
-        self.acquire_kill_event.set()
+        if not self.acquire_kill_event.is_set():
+            self.acquire_kill_event.set()
         while (('segment' in self.param.Experiment.queues and  not self.segment_killed.is_set()) or 
                 ('track' in self.param.Experiment.queues and not self.track_killed.is_set()) or 
                 ('growth' in self.param.Experiment.queues and not self.growth_killed.is_set())):
