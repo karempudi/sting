@@ -137,7 +137,7 @@ Experiment:
           units: 'minutes' # units for start, every, end, #minutes or seconds
           start: 0 # start t = 0 mins
           every: 1 # units in mins
-          end: 1 # end t = 5 mins
+          end: 2 # end t = 5 mins
           group: 'imaging'
           preset: 'phase_fast'
           exposure: 10 # Always in ms

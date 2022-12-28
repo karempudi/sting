@@ -164,8 +164,8 @@ class ExptRun(object):
 
         # place the request for next even acquistion event
         else:
-            event_queue.put(self.events[event_number+1])
-            sys.stdout.write(f"Put next event in the acquire queue {self.events[event_number+1]}... \n")
+            event_queue.put(self.events[self.counter+1])
+            sys.stdout.write(f"Put next event in the acquire queue {self.events[self.counter+1]}... \n")
             sys.stdout.flush()
 
         #name = tmp.current_process
