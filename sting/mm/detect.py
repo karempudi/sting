@@ -119,8 +119,9 @@ def process_image(datapoint, model, param):
             bboxes_barcode = [bbox.numpy() for bbox in bboxes_cleaned][0] # only one class so we should get this at index 0
 
         # untransformations barcodes to original shape
-        #sys.stdout.write(f"After Pos: {datapoint['position']} time: {datapoint['time']} , segmentation shape: {seg_pred.shape} -- barcodes_shape: {bboxes_barcode.shape}\n")
-        #sys.stdout.flush()
+        sys.stdout.write(f"After Pos: {datapoint['position']} time: {datapoint['time']} , segmentation shape: {seg_pred.shape} -- barcodes_shape: {bboxes_barcode.shape}\n")
+        sys.stdout.flush()
+
 
         yolo_datapoint = {
             'yolo_size': tuple(param.Analysis.Barcode.img_size),
@@ -144,6 +145,9 @@ def process_image(datapoint, model, param):
         for block in channel_locations:
             total_channels += channel_locations[block]['num_channels']
             list_channel_locations.extend(channel_locations[block]['channel_locations'].tolist())
+
+        sys.stdout.write(f"After Pos: {datapoint['position']} time: {datapoint['time']} , no ch: {total_channels} ... \n")
+        sys.stdout.flush()
 
         return { 
             'phase': datapoint['image'],

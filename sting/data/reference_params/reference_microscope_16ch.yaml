@@ -124,7 +124,7 @@ Experiment:
       pass_all: False # if you set this to true, pass_one_and_wait to False
       #pos_filename: "C:\\Users\\elflab\\Documents\\Praneeth\\sting\\sting\\data\\reference_position_files\\position_list.pos" # positions filename
       #pos_filename: 'D:\\praneeth\\position_lists\\PositionList.pos'
-      pos_filename: "F:\\position_lists\\positions_20.pos"
+      pos_filename: "F:\\position_lists\\positions_40.pos"
       motion_type: 'all_from_file' # can be 'all_from_file' or 'one_rect_from_file' or 'two_rect_from_file'
       motion_params:
         x_space:
@@ -140,7 +140,7 @@ Experiment:
           end: 1 # end t = 5 mins
           group: 'imaging'
           preset: 'phase_fast'
-          exposure: 10 # Always in ms
+          exposure: 20 # Always in ms
           wait_pfs: False
           speed: 'dual' # speed can be 'mono' or 'dual' or anything custom you write
           # speed will vary based on distance, usually first and last positions are

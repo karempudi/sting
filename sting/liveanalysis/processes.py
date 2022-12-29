@@ -138,16 +138,16 @@ class ExptRun(object):
     def put_image_in_queue(self, image, metadata, event_queue):
         #sys.stdout.write(f"Acquired image at position: {metadata['Axes']['position']} and time: {metadata['Axes']['time']}\n")
         #sys.stdout.flush()
-        path = Path("C:\\Users\\elflab\\Documents\\Praneeth\\data\\simstack")
-        image_number = 'img_' + str(int(metadata['Axes']['time'])).zfill(9) + '.tiff'
-        image_path = path / Path(image_number)
+        #path = Path("C:\\Users\\elflab\\Documents\\Praneeth\\data\\simstack")
+        #image_number = 'img_' + str(int(metadata['Axes']['time'])).zfill(9) + '.tiff'
+        #image_path = path / Path(image_number)
         #sys.stdout.write(f"Image filename to put in queue: {image_path}... \n")
         #sys.stdout.flush()
-        image = io.imread(image_path).astype('float32')
+        #image = io.imread(image_path).astype('float32')
         self.segment_queue.put({
             'position': metadata['Axes']['position'],
             'time': metadata['Axes']['time'],
-            'image': image
+            'image': image.astype('float32')
         })
         #sys.stdout.write(f"Put image in the image queue for segmentation ... \n")
         #sys.stdout.flush()

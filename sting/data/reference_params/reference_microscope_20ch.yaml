@@ -1,0 +1,167 @@
+# This should contain the complete list of all the parameters.
+--- # Begin
+
+Analysis:
+  Hardware:
+    device: 'cuda:0'
+
+  Segmentation:
+    type: 'dual' # if dual predicts, 2 channels at once, if single predicts one item at a time
+    architecture: 'Unet' # Network type used for cell seg
+    output:
+      - 'cells'
+      - 'channels'
+    model_paths: # list .pt or .pth file containing network weights, 
+      both: 'C:\\Users\\elflab\\Documents\\Praneeth\\models\\seg_models\\model.pth'
+      cells: # fill in if you have different model
+      channels: # fill in if you have different model
+    thresholds:
+      cells:
+        probability: 0.9
+      channels:
+        probability: 0.9
+    
+    transformations:
+      before_type: 'UnetTestTransforms' # write something compatible with networks above
+      after_type: 'PostSegTransforms' # write something compatible iwth networks above # not used for now
+    
+    model_params:
+      channels_by_scale:
+        - 1
+        - 8
+        - 16
+        - 32
+        - 64
+        - 128
+      num_outputs: 2
+      upsample_type: 'transpose_conv'
+      feature_fusion_type: 'concat' 
+
+  Barcode:
+    thresholds:
+      conf: 0.25
+      iou: 0.45
+    img_size:
+      - 256
+      - 800
+    dist_thresholds:
+      min: 600
+      max: 900
+      dist: 760
+      channel_dist: 35
+      size: 20
+      prominences: 300
+    architecture: 'YOLOv3'
+    model_path: 'C:\\Users\\elflab\\Documents\\Praneeth\\models\\barcode_models\\model_100.pth'
+    batch_size: 1
+    transformations:
+      before_type: 'YoloLiveAugmentations'
+      after_type: 'YoloLiveUnAgumentations'
+    model_params:
+      num_classes: 1
+      anchors: 
+        number: 9
+        sizes:
+        - - 19
+          - 168
+        - - 21
+          - 168
+        - - 29
+          - 178
+        - - 11
+          - 130
+        - - 11
+          - 131
+        - - 15
+          - 165
+        - - 6
+          - 115
+        - - 7
+          - 115
+        - - 7
+          - 125
+        strides:
+          - - 32
+            - 32
+          - - 16
+            - 16
+          - - 8
+            - 8
+      
+
+
+  Tracking:
+    network: 'Graphnet'
+
+  GrowthRates:
+    calculation_type: 'exponential_fit'
+
+Save:
+  directory: "C:\\Users\\elflab\\Documents\\Praneeth\\REALTIME\\analysis" # Top level directory for saving files.
+  save_channels: True
+  small_file_format: '.hdf5' # can be hdf5 or tiff # if tiff will store individual files
+  small_file_compression_level: 6
+  small_file_compression_type: 'gzip'
+  channel_width: 20
+
+Experiment:
+  number: 'exp-bp-000' # Experiment no
+  analysis_type: 'simlive' # should be 'live' or 'post' or 'simlive'
+  # if simlive, then use the images from this directory 
+  sim_directory: 'C:\\Users\\elflab\\Documents\\Praneeth\\data\\simstack'
+  analysis_device: 'cuda:0' # defaults to 'cpu' if not available
+  queues: # list with 4 things 'acquire', 'segment', 'channel', 'growth'
+    - 'acquire'
+    - 'segment'
+    - 'track'
+    - 'growth'
+  max_positions: 10 # here for dummy placement
+  max_timepoints: 108 # here for dummy placement
+  Acquisition:
+    magnification: 100
+    events:
+      pass_one_and_wait: True # if you set this to true, set pass_all to False
+      pass_all: False # if you set this to true, pass_one_and_wait to False
+      #pos_filename: "C:\\Users\\elflab\\Documents\\Praneeth\\sting\\sting\\data\\reference_position_files\\position_list.pos" # positions filename
+      #pos_filename: 'D:\\praneeth\\position_lists\\PositionList.pos'
+      pos_filename: "F:\\position_lists\\positions_40.pos"
+      motion_type: 'all_from_file' # can be 'all_from_file' or 'one_rect_from_file' or 'two_rect_from_file'
+      motion_params:
+        x_space:
+        y_space:
+      available_presets:
+        - 'phase_fast'
+        - 'phase_slow'
+
+      rules: # full functionlity not yet done for arbitrary rules
+          units: 'minutes' # units for start, every, end, #minutes or seconds
+          start: 0 # start t = 0 mins
+          every: 1 # units in mins
+          end: 1 # end t = 5 mins
+          group: 'imaging'
+          preset: 'phase_fast'
+          exposure: 20 # Always in ms
+          wait_pfs: False
+          speed: 'dual' # speed can be 'mono' or 'dual' or anything custom you write
+          # speed will vary based on distance, usually first and last positions are
+          # bridged by slow movements  
+          slow_positions: 'last' # will the first position be slow or 'last'  be slow # if auto
+          slow_dist_thres:  #if we have slow positions as 'auto', will move to slow mode if 
+          # distance is greater than this in microns
+          slow_preset: 'phase_slow'
+
+Logging:
+  to_file: True
+  to_console: True
+
+# All setting for running the live window
+# This will start pycromanager in headless mode and
+# will be used for tweezing overlay window.
+Live:
+  mm_app_path: 'test'
+  mm_config_file_path: 'test_config_path'
+  timeout: 50000
+  fake_image: True
+  fake_image_path: 'C:\\Users\\elflab\\Documents\\Praneeth\\data\\simstack\\img_000000000.tiff'
+
+
