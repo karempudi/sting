@@ -136,21 +136,21 @@ class ExptRun(object):
         root.setLevel(logging.DEBUG)
 
     def put_image_in_queue(self, image, metadata, event_queue):
-        sys.stdout.write(f"Acquired image at position: {metadata['Axes']['position']} and time: {metadata['Axes']['time']}\n")
-        sys.stdout.flush()
+        #sys.stdout.write(f"Acquired image at position: {metadata['Axes']['position']} and time: {metadata['Axes']['time']}\n")
+        #sys.stdout.flush()
         path = Path("C:\\Users\\elflab\\Documents\\Praneeth\\data\\simstack")
         image_number = 'img_' + str(int(metadata['Axes']['time'])).zfill(9) + '.tiff'
         image_path = path / Path(image_number)
-        sys.stdout.write(f"Image filename to put in queue: {image_path}... \n")
-        sys.stdout.flush()
+        #sys.stdout.write(f"Image filename to put in queue: {image_path}... \n")
+        #sys.stdout.flush()
         image = io.imread(image_path).astype('float32')
         self.segment_queue.put({
             'position': metadata['Axes']['position'],
             'time': metadata['Axes']['time'],
             'image': image
         })
-        sys.stdout.write(f"Put image in the image queue for segmentation ... \n")
-        sys.stdout.flush()
+        #sys.stdout.write(f"Put image in the image queue for segmentation ... \n")
+        #sys.stdout.flush()
         event_number = self.counter
         self.counter += 1
 
@@ -165,22 +165,22 @@ class ExptRun(object):
         # place the request for next even acquistion event
         else:
             event_queue.put(self.events[self.counter+1])
-            sys.stdout.write(f"Put next event in the acquire queue {self.events[self.counter+1]}... \n")
-            sys.stdout.flush()
+            #sys.stdout.write(f"Put next event in the acquire queue {self.events[self.counter+1]}... \n")
+            #sys.stdout.flush()
 
         #name = tmp.current_process
-        #logger = logging.getLogger(name)
-        #logger.log(logging.INFO, "Acquired image of position: %s, time: %s",
-        #            metadata['Axes']['position'], metadata['Axes']['time'])
-        sys.stdout.write(f"Logging acquired of position: {metadata['Axes']['position']} -- {metadata['Axes']['time']} .. \n")
-        sys.stdout.flush()
+        logger = logging.getLogger('acquire')
+        logger.log(logging.INFO, "Acquired image of position: %s, time: %s",
+                    metadata['Axes']['position'], metadata['Axes']['time'])
+        #sys.stdout.write(f"Acquire Log position: {metadata['Axes']['position']} -- {metadata['Axes']['time']} .. \n")
+        #sys.stdout.flush()
         write_to_db({'position': metadata['Axes']['position'],
                      'timepoint': metadata['Axes']['time']}, self.expt_save_dir, 'acquire')
 
     def wait_for_pfs(self, event):
         self.core.full_focus()
-        sys.stdout.write(f"Inside pfs wait for {event['axes']} ... \n")
-        sys.stdout.flush()
+        #sys.stdout.write(f"Inside pfs wait for {event['axes']} ... \n")
+        #sys.stdout.flush()
         return event    
     
     def acquire(self):

@@ -359,8 +359,8 @@ class activityTrackingPosition(object):
         save_dir = Path(param.Save.directory) if isinstance(param.Save.directory, str) else param.Save.directory
         self.position_dir = save_dir / Path('Pos' + str(self.position))
         # we will write data to disk here 
-        sys.stdout.write(f"Inside activity tracking got data for Position: {self.position} and timepoint: {self.timepoint} id: {id(tracking_event)} ...\n")
-        sys.stdout.flush()
+        #sys.stdout.write(f"Inside activity tracking got data for Position: {self.position} and timepoint: {self.timepoint} id: {id(tracking_event)} ...\n")
+        #sys.stdout.flush()
 
         # if there is a failure to detect channels, write the data and quit, no tracking is done
         if tracking_event['error'] == True:
