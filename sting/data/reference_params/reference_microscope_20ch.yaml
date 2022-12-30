@@ -19,7 +19,7 @@ Analysis:
       cells:
         probability: 0.9
       channels:
-        probability: 0.80
+        probability: 0.70
     
     transformations:
       before_type: 'UnetTestTransforms' # write something compatible with networks above
@@ -48,7 +48,7 @@ Analysis:
       min: 600
       max: 900
       dist: 760
-      channel_dist: 25
+      channel_dist: 22
       size: 20
       prominences: 200
     architecture: 'YOLOv3'
