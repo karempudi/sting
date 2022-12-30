@@ -122,9 +122,23 @@ def process_image(datapoint, model, param):
         sys.stdout.write(f"After Pos: {datapoint['position']} time: {datapoint['time']} , segmentation shape: {seg_pred.shape} -- barcodes_shape: {bboxes_barcode.shape}\n")
         sys.stdout.flush()
 
+        yolo_img_size = tuple(param.Analysis.Barcode.img_size)
+
+        # cleaning up bbox predictions that are outside the size of the image
+        # can happen as the net projects outward if the barcodes are at the edge
+        # of the image
+        for bbox in bboxes_barcode:
+            if bbox[0] < 0.0:
+                bbox[0] = 0.0
+            if bbox[2] > yolo_img_size[1]:
+                bbox[2] = yolo_img_size[1]
+            if bbox[1] < 0.0:
+                bbox[1] = 0.0
+            if bbox[3] > yolo_img_size[0]:
+                bbox[3] = yolo_img_size[0]
 
         yolo_datapoint = {
-            'yolo_size': tuple(param.Analysis.Barcode.img_size),
+            'yolo_size': yolo_img_size,
             'bboxes': bboxes_barcode
         }
         post_barcode_transformations = YoloLiveUnAugmentations(
