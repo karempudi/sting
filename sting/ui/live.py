@@ -17,6 +17,7 @@ from datetime import datetime
 from sting.mm.detect import process_image, get_loaded_model
 from sting.mm.utils import plot_channels_img_pyqtgraph
 import cv2
+from pycromanager import Core
 
 class LiveImageFetch(QThread):
 
@@ -26,6 +27,9 @@ class LiveImageFetch(QThread):
         super(LiveImageFetch, self).__init__()
         self.data = None
         self.param = param
+
+    def set_data(self, image, metadata):
+        self.data = image
 
     def run(self):
         # try different things depending on the param
@@ -96,8 +100,9 @@ class LiveWindow(QMainWindow):
 
         self.img_acq_thread = None
         self.acquiring = False
+        self.interval = 1000
         self.timer = QTimer()
-        self.timer.setInterval(300) # Image will be grabbed every 300ms
+        self.timer.setInterval(self.interval) # Image will be grabbed every 300ms
         self.net = None
 
     def closeEvent(self, event):
@@ -166,7 +171,7 @@ class LiveWindow(QMainWindow):
         torch.cuda.empty_cache()
         self.timer = None
         self.timer = QTimer()
-        self.timer.setInterval(300)
+        self.timer.setInterval(self.interval)
         sys.stdout.write(f"Stopped acquiring ... \n")
         sys.stdout.flush()
 

@@ -19,7 +19,7 @@ Analysis:
       cells:
         probability: 0.9
       channels:
-        probability: 0.9
+        probability: 0.80
     
     transformations:
       before_type: 'UnetTestTransforms' # write something compatible with networks above
@@ -48,9 +48,9 @@ Analysis:
       min: 600
       max: 900
       dist: 760
-      channel_dist: 35
+      channel_dist: 25
       size: 20
-      prominences: 300
+      prominences: 200
     architecture: 'YOLOv3'
     model_path: 'C:\\Users\\elflab\\Documents\\Praneeth\\models\\barcode_models\\model_100.pth'
     batch_size: 1
@@ -161,7 +161,7 @@ Live:
   mm_app_path: 'test'
   mm_config_file_path: 'test_config_path'
   timeout: 50000
-  fake_image: True
-  fake_image_path: 'C:\\Users\\elflab\\Documents\\Praneeth\\data\\simstack\\img_000000000.tiff'
+  fake_image: False
+  fake_image_path: 'C:\\Users\\elflab\\Documents\\Praneeth\\data\\test_imgs\\phase_0000.tiff'
 
 
