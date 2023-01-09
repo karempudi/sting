@@ -248,20 +248,20 @@ def train_model(param_file: str, device_overwrite: str = None,
             batches_test_done = len(test_dl) * epoch + batch_i
             with torch.no_grad():
                 predictions = model(phase.to(device, non_blocking=True))
-                predictions = predictions.sigmoid()
+                predictions = predictions.sigmoid() > param.Datasets.test.probability
                 # log some images to monitor progress
-                if batch_i % 100 == 0:
-                    batch_fig_handles = plot_results_batch(to_cpu(phase).numpy(), to_cpu(predictions).numpy())
-                    for i, figure in enumerate(batch_fig_handles, 0):
-                        logger.add_figure('test/fig' + str(batch_i), figure, global_step=batches_test_done)
+                #if batch_i % 100 == 0:
+                batch_fig_handles = plot_results_batch(to_cpu(phase).numpy(), to_cpu(predictions).numpy())
+                for i, figure in enumerate(batch_fig_handles, 0):
+                    logger.add_figure('test/fig' + str(batch_i), figure, global_step=batches_test_done)
                 # on last epoch save figures to directory
-                elif epoch == nEpochs:
+                if epoch == nEpochs:
                     batch_fig_handles == plot_results_batch(to_cpu(phase).numpy(), to_cpu(predictions).numpy())
                     for i, figure in enumerate(batch_fig_handles, 0):
                         save_path = save_test_dir / Path(filenames[i])
                         figure.savefig(save_path, bbox_inches='tight')
                         plt.close(figure)
-    
+
     print("\n ---- Training done ----\n")
 
 

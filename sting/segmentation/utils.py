@@ -812,7 +812,7 @@ def plot_results_batch(phase_batch, predictions_batch):
     B, n_outputs, _, _ = predictions_batch.shape
 
     for i in range(B):
-        fig, ax = plt.subplots(nrows=1, ncols=1 + n_outputs)
+        fig, ax = plt.subplots(nrows=1 + n_outputs, ncols=1)
         fig.tight_layout()
         ax[0].imshow(phase_batch[i][0], cmap='gray')
         for j in range(n_outputs):
