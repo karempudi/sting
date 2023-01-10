@@ -52,31 +52,30 @@ Hardware:
 
 # All network architecture and training related parameters
 HyperParameters:
-  train_batch_size: 16
-  validation_batch_size: 8
+  train_batch_size: 4
+  validation_batch_size: 4
   test_batch_size: 1
   architecture: 'Unet'
-  epochs: 10
+  epochs: 20
   optimizer:
     name: 'AdamW'
-    learning_rate: 0.003
+    learning_rate: 0.0005
     momentum: 0.9
     weight_decay: 0.0005
   scheduler:
     name: 'CosineWarmup'
-    warmup: 1
-    max_iters: 20
+    warmup: 3
+    max_iters: 40
 
   loss: 'unet_dual'
 
   model_params:
     channels_by_scale:
       - 1
-      - 8
-      - 16
       - 32
       - 64
       - 128
+      - 256
     num_outputs: 2
     upsample_type: 'transpose_conv'
     feature_fusion_type: 'concat'

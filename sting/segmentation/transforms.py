@@ -131,6 +131,8 @@ class randomContrast(object):
         if random.random() < 0.5:
             phase_img = np.array(sample['phase']).astype('float32')
             gamma_factor = random.uniform(self.gamma_range[0], self.gamma_range[1])
+            brightness_factor = random.uniform(0.0, 5000.0)
+            phase_img += brightness_factor
             phase_adjusted = adjust_gamma(phase_img, gamma=gamma_factor)
             phase_adjusted = rescale_intensity(phase_adjusted, in_range='image', out_range='int16')
             sample['phase'] = TF.to_pil_image(phase_adjusted)
@@ -178,8 +180,10 @@ class normalize(object):
             phase_img = np.array(sample['phase']).astype('float32')
         else:
             phase_img = sample['phase']
-        phase_img = _normalize(phase_img)
-        sample['phase'] = (phase_img - np.mean(phase_img))/ np.std(phase_img)
+        #phase_img = _normalize(phase_img)
+        #sample['phase'] = (phase_img - np.mean(phase_img))/ np.std(phase_img)
+        phase_img /= 65535.0
+        sample['phase'] = phase_img
 
         if ('mask' in sample) and (sample['mask'] is not None):
             if not isinstance(sample['mask'], np.ndarray):
@@ -200,8 +204,8 @@ class normalize(object):
 
 class UnetTrainTransforms:
 
-    def __init__(self, output_size=(320, 320), rotation=[-20, 20], affine_scale=(0.5, 1.5), gamma_range=(0.75, 1.25),
-                       affine_shear=[-20, 20, -20, 20], vflip=True, normalize_phase=True, tensorize=True):
+    def __init__(self, output_size=(512, 512), rotation=[-30, 30], affine_scale=(0.65, 1.35), gamma_range=(0.8, 1.2),
+                       affine_shear=[-30, 30, -30, 30], vflip=True, normalize_phase=True, tensorize=True):
         self.transform = []
         self.transform.append(changedtoPIL())
         self.transform.append(randomCrop(output_size))
