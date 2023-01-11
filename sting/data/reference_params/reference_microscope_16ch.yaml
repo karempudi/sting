@@ -12,7 +12,7 @@ Analysis:
       - 'cells'
       - 'channels'
     model_paths: # list .pt or .pth file containing network weights, 
-      both: 'C:\\Users\\elflab\\Documents\\Praneeth\\models\\seg_models\\model.pth'
+      both: 'C:\\Users\\elflab\\Documents\\Praneeth\\models\\seg_models\\model_20230111.pth'
       cells: # fill in if you have different model
       channels: # fill in if you have different model
     thresholds:
@@ -28,11 +28,10 @@ Analysis:
     model_params:
       channels_by_scale:
         - 1
-        - 8
-        - 16
         - 32
         - 64
         - 128
+        - 256
       num_outputs: 2
       upsample_type: 'transpose_conv'
       feature_fusion_type: 'concat' 
@@ -97,7 +96,7 @@ Analysis:
     calculation_type: 'exponential_fit'
 
 Save:
-  directory: "C:\\Users\\elflab\\Documents\\Praneeth\\REALTIME\\analysis" # Top level directory for saving files.
+  directory: "F:\\REALTIME\\analysis" # Top level directory for saving files.
   save_channels: True
   small_file_format: '.hdf5' # can be hdf5 or tiff # if tiff will store individual files
   small_file_compression_level: 6
