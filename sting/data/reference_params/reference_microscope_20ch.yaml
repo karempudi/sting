@@ -19,7 +19,7 @@ Analysis:
       cells:
         probability: 0.9
       channels:
-        probability: 0.70
+        probability: 0.50
     
     transformations:
       before_type: 'UnetTestTransforms' # write something compatible with networks above
@@ -50,7 +50,7 @@ Analysis:
       dist: 760
       channel_dist: 22
       size: 20
-      prominences: 200
+      prominences: 100
     architecture: 'YOLOv3'
     model_path: 'C:\\Users\\elflab\\Documents\\Praneeth\\models\\barcode_models\\model_100.pth'
     batch_size: 1
@@ -97,7 +97,7 @@ Analysis:
     calculation_type: 'exponential_fit'
 
 Save:
-  directory: "C:\\Users\\elflab\\Documents\\Praneeth\\REALTIME\\analysis" # Top level directory for saving files.
+  directory: "F:\\REALTIME\\analysis" # Top level directory for saving files.
   save_channels: True
   small_file_format: '.hdf5' # can be hdf5 or tiff # if tiff will store individual files
   small_file_compression_level: 6
@@ -137,7 +137,7 @@ Experiment:
           units: 'minutes' # units for start, every, end, #minutes or seconds
           start: 0 # start t = 0 mins
           every: 1 # units in mins
-          end: 1 # end t = 5 mins
+          end: 5 # end t = 5 mins
           group: 'imaging'
           preset: 'phase_fast'
           exposure: 20 # Always in ms
