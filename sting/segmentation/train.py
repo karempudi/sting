@@ -208,6 +208,8 @@ def train_model(param_file: str, device_overwrite: str = None,
         logger.add_scalar(param.HyperParameters.optimizer.name + '/lr', current_lr, batches_done)
         print(f"Epoch: {epoch} Train loss: {np.mean(epoch_loss): 0.4f} lr: {current_lr : .6f}")
 
+        del predictions
+        torch.cuda.empty_cache()
         # validation loop
         model.eval()
         epoch_val_loss = []
@@ -237,6 +239,8 @@ def train_model(param_file: str, device_overwrite: str = None,
         mean_epoch_val_loss = np.mean(epoch_val_loss) 
         print(f"Epoch: {epoch} Validation loss: {mean_epoch_val_loss: .4f}")
 
+        del predictions
+        torch.cuda.empty_cache()
         # save model if 
         if mean_epoch_val_loss < best_val_loss:
             best_val_loss = mean_epoch_val_loss
@@ -246,22 +250,26 @@ def train_model(param_file: str, device_overwrite: str = None,
         model.eval()
         for batch_i, (phase, filenames, raw_shapes) in enumerate(tqdm(test_dl, desc=f"Test Epoch {epoch}")):
             batches_test_done = len(test_dl) * epoch + batch_i
+            #print(filenames)
             with torch.no_grad():
                 predictions = model(phase.to(device, non_blocking=True))
-                predictions = predictions.sigmoid()
+                predictions = predictions.sigmoid() > param.Datasets.test.probability
                 # log some images to monitor progress
-                if batch_i % 100 == 0:
-                    batch_fig_handles = plot_results_batch(to_cpu(phase).numpy(), to_cpu(predictions).numpy())
-                    for i, figure in enumerate(batch_fig_handles, 0):
-                        logger.add_figure('test/fig' + str(batch_i), figure, global_step=batches_test_done)
+                #if batch_i % 100 == 0:
+                batch_fig_handles = plot_results_batch(to_cpu(phase).numpy(), to_cpu(predictions).numpy())
+                for i, figure in enumerate(batch_fig_handles, 0):
+                    logger.add_figure('test/fig' + str(batch_i), figure, global_step=batches_test_done)
+                    plt.close(figure)
                 # on last epoch save figures to directory
-                elif epoch == nEpochs:
-                    batch_fig_handles == plot_results_batch(to_cpu(phase).numpy(), to_cpu(predictions).numpy())
-                    for i, figure in enumerate(batch_fig_handles, 0):
-                        save_path = save_test_dir / Path(filenames[i])
-                        figure.savefig(save_path, bbox_inches='tight')
-                        plt.close(figure)
-    
+                #if epoch == nEpochs:
+                #    batch_fig_handles == plot_results_batch(to_cpu(phase).numpy(), to_cpu(predictions).numpy())
+                #    for i, figure in enumerate(batch_fig_handles, 0):
+                #        save_path = save_test_dir / Path(filenames[i])
+                #        figure.savefig(save_path, bbox_inches='tight')
+                #        plt.close(figure)
+            del predictions
+            torch.cuda.empty_cache()
+
     print("\n ---- Training done ----\n")
 
 

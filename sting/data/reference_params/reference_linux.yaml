@@ -46,10 +46,10 @@ Analysis:
     dist_thresholds:
       min: 600
       max: 900
-      dist: 780
-      channel_dist: 35
+      dist: 760
+      channel_dist: 22
       size: 20
-      prominences: 300
+      prominences: 200
     architecture: 'YOLOv3'
     model_path: '/home/pk/Documents/REALTIME/network_expts/barcode_models/model_100.pth'
     batch_size: 1

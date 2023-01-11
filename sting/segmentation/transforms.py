@@ -4,6 +4,7 @@ from torchvision import transforms
 import torchvision.transforms.functional as TF
 import random
 from skimage.util import random_noise
+from skimage.exposure import adjust_gamma, rescale_intensity
 
 
 class changedtoPIL(object):
@@ -119,6 +120,26 @@ class verticalFlip(object):
 
         return sample
 
+class randomContrast(object):
+
+
+    def __init__(self, gamma_range):
+        self.gamma_range = gamma_range
+
+    def __call__(self, sample):
+
+        if random.random() < 0.5:
+            phase_img = np.array(sample['phase']).astype('float32')
+            gamma_factor = random.uniform(self.gamma_range[0], self.gamma_range[1])
+            brightness_factor = random.uniform(0.0, 5000.0)
+            phase_img += brightness_factor
+            phase_adjusted = adjust_gamma(phase_img, gamma=gamma_factor)
+            phase_adjusted = rescale_intensity(phase_adjusted, in_range='image', out_range='int16')
+            sample['phase'] = TF.to_pil_image(phase_adjusted)
+            #sample['phase'] = TF.adjust_brightness(sample['phase'], brightness_factor=brightness_factor)
+        return sample
+
+
 
 class toTensor(object):
 
@@ -159,8 +180,10 @@ class normalize(object):
             phase_img = np.array(sample['phase']).astype('float32')
         else:
             phase_img = sample['phase']
-        phase_img = _normalize(phase_img)
-        sample['phase'] = (phase_img - np.mean(phase_img))/ np.std(phase_img)
+        #phase_img = _normalize(phase_img)
+        #sample['phase'] = (phase_img - np.mean(phase_img))/ np.std(phase_img)
+        phase_img /= 65535.0
+        sample['phase'] = phase_img
 
         if ('mask' in sample) and (sample['mask'] is not None):
             if not isinstance(sample['mask'], np.ndarray):
@@ -178,13 +201,15 @@ class normalize(object):
  
         return sample
 
+
 class UnetTrainTransforms:
 
-    def __init__(self, output_size=(320, 320), rotation=[-20, 20], affine_scale=(0.625, 1.5),
-                       affine_shear=[-20, 20, -20, 20], vflip=True, normalize_phase=True, tensorize=True):
+    def __init__(self, output_size=(512, 512), rotation=[-30, 30], affine_scale=(0.65, 1.35), gamma_range=(0.8, 1.2),
+                       affine_shear=[-30, 30, -30, 30], vflip=True, normalize_phase=True, tensorize=True):
         self.transform = []
         self.transform.append(changedtoPIL())
         self.transform.append(randomCrop(output_size))
+        self.transform.append(randomContrast(gamma_range))
         self.transform.append(randomRotation(rotation))
         self.transform.append(randomAffine(affine_scale, affine_shear))
         if vflip:
