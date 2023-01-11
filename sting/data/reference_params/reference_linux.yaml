@@ -12,14 +12,14 @@ Analysis:
       - 'cells'
       - 'channels'
     model_paths: # list .pt or .pth file containing network weights, 
-      both: '/home/pk/Documents/REALTIME/network_expts/seg_models/model.pth'
+      both: '/home/pk/Documents/REALTIME/network_expts/seg_models/model_20230111.pth'
       cells: # fill in if you have different model
       channels: # fill in if you have different model
     thresholds:
       cells: 
         probability: 0.9
       channels:
-        probability: 0.9
+        probability: 0.5
     
     transformations:
       before_type: 'UnetTestTransforms' # write something compatible with networks above
@@ -27,11 +27,10 @@ Analysis:
     model_params:
       channels_by_scale:
         - 1
-        - 8
-        - 16
         - 32
         - 64
         - 128
+        - 256
       num_outputs: 2
       upsample_type: 'transpose_conv'
       feature_fusion_type: 'concat' 
@@ -160,7 +159,7 @@ Live:
   mm_config_file_path: 'test_config_path'
   timeout: 50000
   fake_image: True
-  fake_image_path: '/home/pk/Documents/REALTIME/data/test_data/test_imgs/phase_0000.tiff'
+  fake_image_path: '/home/pk/Documents/REALTIME/data/test_data/test_imgs/img_000000012.tiff'
 
 
 
