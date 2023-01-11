@@ -56,7 +56,7 @@ HyperParameters:
   validation_batch_size: 4
   test_batch_size: 1
   architecture: 'Unet'
-  epochs: 20
+  epochs: 100
   optimizer:
     name: 'AdamW'
     learning_rate: 0.0005
@@ -64,8 +64,8 @@ HyperParameters:
     weight_decay: 0.0005
   scheduler:
     name: 'CosineWarmup'
-    warmup: 3
-    max_iters: 40
+    warmup: 10
+    max_iters: 200
 
   loss: 'unet_dual'
 
