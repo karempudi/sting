@@ -163,12 +163,17 @@ def process_image(datapoint, model, param):
         sys.stdout.write(f"After Pos: {datapoint['position']} time: {datapoint['time']} , no ch: {total_channels} ... \n")
         sys.stdout.flush()
 
+        cell_prob = param.Analysis.Segmentation.thresholds.cells.probability
+
         return { 
-            'phase': datapoint['image'],
+            #'phase': datapoint['image'].astype(),
+            'phase': datapoint['image'].astype('uint16'),
             'position': datapoint['position'],
             'time': datapoint['time'],
-            'cells': seg_pred[0][:raw_shape[0], :raw_shape[1]],
-            'channels': seg_pred[1][:raw_shape[0], :raw_shape[1]],
+            #'cells': seg_pred[0][:raw_shape[0], :raw_shape[1]],
+            'cells': (seg_pred[0][:raw_shape[0], :raw_shape[1]] > cell_prob),
+            #'channels': seg_pred[1][:raw_shape[0], :raw_shape[1]],
+            'channels': None,
             'barcode_locations': bboxes_final,
             'channel_locations': channel_locations,
             'channel_locations_list': list_channel_locations,

@@ -369,9 +369,10 @@ class activityTrackingPosition(object):
             else:
                 write_files(tracking_event, 'cells', self.param)
         else:
-            # threshold cells_data 
-            cell_prob = param.Analysis.Segmentation.thresholds.cells.probability
-            cells_data = (tracking_event['cells'] > cell_prob)
+            # threshold cells_data is done right after segmentation
+            #cell_prob = param.Analysis.Segmentation.thresholds.cells.probability
+            #cells_data = (tracking_event['cells'] > cell_prob)
+            cells_data = tracking_event['cells']
  
             # aggregate channel locations
             channel_locations = []
@@ -387,7 +388,8 @@ class activityTrackingPosition(object):
                 # 1. make a frame dict and write the files
                 with h5py.File(filename, 'a') as cells_file:
                     write_string_phase = '/prev_phase'
-                    cells_file.create_dataset(write_string_phase, data=tracking_event['phase'].astype('uint16'))
+                    #cells_file.create_dataset(write_string_phase, data=tracking_event['phase'].astype('uint16'))
+                    cells_file.create_dataset(write_string_phase, data=tracking_event['phase'])
                     for i, location in enumerate(channel_locations, 0):
                         img_slice = cells_data[:, max(location-channel_width, 0): 
                                         min(tracking_event['raw_shape'][1], location+channel_width)]

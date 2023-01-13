@@ -136,10 +136,10 @@ Experiment:
           units: 'minutes' # units for start, every, end, #minutes or seconds
           start: 0 # start t = 0 mins
           every: 1 # units in mins
-          end: 5 # end t = 5 mins
+          end: 3 # end t = 5 mins
           group: 'imaging'
           preset: 'phase_fast'
-          exposure: 20 # Always in ms
+          exposure: 30 # Always in ms
           wait_pfs: False
           speed: 'dual' # speed can be 'mono' or 'dual' or anything custom you write
           # speed will vary based on distance, usually first and last positions are
