@@ -9,7 +9,7 @@ Save:
   directory: '/home/pk/Documents/REALTIME/network_expts/seg_expts' # main direcotry that contains all training runs
 
 Datasets:
-  directory: '/home/pk/Documents/REALTIME/data/seg_unet/dual'
+  directory: '/home/pk/Documents/REALTIME/data/all_data'
   # 'seg_omni/species', 'seg_unet/species', 'seg_omni/dual', 'seg_unet/dual'
   # duals are when you learn channels and cells in the same model
   type:  'unet_dual'  # used for dataset class
@@ -27,7 +27,7 @@ Datasets:
     subset:
       - 'validation'
   test:
-    directory: '/home/pk/Documents/REALTIME/data/seg_unet/test40x'
+    directory: '/home/pk/Documents/REALTIME/data/test_data'
     save_directory: '/home/pk/Documents/REALTIME/network_expts/seg_test_save/'
     transformations:
       type: 'UnetTestTransforms'
@@ -45,14 +45,14 @@ Checkpoints:
   ckpt_filename: # ckpt filename from which to load the experiment to restart
 
 Hardware:
-  device: 'cuda:1' # device on which to train the network
+  device: 'cuda:0' # device on which to train the network
   num_workers: 6 #
   torch_threads: 6
 
 
 # All network architecture and training related parameters
 HyperParameters:
-  train_batch_size: 4
+  train_batch_size: 16
   validation_batch_size: 4
   test_batch_size: 1
   architecture: 'Unet'

@@ -27,8 +27,8 @@ from sklearn.cluster import DBSCAN
 # forked from a repo of paper https://dl.acm.org/doi/10.1145/3318464.3380582
 # is used to compile this .so file, need to work on how to get it to work on
 # windows
-if os.name == 'posix':
-    from .DBSCAN import DBSCAN as FASTDBSCAN
+#if os.name == 'posix':
+#    from .DBSCAN import DBSCAN as FASTDBSCAN
 from matplotlib_inline.backend_inline import set_matplotlib_formats
 set_matplotlib_formats('svg', 'pdf')
 import matplotlib
