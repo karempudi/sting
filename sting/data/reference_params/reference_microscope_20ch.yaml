@@ -12,7 +12,7 @@ Analysis:
       - 'cells'
       - 'channels'
     model_paths: # list .pt or .pth file containing network weights, 
-      both: 'C:\\Users\\elflab\\Documents\\Praneeth\\models\\seg_models\\model_20230111.pth'
+      both: 'C:\\Users\\elflab\\Documents\\Praneeth\\models\\seg_models\\model_20230127.pth'
       cells: # fill in if you have different model
       channels: # fill in if you have different model
     thresholds:
@@ -161,6 +161,6 @@ Live:
   mm_config_file_path: 'test_config_path'
   timeout: 50000
   fake_image: True
-  fake_image_path: 'C:\\Users\\elflab\\Documents\\Praneeth\\data\\test_imgs\\phase_0001.tiff'
+  fake_image_path: 'C:\\Users\\elflab\\Documents\\Praneeth\\data\\test_imgs\\phase_0021.tiff'
 
 
