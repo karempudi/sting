@@ -12,7 +12,7 @@ Analysis:
       - 'cells'
       - 'channels'
     model_paths: # list .pt or .pth file containing network weights, 
-      both: '/home/pk/Documents/REALTIME/network_expts/seg_models/model_20230111.pth'
+      both: '/home/pk/Documents/REALTIME/network_expts/seg_models/model_20230127.pth'
       cells: # fill in if you have different model
       channels: # fill in if you have different model
     thresholds:
@@ -45,10 +45,10 @@ Analysis:
     dist_thresholds:
       min: 600
       max: 900
-      dist: 760
-      channel_dist: 22
+      dist: 780
+      channel_dist: 35
       size: 20
-      prominences: 200
+      prominences: 300
     architecture: 'YOLOv3'
     model_path: '/home/pk/Documents/REALTIME/network_expts/barcode_models/model_100.pth'
     batch_size: 1
@@ -159,7 +159,7 @@ Live:
   mm_config_file_path: 'test_config_path'
   timeout: 50000
   fake_image: True
-  fake_image_path: '/home/pk/Documents/REALTIME/data/test_data/test_imgs/img_000000012.tiff'
+  fake_image_path: '/mnt/sda1/REALTIME/data/test_data/test_imgs/img_000000001.tiff'
 
 
 

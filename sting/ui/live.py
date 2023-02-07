@@ -15,7 +15,7 @@ from sting.microscope.utils import fetch_mm_image
 from tifffile import imread
 from datetime import datetime
 from sting.mm.detect import process_image, get_loaded_model
-from sting.mm.utils import plot_channels_img_pyqtgraph
+from sting.mm.utils import plot_inference_img_pyqtgraph
 import cv2
 from pycromanager import Core
 
@@ -188,7 +188,7 @@ class LiveWindow(QMainWindow):
             #sys.stdout.write(f"Segmented: error: {result['error']} found {result['total_channels']}\n")
             #sys.stdout.flush()
 
-            barcode_img = np.transpose(plot_channels_img_pyqtgraph(image, result['channel_locations']), (1, 0, 2))
+            barcode_img = np.transpose(plot_inference_img_pyqtgraph(result), (1, 0, 2))
             if (self.ui.scroll_bar.value() == 0 and (not result['error'])):
                 #sys.stdout.write(f"slider value is {self.ui.scroll_bar.value()} \n")
                 #sys.stdout.flush()

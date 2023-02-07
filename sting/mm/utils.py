@@ -3,6 +3,7 @@ import albumentations as A
 import cv2
 import torch
 from torchvision import transforms
+import copy
 
 class YoloLiveAugmentations:
 
@@ -68,11 +69,29 @@ def plot_channels_img(phase, channel_locations):
             #phase_rgb[:, channel_locations+20:channel_locations+22, :] = np.array(colors[block%3])
     return phase_rgb
 
-def plot_channels_img_pyqtgraph(phase, channel_locations):
+def plot_inference_img_pyqtgraph(result):
+    phase = result['phase']
+    height, width = phase.shape
+    channel_locations = result['channel_locations']
+    barcode_locations = result['barcode_locations']
+
     phase_rgb = np.stack([phase, phase, phase], axis=-1)
-    colors = [[0, 0, 65535], [0, 65535, 0], [65535, 0, 0]]
+    colors_block = [[0, 0, 65535], [0, 65535, 0], [65535, 0, 0]]
+    color_barcode = np.array([49087, 16448, 49087])
     for block in channel_locations:
         for each_channel in  channel_locations[block]['channel_locations']:
-            phase_rgb[:, each_channel-20:each_channel-16, :] = np.array(colors[block%3])
+            phase_rgb[:, max(each_channel-20, 0): max(each_channel-16, 0), :] = np.array(colors_block[block%3])
             #phase_rgb[:, channel_locations+20:channel_locations+22, :] = np.array(colors[block%3])
+    for barcode in barcode_locations:
+        # safegaurd for barcodes
+        phase_rgb[max(int(barcode[1]), 0): min(int(barcode[3]), height),
+                 max(int(barcode[0])-2, 0): max(int(barcode[0])+2, 0), :] = color_barcode
+        phase_rgb[max(int(barcode[1]), 0): min(int(barcode[3]), height),
+                min(int(barcode[2])-2, width): min(int(barcode[2])+2, width), :] = color_barcode
+
+        phase_rgb[max(int(barcode[1])-2, 0): max(int(barcode[1])+2, 0), 
+                max(int(barcode[0]), 0): min(int(barcode[2]), width), :] = color_barcode
+        phase_rgb[min(int(barcode[3])-2, height): min(int(barcode[3])+2, height), 
+                max(int(barcode[0]), 0): min(int(barcode[2]), width), :] = color_barcode
+
     return phase_rgb
