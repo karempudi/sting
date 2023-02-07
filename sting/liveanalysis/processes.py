@@ -15,7 +15,7 @@ from queue import Empty
 from functools import partial
 from sting.utils.logger import logger_listener, setup_root_logger
 from sting.utils.db_ops import create_databases, write_to_db, read_from_db
-from sting.microscope.acquisition import simAcquisition, ExptAcquisition, simFullExpt
+from sting.microscope.acquisition import simAcquisition, ExptAcquisition, simFullExpt, postFullExpt
 from sting.utils.param_io import save_params
 from sting.utils.disk_ops import write_files
 from sting.mm.detect import get_loaded_model, process_image
@@ -221,7 +221,8 @@ class ExptRun(object):
         print(f"Starting {name} simulation process ..")
         # keep process alive
         #expt_acq = simAcquisition(self.param)
-        self.expt_acq = simFullExpt(self.param, n_positions=10)
+        #self.expt_acq = simFullExpt(self.param, n_positions=10)
+        self.expt_acq = postFullExpt(self.param)
         time.sleep(4)
         sys.stdout.write(f"Starting the acquisition sequence now .. \n")
         sys.stdout.flush()
@@ -432,7 +433,7 @@ def start_live_experiment(expt_run: ExptRun, param: Union[RecursiveNamespace, di
     Args:
         expt_run (ExptRun): an instance of ExptRun that hold all the 
             handles for the queues and processes.
-        param (RecursvieNamespace): param file used to create the ExptRun
+        param (RecursiveNamespace): param file used to create the ExptRun
             instance.
         sim (bool): set (False) if you run real experiment, set (True) 
             for simulation/debugging, defaults to True.

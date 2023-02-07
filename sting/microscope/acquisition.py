@@ -189,3 +189,54 @@ class simFullExpt(object):
             }
         else:
             return None
+
+class postFullExpt(object):
+
+    def __init__(self, param: Union[dict, RecursiveNamespace]):
+        self.expt_dir = Path(param.Experiment.sim_directory)
+        positions_dirs = sorted(list(self.expt_dir.glob('Pos*')), key=lambda x: int(x.stem[3:]))
+        self.positions_dirs = [path for path in positions_dirs if path.is_dir()]
+        # no of positions imaged in the directory
+        self.n_positions = len(self.positions_dirs)
+        self.last_position = int(self.positions_dirs[-1].name[3:])
+        # no of time points available
+        n_timepoints = len(list((self.positions_dirs[0] / Path('phase')).glob('*.tif*')))
+        self.n_timepoints = n_timepoints
+        # filenames to loop over
+        self.filenames = []
+        self.time_pos = []
+        for t in range(self.n_timepoints):
+            for pos_dir in self.positions_dirs:
+                filename = pos_dir / Path('phase') / Path('phase_' + str(t).zfill(4) + '.tiff')
+                position = int(pos_dir.name[3:])
+                self.filenames.append(filename)
+                self.time_pos.append((t, position))
+
+        self.max_events = self.n_positions * self.n_timepoints
+        self.events_sent = 0
+    @classmethod
+    def parse(cls, param):
+        return cls(param)
+
+    def __len__(self):
+        return len(self.time_pos)
+
+    def __iter__(self):
+        return self
+    
+    def __next__(self):
+        if self.events_sent < self.max_events:
+            filename = self.filenames[self.events_sent]
+            time, pos = self.time_pos[self.events_sent]
+            self.events_sent += 1
+            img = imread(filename).astype('float32')
+            return {
+                'image': img,
+                'position': pos,
+                'timepoint': time,
+                'last': (pos == self.last_position)
+            }
+        else:
+            return None
+            
+        
