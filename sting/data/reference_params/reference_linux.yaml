@@ -48,7 +48,7 @@ Analysis:
       dist: 760
       channel_dist: 23
       size: 20
-      prominences: 100
+      prominences: 400
     architecture: 'YOLOv3'
     model_path: '/home/pk/Documents/REALTIME/network_expts/barcode_models/model_100.pth'
     batch_size: 1

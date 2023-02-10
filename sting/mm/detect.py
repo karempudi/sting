@@ -63,6 +63,7 @@ def get_locations_btn_barcodes(channel_img, bbox_pred, param, raw_shape):
     #constructed_good_idx = np.where(constructed_bboxes==first_good_bbox)[0][0]
     # we will use constructed bboxes by default
     final_bbox_centers = constructed_bboxes.astype('int')
+    print(final_bbox_centers)
     forbidden = [] # channels' centers can't be in this indices as they are take by barcode
     barcode_regions = [forbidden.extend(list(range(center-param.Analysis.Barcode.dist_thresholds.size, 
                                                   center+param.Analysis.Barcode.dist_thresholds.size))) 
@@ -72,6 +73,7 @@ def get_locations_btn_barcodes(channel_img, bbox_pred, param, raw_shape):
     peaks, _ = find_peaks(hist, distance=param.Analysis.Barcode.dist_thresholds.channel_dist)
     prominences, _, _ = peak_prominences(hist, peaks)
     peaks = peaks[prominences > param.Analysis.Barcode.dist_thresholds.prominences]
+    print(peaks)
     first_bbox = final_bbox_centers[0]
     last_bbox = final_bbox_centers[-1]
     peaks = [peak for peak in peaks if (peak > first_bbox and peak < last_bbox)]
@@ -86,6 +88,68 @@ def get_locations_btn_barcodes(channel_img, bbox_pred, param, raw_shape):
         channels_btn_barcode[i]['channel_locations'] = peaks_np[valid_channels]
     
     return channels_btn_barcode, False
+
+
+def get_channel_locations(channel_img, bboxes_final, param, raw_shape):
+    bbox_centers_confidences = [((bbox[0] + bbox[2])/2, bbox[4]) for bbox in bboxes_final]
+    bbox_centers_confidences = sorted(bbox_centers_confidences, key=lambda x:x[0])
+    bbox_centers = np.array([x[0] for x in bbox_centers_confidences])
+    bbox_confidences = np.array([x[1] for x in bbox_centers_confidences]) 
+    distance_bboxes = np.diff(bbox_centers)
+    block_ok = np.logical_and(distance_bboxes > param.Analysis.Barcode.dist_thresholds.min,
+                                distance_bboxes < param.Analysis.Barcode.dist_thresholds.max)
+    
+    # TODO: use these to convey error status later
+    all_blocks_ok = np.all(block_ok)
+    n_possible_good_blocks = sum(block_ok)
+
+    broken_blocks = np.where(block_ok == False)[0]
+
+    corrected_bboxes = bbox_centers.copy()
+    for broken_idx in broken_blocks:
+        left_center, right_center = bbox_centers[broken_idx], bbox_centers[broken_idx+1]
+        left_conf, right_conf = bbox_confidences[broken_idx], bbox_confidences[broken_idx+1]
+        if left_conf >= right_conf:
+            corrected_bboxes[broken_idx+1] = min(corrected_bboxes[broken_idx] + param.Analysis.Barcode.dist_thresholds.dist,
+                                                 raw_shape[1])
+        else:
+            corrected_bboxes[broken_idx] = max(corrected_bboxes[broken_idx+1] - param.Analysis.Barcode.dist_thresholds.dist, 
+                                                0)
+    
+    #print(f"After correcttions: {corrected_bboxes}")
+    final_bboxes = np.concatenate((np.sort(np.arange(corrected_bboxes[0], 0, -param.Analysis.Barcode.dist_thresholds.dist)),
+                                    corrected_bboxes[1:-1],
+                                   np.sort(np.arange(corrected_bboxes[-1], raw_shape[1], param.Analysis.Barcode.dist_thresholds.dist))))
+    #print(f"Final bboxes: {final_bboxes}")
+    channel_img = channel_img > param.Analysis.Segmentation.thresholds.channels.probability
+    hist = np.sum(channel_img, axis=0)
+    #print(hist)
+    #peaks, props = find_peaks(hist, distance=param.Analysis.Barcode.dist_thresholds.channel_dist)
+    peaks, props = find_peaks(hist, prominence=param.Analysis.Barcode.dist_thresholds.prominences, 
+                                distance=param.Analysis.Barcode.dist_thresholds.channel_dist/1.5)
+    #prominences, _, _ = peak_prominences(hist, peaks, wlen=2*param.Analysis.Barcode.dist_thresholds.channel_dist)
+    prominences = props['prominences']
+    #print(peaks, prominences)
+    peaks = peaks[prominences > param.Analysis.Barcode.dist_thresholds.prominences]
+    
+    btn_barcodes = []
+    btn_barcodes.append((0, final_bboxes[0]))
+    btn_barcodes.extend(list(zip(final_bboxes[:-1], final_bboxes[1:])))
+    btn_barcodes.append((final_bboxes[-1], raw_shape[1]))
+
+    channels_btn_barcode = {}
+    for i, (b_l, b_r) in enumerate(btn_barcodes, 0):
+        channels_btn_barcode[i] = {}
+        valid_channels = np.logical_and(peaks > b_l, peaks < b_r)
+        channels_btn_barcode[i]['num_channels'] = np.sum(valid_channels)
+        channels_btn_barcode[i]['channel_locations'] = peaks[valid_channels]
+    #print(channels_btn_barcode)
+    
+    return channels_btn_barcode, False
+
+
+def get_channel_locations_corr(channel_img, bboxes_final, param, raw_shape, prev_channels):
+    pass
 
 def process_image(datapoint, model, param):
     """
@@ -150,10 +214,11 @@ def process_image(datapoint, model, param):
             }
         )
         bboxes_final = post_barcode_transformations(yolo_datapoint)
-        bboxes_final = sorted(bboxes_final, key=lambda x: x[0]) # sort according to top left corner
+        bboxes_final = sorted(bboxes_final, key=lambda x: x[0]) # sort according to top left corner in x axis
         #print(bboxes_final)
         #return None
-        channel_locations, error = get_locations_btn_barcodes(seg_pred[1], bboxes_final, param, raw_shape)
+        #channel_locations, error = get_locations_btn_barcodes(seg_pred[1], bboxes_final, param, raw_shape)
+        channel_locations, error = get_channel_locations(seg_pred[1], bboxes_final, param, raw_shape)
         total_channels = 0
         list_channel_locations = []
         for block in channel_locations:
