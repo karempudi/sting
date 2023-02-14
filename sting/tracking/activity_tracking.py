@@ -94,10 +94,10 @@ def set_activities(frame_dict, mask, diff):
         cell_activity = np.sum(active_map * ma) / (area + 0.0001) # just to avoid 0 in denominator
         #activity_mask += cell_activity * ma
         frame_dict[key]['activity'] = cell_activity
-        #sys.stdout.write(f"Activity: of {key} is {area} -- {np.sum(ma)} \n")
+        #sys.stdout.write(f"Activity: of {key} is {area} -- {np.sum(ma)}  --- {area}\n")
         #sys.stdout.flush()
     #for key in frame_dict:
-    #    sys.stdout.write(f"{key} --> {frame_dict[key]['activity']} ..")
+        #sys.stdout.write(f"{key} --> {frame_dict[key]['activity']} ..")
     #sys.stdout.write("\n")
     #sys.stdout.flush()
     return frame_dict
@@ -515,7 +515,18 @@ class activityTrackingPosition(object):
         pass
         
 
-
-      
-
-
+def plot_links(img1, img2, res_dict1, res_dict2):
+    height, width = img1.shape
+    img_composite = np.concatenate((img1, img2), axis=1)
+    fig, ax = plt.subplots()
+    ax.imshow(img_composite)
+    for key1 in res_dict1:
+        cell_index = res_dict1[key1]['index']
+        for key2 in res_dict2:
+            # check for same index
+            if res_dict2[key2]['index'] == cell_index:
+                cm_t1_x, cm_t1_y = res_dict1[key1]['cm']
+                cm_t2_x, cm_t2_y = res_dict2[key2]['cm']
+                ax.plot([cm_t1_y , cm_t2_y + width], 
+                        [cm_t1_x, cm_t2_x], 'r')
+    plt.show()
