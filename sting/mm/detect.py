@@ -151,13 +151,16 @@ def get_channel_locations(channel_img, bboxes_final, param, raw_shape):
 def get_channel_locations_corr(channel_img, bboxes_final, param, raw_shape, prev_channels):
     pass
 
-def process_image(datapoint, model, param):
+def process_image(datapoint, model, param, visualize=True):
     """
     Function to process one datapoint in the live analysis pipeline
     Arguments:
         datapoint: a dict with keys 'image', 'time', 'position',
         model: an instance of live net model loaded on device
-
+        param: parameters used
+        visualize: To get full results for plotting, set visualize to True. Default
+                   is to chop up the image into slices and label each channel slice 
+                   to avoid doing it in the tracking process.
     """
     try:
         device = model.device
@@ -222,30 +225,37 @@ def process_image(datapoint, model, param):
         total_channels = 0
         list_channel_locations = []
         for block in channel_locations:
-            total_channels += channel_locations[block]['num_channels']
-            list_channel_locations.extend(channel_locations[block]['channel_locations'].tolist())
+            n_channels = channel_locations[block]['num_channels']
+            if n_channels > 10:
+                total_channels += channel_locations[block]['num_channels']
+                list_channel_locations.extend(channel_locations[block]['channel_locations'].tolist())
 
         sys.stdout.write(f"After Pos: {datapoint['position']} time: {datapoint['time']} , no ch: {total_channels} ... \n")
         sys.stdout.flush()
 
         cell_prob = param.Analysis.Segmentation.thresholds.cells.probability
 
-        return { 
-            #'phase': datapoint['image'].astype(),
-            'phase': datapoint['image'].astype('uint16'),
-            'position': datapoint['position'],
-            'time': datapoint['time'],
-            #'cells': seg_pred[0][:raw_shape[0], :raw_shape[1]],
-            'cells': (seg_pred[0][:raw_shape[0], :raw_shape[1]] > cell_prob),
-            'channels': seg_pred[1][:raw_shape[0], :raw_shape[1]],
-            #'channels': None,
-            'barcode_locations': bboxes_final,
-            'channel_locations': channel_locations,
-            'channel_locations_list': list_channel_locations,
-            'raw_shape': seg_sample['raw_shape'],
-            'total_channels': total_channels,
-            'error': error # if error is true we are going to skip the position
-        }# segmented cells, segmented channels, barcode locations, channel locations
+        if visualize:
+            return { 
+                #'phase': datapoint['image'].astype(),
+                'phase': datapoint['image'].astype('uint16'),
+                'position': datapoint['position'],
+                'time': datapoint['time'],
+                #'cells': seg_pred[0][:raw_shape[0], :raw_shape[1]],
+                'cells': (seg_pred[0][:raw_shape[0], :raw_shape[1]] > cell_prob),
+                'channels': seg_pred[1][:raw_shape[0], :raw_shape[1]],
+                #'channels': None,
+                'barcode_locations': bboxes_final,
+                'channel_locations': channel_locations,
+                'channel_locations_list': list_channel_locations,
+                'raw_shape': seg_sample['raw_shape'],
+                'total_channels': total_channels,
+                'error': error # if error is true we are going to skip the position
+            }# segmented cells, segmented channels, barcode locations, channel locations
+        else:
+            # Here we do a chopped up labelled version of each channel slice to avoid 
+            # doing it in the tracking pipeline
+            return None
     except Exception as e:
         sys.stdout.write(f"Error {e} in process image function at position: {datapoint['position']} - time: {datapoint['time']}\n")
         sys.stdout.flush()

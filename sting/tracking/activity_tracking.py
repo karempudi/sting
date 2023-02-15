@@ -16,6 +16,7 @@ from skimage.measure import label, regionprops
 import concurrent.futures
 from concurrent.futures import ThreadPoolExecutor, ProcessPoolExecutor
 import json
+import time
 
 np.seterr(divide='ignore', invalid='ignore')
 
@@ -62,14 +63,14 @@ def frame_dict(mask):
     for i, props in enumerate(img_props):
         if (props['area'] > 0):
             cell = {}
-            cell['area'] = props['area']
-            cell['cm'] = props['centroid']
+            cell['area'] = int(props['area'])
+            cell['cm'] = (float(props['centroid'][0]), float(props['centroid'][1]))
             cell['activity'] = 0
             cell['mother'] = None
             cell['index'] = None
             cell['dob'] = 0
             cell['initial_mother'] = 0
-            frame_dict[props['label']] = cell
+            frame_dict[int(props['label'])] = cell
     return frame_dict
 
 def set_activities(frame_dict, mask, diff):
@@ -93,7 +94,7 @@ def set_activities(frame_dict, mask, diff):
         area = frame_dict[key]['area']# sum of all the ones
         cell_activity = np.sum(active_map * ma) / (area + 0.0001) # just to avoid 0 in denominator
         #activity_mask += cell_activity * ma
-        frame_dict[key]['activity'] = cell_activity
+        frame_dict[key]['activity'] = float(cell_activity)
         #sys.stdout.write(f"Activity: of {key} is {area} -- {np.sum(ma)}  --- {area}\n")
         #sys.stdout.flush()
     #for key in frame_dict:
@@ -111,7 +112,7 @@ def find_max_index(cells_frame_dict) :
     if len(cell_indices) == 0:
         return 0
     else:
-        return np.max(cell_indices)
+        return int(np.max(cell_indices))
 
 def gaussian_heatmap(center = (2, 2), image_size = (10, 10), sigma = 1):
     """
@@ -178,7 +179,6 @@ def track_a_bundle(bundle, area_thres=0.75):
     # 2. Generate gaussian maps for all the cells in frame1 
     # 3. Iterate over the cells and link them and solve the problem of linking
     #    in 2 stages, first based on just activity and second by solving the splitting problem
-
     img1 = bundle['frame1']
     img2 = bundle['frame2']
     channel_number = bundle['channel_no']
@@ -214,7 +214,7 @@ def track_a_bundle(bundle, area_thres=0.75):
         # has all the possible 
         subdic = {}
         for key2 in leftover2:
-            pr = gm[key1][int(frame_dict2[key2]['cm'][0]), int(frame_dict2[key2]['cm'][1])]
+            pr = float(gm[key1][int(frame_dict2[key2]['cm'][0]), int(frame_dict2[key2]['cm'][1])])
             if pr > 0.01:
                 subdic[key2] = pr
         # all possible cells that could be connnected to key1
@@ -302,7 +302,7 @@ def track_a_bundle(bundle, area_thres=0.75):
     # solve the linear assignment problem, this will give indices into 
     # mothers_twice and daughters
     pairs_mother, pairs_daughter = linear_sum_assignment(C)
-    max_max = np.max(max_max) + 1 # not sure why we are adding 1 here, but will see if needed
+    max_max = int(np.max(max_max)) + 1 # not sure why we are adding 1 here, but will see if needed
     found = []
     for i in range(len(pairs_mother)):
         frame_dict2[daughters[pairs_daughter[i]]]['mother'] = frame_dict1[mothers_twice[pairs_mother[i]]]['index']
@@ -345,9 +345,10 @@ class activityTrackingPosition(object):
     """
 
     def __init__(self, tracking_event, param, track_pos=True):
-
+        
         # the keys that are important are 'position', 'time', 'phase', 'cells', 
         # and 'channel_locations'
+        start_time = time.time()
         self.position = tracking_event['position']
         self.timepoint = tracking_event['time']
         self.param = param
@@ -375,9 +376,10 @@ class activityTrackingPosition(object):
             cells_data = tracking_event['cells']
  
             # aggregate channel locations
-            channel_locations = []
-            for block in tracking_event['channel_locations']:
-                channel_locations.extend(tracking_event['channel_locations'][block]['channel_locations'])
+            #channel_locations = []
+            #for block in tracking_event['channel_locations']:
+            #    channel_locations.extend(tracking_event['channel_locations'][block]['channel_locations'])
+            channel_locations = tracking_event['channel_locations_list']
             channel_width = param.Save.channel_width
 
             filename = self.position_dir / Path('cells_tracks.hdf5')
@@ -407,7 +409,7 @@ class activityTrackingPosition(object):
                         cells_file.create_dataset(write_string_slice, data=img_slice, 
                                 compression=param.Save.small_file_compression_type,
                                 compression_opts=param.Save.small_file_compression_level)
-                        cells_file.create_dataset(write_string_dict, data=json.dumps(img_slice_dict, cls=CellsDictEncoder))
+                        cells_file.create_dataset(write_string_dict, data=json.dumps(img_slice_dict))
 
             else:
                 # 1. make frame dict for the current mask
@@ -432,8 +434,8 @@ class activityTrackingPosition(object):
                     phase_diff = tracking_event['phase'] - prev_phase_img
                     # we only grab stuff between barcodes and ignore the ends, so this operation will not result in errors
                     futures = []
-                    with ThreadPoolExecutor(max_workers=32) as executor:
-                    #with ProcessPoolExecutor(max_workers=32) as executor:
+                    #with ThreadPoolExecutor(max_workers=32) as executor:
+                    with ProcessPoolExecutor(max_workers=32) as executor:
                         for i, location in enumerate(channel_locations, 0):
                             bundle_item = {}
                             img_slice2 = cells_data[:, max(location-channel_width, 0): 
@@ -486,11 +488,10 @@ class activityTrackingPosition(object):
                         # chanel no, cells + _ time.zfil(4)
                         write_string_dict = str(result[0]) + '/tracks/tracks_' + str(tracking_event['time']).zfill(4)
                         write_string_dict_prev = str(result[0]) + '/tracks/tracks_' + prev_time_str
-                        cells_file.create_dataset(write_string_dict, data=json.dumps(result[2], cls=CellsDictEncoder))
-                        cells_file[write_string_dict_prev][()] = json.dumps(result[1], cls=CellsDictEncoder)
+                        cells_file.create_dataset(write_string_dict, data=json.dumps(result[2]))
+                        cells_file[write_string_dict_prev][()] = json.dumps(result[1])
                         #sys.stdout.write(f"Doing result of channel: {result[0]} ..\n")
                         #sys.stdout.flush()
-        
             #if self.param.Save.save_channels:
             #    write_files(tracking_event, 'cells_channels', self.param)
             #else:
@@ -500,6 +501,9 @@ class activityTrackingPosition(object):
         # write to a different file instead of writing to the main line and corrupt 
         # tracking, if there is more than a few frames missing, we write by default
         # to the error save files instead of the main line
+        duration = time.time() - start_time
+        sys.stdout.write(f"Tracking Pos: {self.position}, time: {self.timepoint}, duration: {duration}s\n")
+        sys.stdout.flush()
 
     def track(self,):
         # run a bunch of threads and start a tracking of all the channels
