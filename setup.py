@@ -21,6 +21,7 @@ setup(
         'console_scripts' : [
             'sting.runner = sting.ui.run:main',
             'sting.viewer = sting.ui.viewer:main',
+            'sting.posgen = sting.ui.posgen:main',
             'sting.runcmd = sting.liveanalysis.run:main',
             'sting.segtrain = sting.segmentation.train:main',
             'sting.segtest = sting.segmentation.test:main',

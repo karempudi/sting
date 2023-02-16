@@ -19,7 +19,7 @@ class Motion(ABC):
         objective: Magnification of the objective under use (20, 40 or 100)
     """
 
-    def __init__(self, objective: int = 100):
+    def __init__(self, objective: int = 40):
         super().__init__()
         self.objective = objective
         
@@ -56,7 +56,7 @@ class RectGridMotion(Motion):
                 will always follow a snake pattern. (Plot to verify)
     """    
 
-    def __init__(self, objective: int = 100, limits: tuple = None,
+    def __init__(self, objective: int = 40, limits: tuple = None,
                 direction_traversal: str = 'horizontal'):
         super().__init__(objective=objective)
         self.limits = limits
