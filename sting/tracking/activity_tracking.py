@@ -351,6 +351,7 @@ class activityTrackingPosition(object):
         start_time = time.time()
         cumulative = 0
         cumulative_tracks = 0
+        cumulative_bundle_compute = 0
         self.position = tracking_event['position']
         self.timepoint = tracking_event['time']
         self.param = param
@@ -439,6 +440,7 @@ class activityTrackingPosition(object):
                     with ThreadPoolExecutor(max_workers=32) as executor:
                     #with ProcessPoolExecutor(max_workers=32) as executor:
                         for i, location in enumerate(channel_locations, 0):
+                            wait_for_finish_start = time.time()
                             bundle_item = {}
                             img_slice2 = cells_data[:, max(location-channel_width, 0): 
                                             min(tracking_event['raw_shape'][1], location+channel_width)]
@@ -455,9 +457,10 @@ class activityTrackingPosition(object):
                                             min(tracking_event['raw_shape'][1], location+channel_width)]
                         
                             #img_slice_dict1 = set_activities(img_slice_dict1, img_slice1, diff_slice)
-
+                            
                             # Now you have everything you need to track a slice
                             # put them in somewhere and track them
+
                             bundle_item = {
                                 't1': self.timepoint-1,
                                 't2': self.timepoint,
@@ -468,6 +471,9 @@ class activityTrackingPosition(object):
                                 #'frame_dict2': img_slice_dict2,
                                 'diff': diff_slice
                             }
+
+                            cumulative_bundle_compute += (time.time() - wait_for_finish_start)
+
                             slice_time_start = time.time()
                             write_string_slice = str(i) + '/cells/cells_' + str(tracking_event['time']).zfill(4)
                             cells_file.create_dataset(write_string_slice, data=img_slice2,
@@ -485,7 +491,7 @@ class activityTrackingPosition(object):
                     #    for one_bundle in bundles:
                     #        future = executor.submit(track_a_bundle, one_bundle)
                     #        futures.append(future)
-
+                    
                     futures, _ = concurrent.futures.wait(futures)
                     for future in futures:
                         result = future.result()
@@ -509,7 +515,7 @@ class activityTrackingPosition(object):
         # tracking, if there is more than a few frames missing, we write by default
         # to the error save files instead of the main line
         duration = time.time() - start_time
-        sys.stdout.write(f"Tracking Pos: {self.position}, time: {self.timepoint}, duration: {duration}s, cell_writes: {cumulative}, track_writes: {cumulative_tracks}\n")
+        sys.stdout.write(f"Tracking Pos: {self.position}, time: {self.timepoint}, duration: {duration}s, cell_writes: {cumulative}, track_writes: {cumulative_tracks} waiting_time: {cumulative_bundle_compute} \n")
         sys.stdout.flush()
 
     def track(self,):
