@@ -47,9 +47,9 @@ Analysis:
       min: 600
       max: 900
       dist: 760
-      channel_dist: 22
+      channel_dist: 23
       size: 20
-      prominences: 100
+      prominences: 400
     architecture: 'YOLOv3'
     model_path: 'C:\\Users\\elflab\\Documents\\Praneeth\\models\\barcode_models\\model_100.pth'
     batch_size: 1
@@ -107,7 +107,7 @@ Experiment:
   number: 'exp-bp-000' # Experiment no
   analysis_type: 'simlive' # should be 'live' or 'post' or 'simlive'
   # if simlive, then use the images from this directory 
-  sim_directory: 'C:\\Users\\elflab\\Documents\\Praneeth\\data\\simstack'
+  sim_directory: "F:\\EXP-23-BP0396\\exp-bp-396-2023-02-03_10-51-21"
   analysis_device: 'cuda:0' # defaults to 'cpu' if not available
   queues: # list with 4 things 'acquire', 'segment', 'channel', 'growth'
     - 'acquire'

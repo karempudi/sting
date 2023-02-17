@@ -20,31 +20,27 @@ import json
 
 np.seterr(divide='ignore', invalid='ignore')
 
-class CellsDictEncoder(json.JSONEncoder):
 
-    def default(self, obj):
-        if isinstance(obj, np.integer):
-            return int(obj)
-        if isinstance(obj, np.floating):
-            return float(obj)
-        if isinstance(obj, np.ndarray):
-            return obj.tolist()
-        return json.JSONEncoder.default(self, obj)
-
-
-def frame_dict(mask):
+def construct_cellprops(mask, min_area=20):
     """
     For each cell mark the activity and some indices and return a dict.
     Activity field is not filled and will have to be filled once you
     get the next frame.
+    Arguments:
+        mask: a labelled image slice of a single channel 
+                (works for a full image as well)
+        min_area: min area of the labelled region in pixels
+    Returns:
+        frame_dict: a dict with keys as the labels of the region
+                and values defined by the keys
     """
     img_props = regionprops(mask)
     frame_dict = {}
     for i, props in enumerate(img_props):
-        if (props['area'] > 0):
+        if (props['area'] > min_area):
             cell = {}
-            cell['area'] = props['area']
-            cell['cm'] = props['centroid']
+            cell['area'] = int(props['area'])
+            cell['cm'] = (float(props['centroid'][0]), float(props['centroid'][1]))
             cell['activity'] = 0
             cell['mother'] = None
             cell['index'] = None
@@ -55,9 +51,26 @@ def frame_dict(mask):
             frame_dict[props['label']] = cell
     return frame_dict
 
-def link_a_bundle(bundle,):
-
-
 
 def fast_tracking(tracking_event, param):
-    pass
+    """
+    Function that takes in the results of a tracking event, which is
+    all the information concerning an image after segmentation,
+    barcode detection, channel localization and clean up.
+    The job of this function is to plainly do the tracking for 
+    all the channels in the image and write data to disk.
+
+    Arguments:
+        tracking_event: dict containing all the info of one image
+        param: parameters used
+    
+    """
+    
+    position = tracking_event['position']
+    timepoint = tracking_event['time']
+
+    save_dir = Path(param.Save.directory) if isinstance(param.Save.directory, str) else param.Save.directory
+    position_dir = save_dir / Path('Pos' + str(position))
+
+    return None
+    
