@@ -268,7 +268,7 @@ def process_image(datapoint, model, param, visualize=True):
         if visualize:
 
             duration = 1000 * (time.time() - start_time)
-            sys.stdout.write(f"After Pos: {datapoint['position']} time: {datapoint['time']} , no ch: {total_channels}, duration: {duration:0.4f}ms ...\n")
+            sys.stdout.write(f"Seg Pos: {datapoint['position']} time: {datapoint['time']} , no ch: {total_channels}, duration: {duration:0.4f}ms ...\n")
             sys.stdout.flush()
             return { 
                 #'phase': datapoint['image'].astype(),
@@ -293,7 +293,7 @@ def process_image(datapoint, model, param, visualize=True):
             labelled_slices, channel_props = cut_channels_and_props(cells_binary, raw_shape, list_channel_locations, param.Save.channel_width)
 
             duration = 1000 * (time.time() - start_time)
-            sys.stdout.write(f"After Pos: {datapoint['position']} time: {datapoint['time']} , no ch: {total_channels}, duration: {duration:0.4f}ms ...\n")
+            sys.stdout.write(f"Seg Pos: {datapoint['position']} time: {datapoint['time']} , no ch: {total_channels}, duration: {duration:0.4f}ms ...\n")
             sys.stdout.flush()
  
             return {

@@ -67,11 +67,19 @@ def fast_tracking_cells(tracking_event, param):
     
     """
     
+    start_time = time.time()
     position = tracking_event['position']
     timepoint = tracking_event['time']
-
+    props = tracking_event['props']
+    
     save_dir = Path(param.Save.directory) if isinstance(param.Save.directory, str) else param.Save.directory
     position_dir = save_dir / Path('Pos' + str(position))
-    
+    time.sleep(0.400)
+
+    duration = 1000 * (time.time() - start_time)
+    sys.stdout.write(f"Tracking Pos: {tracking_event['position']} time: {tracking_event['time']} , no ch: {len(props)}, duration: {duration:0.4f}ms ...\n")
+    sys.stdout.flush()
+ 
+
     return None
     

@@ -240,7 +240,7 @@ class ExptRun(object):
                                             'image': data['image']})
                     write_to_db({'position': data['position'], 'timepoint': data['timepoint']}, self.expt_save_dir, 'acquire')
                     if data['last']:
-                        time.sleep(1)
+                        time.sleep(1.0)
                         sys.stdout.write(f"Sleeping after acquiring one loop ...\n")
                         sys.stdout.flush()
                 else:
