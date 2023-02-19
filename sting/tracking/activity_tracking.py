@@ -437,8 +437,8 @@ class activityTrackingPosition(object):
                     phase_diff = tracking_event['phase'] - prev_phase_img
                     # we only grab stuff between barcodes and ignore the ends, so this operation will not result in errors
                     futures = []
-                    with ThreadPoolExecutor(max_workers=32) as executor:
-                    #with ProcessPoolExecutor(max_workers=32) as executor:
+                    #with ThreadPoolExecutor(max_workers=32) as executor:
+                    with ProcessPoolExecutor(max_workers=32) as executor:
                         for i, location in enumerate(channel_locations, 0):
                             wait_for_finish_start = time.time()
                             bundle_item = {}

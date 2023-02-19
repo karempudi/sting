@@ -20,6 +20,7 @@ from sting.utils.param_io import save_params
 from sting.utils.disk_ops import write_files
 from sting.mm.detect import get_loaded_model, process_image
 from sting.tracking.activity_tracking import activityTrackingPosition
+from sting.tracking.fast_tracking import fast_tracking_cells
 from sting.utils.verify import verify_channel_locations
 from pycromanager import Acquisition, Core
 from skimage import io
@@ -283,7 +284,7 @@ class ExptRun(object):
                 # do your image processing on the phase image here
                 write_files(data_in_seg_queue, 'phase', self.param)
                 try:
-                    result = process_image(data_in_seg_queue, net, self.param)
+                    result = process_image(data_in_seg_queue, net, self.param, visualize=False)
                     #if self.param.Save.save_channels:
                     #    write_files(result, 'cells_channels', self.param)
                     #else:
@@ -341,7 +342,8 @@ class ExptRun(object):
                     continue
                 
                 # here we the data need to analyze this position, crop the channels and call tracker
-                track_one_position = activityTrackingPosition(data_tracker_queue, self.param)
+                #track_one_position = activityTrackingPosition(data_tracker_queue, self.param)
+                track_one_position = fast_tracking_cells(data_tracker_queue, self.param)
                 write_to_db({
                     'position': data_tracker_queue['position'],
                     'time': data_tracker_queue['time']

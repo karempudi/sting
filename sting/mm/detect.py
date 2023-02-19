@@ -8,6 +8,8 @@ from sting.segmentation.transforms import UnetTestTransforms
 from sting.regiondetect.utils import non_max_suppression, to_cpu, outputs_to_bboxes
 import sys
 from scipy.signal import find_peaks, peak_prominences
+from skimage.measure import label, regionprops
+import time
 
 
 def get_loaded_model(param: RecursiveNamespace):
@@ -151,6 +153,35 @@ def get_channel_locations(channel_img, bboxes_final, param, raw_shape):
 def get_channel_locations_corr(channel_img, bboxes_final, param, raw_shape, prev_channels):
     pass
 
+def cut_channels_and_props(image, raw_shape, channel_locations, channel_width, min_area=20):
+    """
+    A function that takes a segmented binary mask and returns labelled images and 
+    properties that are pushed to the tracking queue for cell-tracking
+    """
+    n_channels = len(channel_locations)
+    height, width = raw_shape[0], raw_shape[1]
+    labelled_slices = np.zeros((height, 2*channel_width*n_channels), dtype='uint8')
+    props = {}
+    for i, location in enumerate(channel_locations, 0):
+        sliced_img = label(image[:, location-channel_width:location+channel_width])
+        labelled_slices[:, i * 2 * channel_width: (i+1) * 2 * channel_width] = sliced_img
+        props_slice = regionprops(sliced_img)
+        props[i] = {}
+        for cell_i, properties in enumerate(props_slice):
+            if (properties['area']) > min_area:
+                cell = {}
+                cell['area'] = int(properties['area'])
+                cell['cm'] = (float(properties['centroid'][0]), float(properties['centroid'][1]))
+                cell['activity'] = 0
+                cell['mother'] = None
+                cell['index'] = None
+                cell['dob'] = 0
+                cell['initial_mother'] = 0
+                cell['growth'] = None
+                cell['state'] = None
+                props[i][cell_i] = cell
+    return labelled_slices, props
+
 def process_image(datapoint, model, param, visualize=True):
     """
     Function to process one datapoint in the live analysis pipeline
@@ -162,6 +193,7 @@ def process_image(datapoint, model, param, visualize=True):
                    is to chop up the image into slices and label each channel slice 
                    to avoid doing it in the tracking process.
     """
+    start_time = time.time()
     try:
         device = model.device
         # transformations
@@ -230,12 +262,14 @@ def process_image(datapoint, model, param, visualize=True):
                 total_channels += channel_locations[block]['num_channels']
                 list_channel_locations.extend(channel_locations[block]['channel_locations'].tolist())
 
-        sys.stdout.write(f"After Pos: {datapoint['position']} time: {datapoint['time']} , no ch: {total_channels} ... \n")
-        sys.stdout.flush()
 
         cell_prob = param.Analysis.Segmentation.thresholds.cells.probability
 
         if visualize:
+
+            duration = 1000 * (time.time() - start_time)
+            sys.stdout.write(f"After Pos: {datapoint['position']} time: {datapoint['time']} , no ch: {total_channels}, duration: {duration:0.4f}ms ...\n")
+            sys.stdout.flush()
             return { 
                 #'phase': datapoint['image'].astype(),
                 'phase': datapoint['image'].astype('uint16'),
@@ -255,7 +289,24 @@ def process_image(datapoint, model, param, visualize=True):
         else:
             # Here we do a chopped up labelled version of each channel slice to avoid 
             # doing it in the tracking pipeline
-            return None
+            cells_binary = seg_pred[0][:raw_shape[0], :raw_shape[1]] > cell_prob
+            labelled_slices, channel_props = cut_channels_and_props(cells_binary, raw_shape, list_channel_locations, param.Save.channel_width)
+
+            duration = 1000 * (time.time() - start_time)
+            sys.stdout.write(f"After Pos: {datapoint['position']} time: {datapoint['time']} , no ch: {total_channels}, duration: {duration:0.4f}ms ...\n")
+            sys.stdout.flush()
+ 
+            return {
+                'position': datapoint['position'],
+                'time': datapoint['time'],
+                'labelled_slices': labelled_slices,
+                'props': channel_props, 
+                'barcode_locations': bboxes_final,
+                'total_channels': total_channels,
+                'channel_locations_list': list_channel_locations,
+                'raw_shape' : raw_shape,
+                'error': error
+            }
     except Exception as e:
         sys.stdout.write(f"Error {e} in process image function at position: {datapoint['position']} - time: {datapoint['time']}\n")
         sys.stdout.flush()

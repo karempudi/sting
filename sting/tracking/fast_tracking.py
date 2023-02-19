@@ -16,6 +16,7 @@ from skimage.measure import label, regionprops
 import concurrent.futures
 from concurrent.futures import ThreadPoolExecutor, ProcessPoolExecutor
 import json
+import time
 
 
 np.seterr(divide='ignore', invalid='ignore')
@@ -52,7 +53,7 @@ def construct_cellprops(mask, min_area=20):
     return frame_dict
 
 
-def fast_tracking(tracking_event, param):
+def fast_tracking_cells(tracking_event, param):
     """
     Function that takes in the results of a tracking event, which is
     all the information concerning an image after segmentation,
@@ -61,7 +62,7 @@ def fast_tracking(tracking_event, param):
     all the channels in the image and write data to disk.
 
     Arguments:
-        tracking_event: dict containing all the info of one image
+        tracking_event: dict containing all the info of one image, position and time
         param: parameters used
     
     """
@@ -71,6 +72,6 @@ def fast_tracking(tracking_event, param):
 
     save_dir = Path(param.Save.directory) if isinstance(param.Save.directory, str) else param.Save.directory
     position_dir = save_dir / Path('Pos' + str(position))
-
+    
     return None
     
