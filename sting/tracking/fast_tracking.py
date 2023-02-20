@@ -82,20 +82,31 @@ def fast_tracking_cells(tracking_event, param):
     position_dir = save_dir / Path('Pos' + str(position))
 
     cells_filename = position_dir / Path('cells.zarr')
+    tracks_dir = position_dir / Path('tracks')
     compressor = Zlib(level=param.Save.small_file_compression_level)
+
+    if not tracks_dir.exists():
+        tracks_dir.mkdir(exist_ok=True, parents=True)
     
+    tracks_write_filename = tracks_dir / Path('tracks_' + str(timepoint).zfill(4) + '.json')
+    with open(tracks_write_filename, 'w') as tracks_fh:
+        tracks_fh.write(json.dumps(props))
+
+   
     if timepoint == 0:
         # we create a file with appropriate compression and chunking and write the first image
         cells_array = zarr.convenience.open(cells_filename, mode='a', shape=(1, height, width),
                         chunks=(1, height, 2*param.Save.channel_width), order='C', 
                         dtype='uint8', compressor=compressor)
         cells_array[0] = image
+
     else:
         cells_array = zarr.convenience.open(cells_filename, mode='a', shape=(1, height, width),
                 chunks=(1, height, 2*param.Save.channel_width), order='C', 
                 dtype='uint8', compressor=compressor)
         cells_array.append(image[np.newaxis, :])
-
+ 
+       
 
     duration = 1000 * (time.time() - start_time)
     sys.stdout.write(f"Tracking Pos: {tracking_event['position']} time: {tracking_event['time']} , no ch: {len(props)}, duration: {duration:0.4f}ms ...\n")
