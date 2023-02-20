@@ -17,6 +17,8 @@ import concurrent.futures
 from concurrent.futures import ThreadPoolExecutor, ProcessPoolExecutor
 import json
 import time
+import zarr
+from numcodecs import Zlib
 
 
 np.seterr(divide='ignore', invalid='ignore')
@@ -71,15 +73,33 @@ def fast_tracking_cells(tracking_event, param):
     position = tracking_event['position']
     timepoint = tracking_event['time']
     props = tracking_event['props']
-    
+    image = tracking_event['labelled_slices']
+    height, width = image.shape
+    n_channels = len(tracking_event['channel_locations_list'])
+
+
     save_dir = Path(param.Save.directory) if isinstance(param.Save.directory, str) else param.Save.directory
     position_dir = save_dir / Path('Pos' + str(position))
-    time.sleep(0.400)
+
+    cells_filename = position_dir / Path('cells.zarr')
+    compressor = Zlib(level=param.Save.small_file_compression_level)
+    
+    if timepoint == 0:
+        # we create a file with appropriate compression and chunking and write the first image
+        cells_array = zarr.convenience.open(cells_filename, mode='a', shape=(1, height, width),
+                        chunks=(1, height, 2*param.Save.channel_width), order='C', 
+                        dtype='uint8', compressor=compressor)
+        cells_array[0] = image
+    else:
+        cells_array = zarr.convenience.open(cells_filename, mode='a', shape=(1, height, width),
+                chunks=(1, height, 2*param.Save.channel_width), order='C', 
+                dtype='uint8', compressor=compressor)
+        cells_array.append(image[np.newaxis, :])
+
 
     duration = 1000 * (time.time() - start_time)
     sys.stdout.write(f"Tracking Pos: {tracking_event['position']} time: {tracking_event['time']} , no ch: {len(props)}, duration: {duration:0.4f}ms ...\n")
     sys.stdout.flush()
- 
 
     return None
     
