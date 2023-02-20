@@ -184,7 +184,7 @@ class LiveWindow(QMainWindow):
                 'time': 0,
                 'image': image
             }
-            result = process_image(datapoint, self.net, self.param)
+            result = process_image(datapoint, self.net, self.param, visualize=True)
             #sys.stdout.write(f"Segmented: error: {result['error']} found {result['total_channels']}\n")
             #sys.stdout.flush()
 

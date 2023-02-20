@@ -11,6 +11,7 @@ from skimage.io import imsave, imread
 from skimage.measure import label
 import h5py
 from sting.utils.db_ops import read_from_db
+import zarr
 
 def write_files(event_data, event_type, param):
     """
@@ -208,7 +209,7 @@ def read_files(read_type, param, position, channel_no, max_imgs=20):
                 'left_barcode': left_barcode_img,
                 'right_barcode': right_barcode_img,
             }
-        elif read_type == 'cell_seg':
+        elif read_type == 'cell_seg' and param.Save.small_file_format == '.hdf5':
             # get cell segmentation data image from reading the cell images data
             # check if cells_tracks.hdf5 exists
 
@@ -252,6 +253,44 @@ def read_files(read_type, param, position, channel_no, max_imgs=20):
                 'image': full_img, 
                 'left_barcode': left_barcode_img,
                 'right_barcode': right_barcode_img,
+            }
+        
+        elif read_type == 'cell_seg' and param.Save.small_file_format == '.zarr':
+
+            # read the zarr file and load the corresponding segmentation masks
+            cells_filename = dir_name / Path('Pos' + str(position)) / Path('cells.zarr')
+
+            channel_width = param.Save.channel_width
+
+            data = zarr.convenience.open(cells_filename, mode='r')
+            n_slices, height, width = data.shape
+            last_key = n_slices - 1
+            prev_phase_filename = dir_name / Path('Pos' + str(position)) / Path('phase') / Path('phase_' + str(last_key).zfill(4) + '.tiff')
+            barcode_data = read_from_db('barcode_locations', dir_name, position=position, timepoint=last_key)
+            #print(f"Last key: {last_key}, barcode_data: {barcode_data}")
+            # get the barcode locations and grab barcode images from the phase image
+            channel_location = barcode_data['channel_locations'][channel_no]
+            for i, barcode in enumerate(barcode_data['barcode_locations'], 0):
+                if (((barcode[0] + barcode[2])/2) > channel_location):
+                    break
+            left_barcode =  barcode_data['barcode_locations'][i-1]
+            right_barcode = barcode_data['barcode_locations'][i]
+            prev_phase_img = imread(prev_phase_filename)
+            left_barcode_img = prev_phase_img[int(left_barcode[1]): int(left_barcode[3]), int(left_barcode[0]): int(left_barcode[2])]
+            right_barcode_img = prev_phase_img[int(right_barcode[1]): int(right_barcode[3]), int(right_barcode[0]): int(right_barcode[2])]
+
+            if max_imgs == None:
+                full_img = data[:, :, (channel_no) * 2 * channel_width : (channel_no+1) * 2 * channel_width]
+                full_img = np.hstack(full_img)
+            else:
+                full_img = data[-max_imgs:, :, (channel_no) * 2 * channel_width : (channel_no+1) * 2 * channel_width]
+                full_img = np.hstack(full_img)
+
+            
+            return {
+                'image': full_img,
+                'left_barcode': left_barcode_img,
+                'right_barcode': right_barcode_img
             }
         
         elif read_type == 'cell_tracks':

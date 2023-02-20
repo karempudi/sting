@@ -28,7 +28,7 @@ class DataFetchThread(QThread):
         sys.stdout.write(f"Image thread to get Pos: {self.position} Ch no: {self.channel_no}\n")
         sys.stdout.flush()
         try:
-            a = 1 + 1
+            #a = 1 + 1
             image_data = read_files(self.read_type, self.param, self.position, self.channel_no, self.max_imgs)
             #print(image.shape)
             self.data = image_data

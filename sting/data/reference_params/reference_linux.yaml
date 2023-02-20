@@ -98,7 +98,8 @@ Save:
   # in this directory you will create a directory with expt-number and time_stamp
   directory: "/mnt/sda1/REALTIME/analysis" # Top level directory for saving files.
   save_channels: True
-  small_file_format: '.hdf5' # can be hdf5 or tiff # if tiff will store individual files
+  #small_file_format: '.hdf5' # can be hdf5 or tiff # if tiff will store individual files
+  small_file_format: '.zarr'
   small_file_compression_level: 6
   small_file_compression_type: 'gzip'
   channel_width: 20
