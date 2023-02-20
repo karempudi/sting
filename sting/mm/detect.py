@@ -172,6 +172,7 @@ def cut_channels_and_props(image, raw_shape, channel_locations, channel_width, m
                 cell = {}
                 cell['area'] = int(properties['area'])
                 cell['cm'] = (float(properties['centroid'][0]), float(properties['centroid'][1]))
+                cell['bbox'] = properties['bbox']
                 cell['activity'] = 0
                 cell['mother'] = None
                 cell['index'] = None
