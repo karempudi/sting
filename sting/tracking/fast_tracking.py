@@ -110,8 +110,7 @@ def fast_tracking_cells(tracking_event, param):
         # of cells in the previous frame, (for now we test read times and write)
         prev_track_filename = tracks_dir / Path('tracks_' + str(timepoint-1).zfill(4) + '.json')
         with open(prev_track_filename, 'r') as prev_track_fh:
-            prev_track_data = json.load(prev_track_fh)
-       
+            prev_track_data = json.load(prev_track_fh) 
 
     duration = 1000 * (time.time() - start_time)
     sys.stdout.write(f"Tracking Pos: {tracking_event['position']} time: {tracking_event['time']} , no ch: {len(props)}, duration: {duration:0.4f}ms ...\n")

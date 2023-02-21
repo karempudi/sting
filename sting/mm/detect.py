@@ -180,7 +180,7 @@ def cut_channels_and_props(image, raw_shape, channel_locations, channel_width, m
                 cell['initial_mother'] = 0
                 cell['growth'] = None
                 cell['state'] = None
-                props[i][cell_i] = cell
+                props[i][properties['label']] = cell
     return labelled_slices, props
 
 def process_image(datapoint, model, param, visualize=True):
