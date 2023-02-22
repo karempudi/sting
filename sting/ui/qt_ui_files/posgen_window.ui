@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>842</width>
-    <height>748</height>
+    <width>766</width>
+    <height>747</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -29,6 +29,9 @@
        <property name="text">
         <string>One Side</string>
        </property>
+       <property name="checked">
+        <bool>true</bool>
+       </property>
       </widget>
      </item>
      <item>
@@ -40,13 +43,13 @@
      </item>
     </layout>
    </widget>
-   <widget class="ImageView" name="graphicsView">
+   <widget class="ImageView" name="positions_plot">
     <property name="geometry">
      <rect>
       <x>20</x>
-      <y>260</y>
-      <width>551</width>
-      <height>441</height>
+      <y>310</y>
+      <width>411</width>
+      <height>391</height>
      </rect>
     </property>
    </widget>
@@ -54,7 +57,7 @@
     <property name="geometry">
      <rect>
       <x>10</x>
-      <y>120</y>
+      <y>130</y>
       <width>200</width>
       <height>80</height>
      </rect>
@@ -91,12 +94,15 @@
     </layout>
    </widget>
    <widget class="QWidget" name="horizontalLayoutWidget_2">
+    <property name="enabled">
+     <bool>true</bool>
+    </property>
     <property name="geometry">
      <rect>
       <x>220</x>
-      <y>100</y>
+      <y>130</y>
       <width>526</width>
-      <height>131</height>
+      <height>81</height>
      </rect>
     </property>
     <layout class="QHBoxLayout" name="two_sides_layout">
@@ -104,29 +110,41 @@
       <layout class="QGridLayout" name="left_side_layout">
        <item row="1" column="0">
         <widget class="QPushButton" name="left_bl_button">
+         <property name="enabled">
+          <bool>true</bool>
+         </property>
          <property name="text">
-          <string>BL1(left)</string>
+          <string>BL1(left-side)</string>
          </property>
         </widget>
        </item>
        <item row="1" column="1">
         <widget class="QPushButton" name="left_br_button">
+         <property name="enabled">
+          <bool>true</bool>
+         </property>
          <property name="text">
-          <string>BR1(left)</string>
+          <string>BR1(left-side)</string>
          </property>
         </widget>
        </item>
        <item row="0" column="0">
         <widget class="QPushButton" name="left_tl_button">
+         <property name="enabled">
+          <bool>true</bool>
+         </property>
          <property name="text">
-          <string>TL1(left)</string>
+          <string>TL1(left-side)</string>
          </property>
         </widget>
        </item>
        <item row="0" column="1">
         <widget class="QPushButton" name="left_tr_button">
+         <property name="enabled">
+          <bool>true</bool>
+         </property>
          <property name="text">
-          <string>TR1(left)</string>
+          <string>TR1(left-side)</string>
          </property>
         </widget>
        </item>
@@ -136,29 +154,41 @@
       <layout class="QGridLayout" name="right_side_layout">
        <item row="0" column="1">
         <widget class="QPushButton" name="right_tr_button">
-         <property name="text">
-          <string>TR2(right)</string>
+         <property name="enabled">
+          <bool>true</bool>
          </property>
-        </widget>
-       </item>
-       <item row="1" column="1">
-        <widget class="QPushButton" name="right_br_button">
          <property name="text">
-          <string>BR2(right)</string>
+          <string>TR2(right-side)</string>
          </property>
         </widget>
        </item>
        <item row="0" column="0">
         <widget class="QPushButton" name="right_tl_button">
+         <property name="enabled">
+          <bool>true</bool>
+         </property>
          <property name="text">
-          <string>TL2(right)</string>
+          <string>TL2(right-side)</string>
          </property>
         </widget>
        </item>
        <item row="1" column="0">
         <widget class="QPushButton" name="right_bl_button">
+         <property name="enabled">
+          <bool>true</bool>
+         </property>
          <property name="text">
-          <string>BL2(right)</string>
+          <string>BL2(right-side)</string>
+         </property>
+        </widget>
+       </item>
+       <item row="1" column="1">
+        <widget class="QPushButton" name="right_br_button">
+         <property name="enabled">
+          <bool>true</bool>
+         </property>
+         <property name="text">
+          <string>BR2(right-side)</string>
          </property>
         </widget>
        </item>
@@ -184,16 +214,55 @@
       </widget>
      </item>
      <item>
-      <widget class="QPushButton" name="pushButton_2">
+      <widget class="QPushButton" name="save_pos_button">
        <property name="text">
         <string>Save Positions</string>
        </property>
       </widget>
      </item>
      <item>
-      <widget class="QPushButton" name="pushButton_3">
+      <widget class="QPushButton" name="quit_button">
        <property name="text">
         <string>Quit</string>
+       </property>
+      </widget>
+     </item>
+    </layout>
+   </widget>
+   <widget class="QWidget" name="horizontalLayoutWidget_4">
+    <property name="geometry">
+     <rect>
+      <x>20</x>
+      <y>250</y>
+      <width>411</width>
+      <height>51</height>
+     </rect>
+    </property>
+    <layout class="QHBoxLayout" name="spacing_layout">
+     <item>
+      <widget class="QLabel" name="x_label">
+       <property name="text">
+        <string>X</string>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QLineEdit" name="x_spacing"/>
+     </item>
+     <item>
+      <widget class="QLabel" name="y_label">
+       <property name="text">
+        <string>Y</string>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QLineEdit" name="y_spacing"/>
+     </item>
+     <item>
+      <widget class="QPushButton" name="generate_pos_button">
+       <property name="text">
+        <string>Generate Positions</string>
        </property>
       </widget>
      </item>
@@ -205,12 +274,11 @@
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>842</width>
+     <width>766</width>
      <height>22</height>
     </rect>
    </property>
   </widget>
-  <widget class="QStatusBar" name="statusbar"/>
  </widget>
  <customwidgets>
   <customwidget>
