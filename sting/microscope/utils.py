@@ -16,4 +16,14 @@ def fetch_mm_image():
         sys.stdout.write(f"Error {e} while snapping image on the microscope ... \n")
         sys.stdout.flush()
         return np.random.randint(low = 0, high = 2, size=(10, 10))
+
+def construct_pos_file(positions_list, devices_dict):
+    """
+    Function that will generate a positions (*.pos) file that is loadable into
+    Micromanager 2.0 using the list of positions and devices.
     
+    Arguments:
+        positions_list: 
+        devices_dict
+    """
+    pass 

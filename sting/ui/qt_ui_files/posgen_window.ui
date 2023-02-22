@@ -47,7 +47,7 @@
     <property name="geometry">
      <rect>
       <x>20</x>
-      <y>310</y>
+      <y>320</y>
       <width>411</width>
       <height>391</height>
      </rect>
@@ -233,12 +233,12 @@
     <property name="geometry">
      <rect>
       <x>20</x>
-      <y>250</y>
+      <y>260</y>
       <width>411</width>
       <height>51</height>
      </rect>
     </property>
-    <layout class="QHBoxLayout" name="spacing_layout">
+    <layout class="QHBoxLayout" name="spacing_layout_input">
      <item>
       <widget class="QLabel" name="x_label">
        <property name="text">
@@ -263,6 +263,35 @@
       <widget class="QPushButton" name="generate_pos_button">
        <property name="text">
         <string>Generate Positions</string>
+       </property>
+      </widget>
+     </item>
+    </layout>
+   </widget>
+   <widget class="QWidget" name="horizontalLayoutWidget_5">
+    <property name="geometry">
+     <rect>
+      <x>20</x>
+      <y>220</y>
+      <width>371</width>
+      <height>31</height>
+     </rect>
+    </property>
+    <layout class="QHBoxLayout" name="spacing_layout_type">
+     <item>
+      <widget class="QRadioButton" name="auto_spacing_button">
+       <property name="text">
+        <string>Auto spacing</string>
+       </property>
+       <property name="checked">
+        <bool>true</bool>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QRadioButton" name="manual_spacing_button">
+       <property name="text">
+        <string>Manual Spacing</string>
        </property>
       </widget>
      </item>

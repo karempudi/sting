@@ -54,6 +54,8 @@ class PosGenWindow(QMainWindow):
         self.ui.right_br_button.clicked.connect(self.set_right_br_position)
         self.ui.right_bl_button.clicked.connect(self.set_right_bl_position)
 
+        self.ui.generate_pos_button.clicked.connect(self.generate_positions)
+
     def set_layout_type(self, clicked):
         self.one_side = self.ui.one_rect_button.isChecked()
         self.two_sides = self.ui.two_rect_button.isChecked()
@@ -161,6 +163,14 @@ class PosGenWindow(QMainWindow):
 
     def set_right_bl_position(self):
         self.set_position_and_label('BL2')
+
+
+    def generate_positions(self):
+        # code to generate positions based on the positions needed
+
+        pass
+
+
 
 
 def main():
