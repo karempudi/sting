@@ -91,11 +91,11 @@ class PosGenWindow(QMainWindow):
             core = Core()
             if core.get_focus_device() != 'PFSOffset':
                 raise ValueError("Foucs device is not PFSOffset")
-            if core.get_xy_device() != 'XYStage':
+            if core.get_xy_stage_device() != 'XYStage':
                 raise ValueError("XY device is not XYStage")
             x = core.get_x_position()
             y = core.get_y_position()
-            z = core.get_foucs_position() 
+            z = core.get_auto_focus_offset()
             position_dict = {
                 'X': x,
                 'Y': y,
@@ -103,6 +103,7 @@ class PosGenWindow(QMainWindow):
                 'grid_row': 0,
                 'grid_col': 0,
             }
+            
         except Exception as e:
             msg = QMessageBox()
             msg.setText(f"Micromanger 2.0 position not grabbed due to: {e}")
@@ -111,6 +112,7 @@ class PosGenWindow(QMainWindow):
         finally:
             if core:
                 del core
+            print(position_dict)
             return position_dict 
 
     def set_position_and_label(self, label):
