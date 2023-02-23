@@ -164,13 +164,9 @@ class PosGenWindow(QMainWindow):
     def set_right_bl_position(self):
         self.set_position_and_label('BL2')
 
-
     def generate_positions(self):
         # code to generate positions based on the positions needed
-
         pass
-
-
 
 
 def main():
