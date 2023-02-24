@@ -55,19 +55,21 @@ class RectGridMotion(Motion):
             position names "PosTL", "PosTR", "PosBR", "PosBL", that mark the
             4 corners of the rectangle containing 25 rows of mother-machine
             channels
-        objective: Magnification of the objective (20, 40 or 100)
-        direction_traversal: horizontal or vertical, the movement between positions
-            will always follow a snake pattern. (Plot to verify)
+        movement_type (str): left or right. More on this in the make_pattern function docstring.
+            basically meant to show how the positions are going to be moving.
+        corner_names: a list of position labels used 
+        nrows (int): number of rows  (depends on how many rows you want to image)
+        ncols (int): number of cols  (depends on magnification, stick to 40x, 100 blocks, so 20 positions)
     """
     def __init__(self,
-                 filename: Union[str, pathlib.Path] = None, objective: int = 40,
-                direction_traversal: str = 'horizontal',
+                filename: Union[str, pathlib.Path] = None, objective: int = 40,
+                movement_type: str = 'left',
                 corner_names=['TL', 'TR', 'BR', 'BL'],
-                nrows=None, ncols=None
+                nrows=None, ncols=None, objective=40
                 ):
         super().__init__(objective=objective)
        
-        self.direction_traversal = direction_traversal
+        self.movement_type = movement_type
         self.corner_names = corner_names
         self.corner_pos_list = None
         self.corner_pos_dict = {}
@@ -81,7 +83,9 @@ class RectGridMotion(Motion):
             self.corner_pos_dict = self.fill_corner_positions()
             if not self.verify_corners():
                 raise ValueError(f"Corners couldn't be validated as a convex polygon")
-            if self.nrows != None  and self.ncols != None:
+            if self.nrows == None  or self.ncols == None:
+                raise ValueError(f"Number or rows and columns not set")
+            else:
                 self.construct_grid()
         
         
@@ -171,7 +175,7 @@ class RectGridMotion(Motion):
         
         return corners
     
-    def construct_grid(self):
+    def construct_grid(self, start_position_no=0):
         
         # check that you have all the 4 positions and verify them and then
         # construct the list of positions that will be visited in linear fashion
@@ -207,9 +211,9 @@ class RectGridMotion(Motion):
             return (x, y, z)
 
 
-        tuples = self.make_pattern(self.nrows, self.ncols)
+        tuples = self.make_pattern(self.nrows, self.ncols, self.movement_type)
         positions = []
-        for counter, (i, j) in enumerate(tuples, 0):
+        for counter, (i, j) in enumerate(tuples, start_position_no):
             one_position = get_xyz(i, j)
 
             positions.append({
@@ -222,31 +226,42 @@ class RectGridMotion(Motion):
             })
         self.positions = positions
     
-    @staticmethod
-    def make_pattern(nrows, ncols):
+    def make_pattern(self, nrows, ncols, movement_type='left'):
         """
         Make a long snake (aka meander) pattern that minimize movement 
         between two rows
         Arguments:
             nrows: number of rows in the snake
             ncols: number of cols in the snake
+            movement_type: 'left' or 'right' (these are mean to be how you move
+                        on the chip). Left half starts at TL->TR-> going down
+                        Right half starts BL-> BR -> going up
         Returns:
             tuples: a list of tuples with i, j of the position
         The microscope is intended to stop at each of the
-        tuple. Eac
+        tuple.
         """
-        tuples = []
-        for i in range(nrows):
-            if i%2 == 0:
-                for j in range(ncols):
-                    tuples.append((i, j))
-            elif i%2 == 1:
-                for j in range(ncols-1, -1, -1):
-                    tuples.append((i, j))
-        return tuples
-    
+        if movement_type == 'left':
+            tuples = []
+            for i in range(nrows):
+                if i%2 == 0:
+                    for j in range(ncols):
+                        tuples.append((i, j))
+                elif i%2 == 1:
+                    for j in range(ncols-1, -1, -1):
+                        tuples.append((i, j))
+            return tuples
+        elif movement_type == 'right':
+            tuples = []
+            for i in range(nrows-1, -1, -1):
+                if i%2 == 0:
+                    for j in range(ncols):
+                        tuples.append((i, j))
+                elif i%2 == 1:
+                    for j in range(ncols-1, -1, -1):
+                        tuples.append((i, j))
+            return tuples    
 
-    
     @staticmethod
     def parse_position_file(filename: Union[str, pathlib.Path]):
         """
@@ -352,18 +367,88 @@ class RectGridMotion(Motion):
 
 class TwoRectGridMotion(Motion):
     """
-    Two Rect Motion pattern used to image tweezer chip, that has two RectGridMotion patterns
-    stitched together.
+    Two Rectangular grids of positions, where the positions are 
+    specified by the 4 corners and a grid of certain size specifed by
+    the number of positions to grab between the corners in x and y directions
+
+    (TL1) (0) ---------- (TR1) (1)   (TL2) (0) ---------- (TR2) (1)
+     |                   |            |                    |
+     |                   |            |                    |
+     |                   |            |                    |
+     |                   |            |                    |
+     |                   |            |                    |
+     |                   |            |                    |
+    (BL1) (3) ---------- (BR1) (2)   (BL2) (3) ---------- (BR2) (2)
+
+    The number in the bracket represent the indices you will use to 
+    figure out which are the 8 corners in xy plane.
 
     Args:
-        objective: Magnification of the objective (20, 40 or 100)
-        limits: (XYHW) limits
-        direction_traversal: horizontal or vertical, the movement between positions
-            will always follow a snake pattern. The motion plan will follow
+        filename: a file name with positions list from micromanager 2.0 with
+            position names "PosTL1", "PosTR1", "PosBR1", "PosBL2", "PosTL2", 
+            "PosTR2", "PosBR1", "PosBL2" that mark the 8 corners of the rectangle
+            containing 25 rows of mother-machine channels or how many ever you 
+            specify, of this class, the restriction will be that
+            number of rows should be odd.
+        corner_names: a list of position labels used 
+        nrows (int): number of rows  (depends on how many rows you want to image)
+        ncols (int): number of cols  (depends on magnification, stick to 40x, 100 blocks, so 20 positions)
     """
+    def __init__(self, filename: Union[str, pathlib] = None, objective: int = 40,
+                corner_names=['TL', 'TR', 'BR', 'BL'],
+                nrows=None, ncols=None):
+        # The strategy here is to create two sub rectangles and merge their positions
+        # to create full scale
+        super().__init__(objective=objective)
+        self.nrows = nrows
+        self.ncols = ncols
+        self.left_half_motion = RectGridMotion(objective=objective, movement_type='left',
+                                corner_names=corner_names)
+        self.right_half_motion = RectGridMotion(objective=objective, movement_type='right',
+                                corner_names=corner_names)
+
+        self.positions = None
     
-    def __init__(self):
-        pass
+    def set_rows(self, rows):
+        self.nrows = rows
+    
+    def set_cols(self, cols):
+        self.cols = cols
+
+    
+    def set_corner_position(self, label, position_dict):
+        """
+        Function that will set the positions of the corners,
+        by passing one at a time. It is used if you set the positions
+        from a UI by grabbing the current location.
+        Arguments:
+            label: one of 'TL1', 'TR1', 'BR1', 'BL1', 'TL2', 'TR2', 'BR2', 'BL2'
+            position_dict: dict with keys 'X', 'Y', 'Z', 'grid_row', 'grid_col', 'label'
+        """
+        if label[:2] not in self.corner_names:
+            raise ValueError(f"Position label not in the corner label list, found: {label}...")
+        else:
+            # check if all keys are in the position dict
+            keys = ['x', 'y', 'z', 'grid_row', 'grid_col', 'label']
+            for key in keys:
+                if key not in position_dict:
+                    raise ValueError(f"Key {key} not found in position dict: {position_dict}")
+            if int(label[2:]) == 1:
+                self.left_half_motion.corner_pos_dict[label[:2]] = position_dict
+            elif int(label[2:]) == 2:
+                self.right_half_motion.corner_pos_dict[label[:2]] = position_dict
+    
+    def construct_grid(self, starting_position_no=0):
+        if len(self.left_half_motion.corner_pos_dict) != 4 or len(self.right_half_motion.corner_pos_dict) != 4:
+            raise ValueError(f"All 8 corners not set .. check that everything is set")
+        
+        self.left_half_motion.construct_grid(starting_position_no)
+        n_left_positions = len(self.left_half_motion.positions)
+        self.right_half_motion.construct_grid(start_position_no + n_left_positions)
+
+        left_positions = self.left_half_motion.positions
+        right_positions = self.right_half_motion.positions
+        self.positions = left_positions + right_positions
 
     @classmethod
     def parse(cls, param):
