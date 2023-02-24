@@ -65,7 +65,7 @@ class RectGridMotion(Motion):
                 filename: Union[str, pathlib.Path] = None, objective: int = 40,
                 movement_type: str = 'left',
                 corner_names=['TL', 'TR', 'BR', 'BL'],
-                nrows=None, ncols=None, objective=40
+                nrows=None, ncols=None,
                 ):
         super().__init__(objective=objective)
        
@@ -394,7 +394,7 @@ class TwoRectGridMotion(Motion):
         nrows (int): number of rows  (depends on how many rows you want to image)
         ncols (int): number of cols  (depends on magnification, stick to 40x, 100 blocks, so 20 positions)
     """
-    def __init__(self, filename: Union[str, pathlib] = None, objective: int = 40,
+    def __init__(self, filename: Union[str, pathlib.Path] = None, objective: int = 40,
                 corner_names=['TL', 'TR', 'BR', 'BL'],
                 nrows=None, ncols=None):
         # The strategy here is to create two sub rectangles and merge their positions
@@ -402,6 +402,7 @@ class TwoRectGridMotion(Motion):
         super().__init__(objective=objective)
         self.nrows = nrows
         self.ncols = ncols
+        self.corner_names = corner_names
         self.left_half_motion = RectGridMotion(objective=objective, movement_type='left',
                                 corner_names=corner_names)
         self.right_half_motion = RectGridMotion(objective=objective, movement_type='right',
@@ -410,10 +411,14 @@ class TwoRectGridMotion(Motion):
         self.positions = None
     
     def set_rows(self, rows):
+        self.left_half_motion.set_rows(rows)
+        self.right_half_motion.set_rows(rows)
         self.nrows = rows
     
     def set_cols(self, cols):
-        self.cols = cols
+        self.left_half_motion.set_cols(cols)
+        self.right_half_motion.set_cols(cols)
+        self.ncols = cols
 
     
     def set_corner_position(self, label, position_dict):
@@ -441,14 +446,18 @@ class TwoRectGridMotion(Motion):
     def construct_grid(self, starting_position_no=0):
         if len(self.left_half_motion.corner_pos_dict) != 4 or len(self.right_half_motion.corner_pos_dict) != 4:
             raise ValueError(f"All 8 corners not set .. check that everything is set")
+
+        print(self.left_half_motion.corner_pos_dict)
+        print(self.right_half_motion.corner_pos_dict)
         
         self.left_half_motion.construct_grid(starting_position_no)
         n_left_positions = len(self.left_half_motion.positions)
-        self.right_half_motion.construct_grid(start_position_no + n_left_positions)
+        self.right_half_motion.construct_grid(starting_position_no + n_left_positions)
 
         left_positions = self.left_half_motion.positions
         right_positions = self.right_half_motion.positions
         self.positions = left_positions + right_positions
+        print(n_left_positions, len(self.positions))
 
     @classmethod
     def parse(cls, param):
