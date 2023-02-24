@@ -194,7 +194,7 @@ class RectGridMotion(Motion):
             y = np.linspace(y_left[row], y_right[row], num=self.ncols)[col]
 
             z_x_interp = np.linspace(z_top[col], z_bot[col], num=self.nrows)[row]
-            z_y_interp = np.linspace(z_left[row], z_rigth[row], num=self.ncols)[col]
+            z_y_interp = np.linspace(z_left[row], z_right[row], num=self.ncols)[col]
 
             # might have to do an acutual bilinear interp on a quadrilateral later on if this is causing trouble
             # for interpolating in 'z' we assume we have something that looks more like a rectangle
@@ -209,7 +209,7 @@ class RectGridMotion(Motion):
 
         tuples = self.make_pattern(self.nrows, self.ncols)
         positions = []
-        for counter, (i, j) in enumreate(tuples, 0):
+        for counter, (i, j) in enumerate(tuples, 0):
             one_position = get_xyz(i, j)
 
             positions.append({
