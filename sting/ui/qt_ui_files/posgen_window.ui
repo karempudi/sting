@@ -234,30 +234,30 @@
      <rect>
       <x>20</x>
       <y>260</y>
-      <width>411</width>
+      <width>525</width>
       <height>51</height>
      </rect>
     </property>
     <layout class="QHBoxLayout" name="spacing_layout_input">
      <item>
-      <widget class="QLabel" name="x_label">
+      <widget class="QLabel" name="n_rows_label">
        <property name="text">
-        <string>X</string>
+        <string>Number of rows</string>
        </property>
       </widget>
      </item>
      <item>
-      <widget class="QLineEdit" name="x_spacing"/>
+      <widget class="QLineEdit" name="n_rows_edit"/>
      </item>
      <item>
-      <widget class="QLabel" name="y_label">
+      <widget class="QLabel" name="n_cols_label">
        <property name="text">
-        <string>Y</string>
+        <string>Number of columns</string>
        </property>
       </widget>
      </item>
      <item>
-      <widget class="QLineEdit" name="y_spacing"/>
+      <widget class="QLineEdit" name="n_cols_edit"/>
      </item>
      <item>
       <widget class="QPushButton" name="generate_pos_button">
@@ -280,6 +280,9 @@
     <layout class="QHBoxLayout" name="spacing_layout_type">
      <item>
       <widget class="QRadioButton" name="auto_spacing_button">
+       <property name="enabled">
+        <bool>false</bool>
+       </property>
        <property name="text">
         <string>Auto spacing</string>
        </property>
@@ -290,12 +293,28 @@
      </item>
      <item>
       <widget class="QRadioButton" name="manual_spacing_button">
+       <property name="enabled">
+        <bool>false</bool>
+       </property>
        <property name="text">
         <string>Manual Spacing</string>
        </property>
       </widget>
      </item>
     </layout>
+   </widget>
+   <widget class="QPushButton" name="clear_button">
+    <property name="geometry">
+     <rect>
+      <x>130</x>
+      <y>80</y>
+      <width>89</width>
+      <height>25</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>Clear</string>
+    </property>
    </widget>
   </widget>
   <widget class="QMenuBar" name="menubar">

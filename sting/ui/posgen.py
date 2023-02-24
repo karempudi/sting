@@ -2,6 +2,7 @@
 import sys
 import copy
 import pathlib
+import json
 from pathlib import Path
 from PyQt5.QtWidgets import (QApplication, QMainWindow, 
                 QMessageBox, QFileDialog)
@@ -10,6 +11,8 @@ from sting.ui.qt_ui_classes.posgen_window_ui import Ui_PosGenWindow
 
 from datetime import datetime
 from pycromanager import Core
+from sting.microscope.motion import RectGridMotion, TwoRectGridMotion
+from sting.microscope.utils import construct_pos_file
 
 class PosGenWindow(QMainWindow):
 
@@ -22,10 +25,16 @@ class PosGenWindow(QMainWindow):
         self.one_side = True
         self.two_sides = False
         self.corners_dict = {}
+        self.motion_object = None
+        self.positions_to_write = None
+        self.current_n_rows = None
+        self.current_n_cols = None
         if not self.one_side:
             self.enable_one_side_buttons(False)
+            self.motion_object = TwoRectGridMotion()
         if not self.two_sides:
             self.enable_two_sides_buttons(False)
+            self.motion_object = RectGridMotion()
         # setup button handlers
         self.setup_button_handlers()
        
@@ -56,17 +65,29 @@ class PosGenWindow(QMainWindow):
 
         self.ui.generate_pos_button.clicked.connect(self.generate_positions)
 
+        self.ui.clear_button.clicked.connect(self.clear_data)
+
+        self.ui.save_pos_button.clicked.connect(self.save_positions_to_file)
+
+        self.ui.n_rows_edit.textChanged.connect(self.n_rows_changed)
+        self.ui.n_cols_edit.textChanged.connect(self.n_cols_changed)
+
+        self.ui.quit_button.clicked.connect(self.quit)
+
     def set_layout_type(self, clicked):
         self.one_side = self.ui.one_rect_button.isChecked()
         self.two_sides = self.ui.two_rect_button.isChecked()
         if not self.one_side:
             self.enable_one_side_buttons(False)
             self.enable_two_sides_buttons(True)
+            self.motion_object = TwoRectGridMotion()
 
         if not self.two_sides:
             self.enable_two_sides_buttons(False)
             self.enable_one_side_buttons(True)
+            self.motion_object = RectGridMotion()
         self.corners_dict = {}
+
 
     def enable_one_side_buttons(self, value):
         self.ui.tl_button.setEnabled(value)
@@ -99,9 +120,9 @@ class PosGenWindow(QMainWindow):
             y = core.get_y_position()
             z = core.get_auto_focus_offset()
             position_dict = {
-                'X': x,
-                'Y': y,
-                'Z': z,
+                'x': x,
+                'y': y,
+                'z': z,
                 'grid_row': 0,
                 'grid_col': 0,
             }
@@ -122,6 +143,7 @@ class PosGenWindow(QMainWindow):
         if position_dict != None:
             position_dict['label'] = 'Pos' + label
             self.corners_dict[label] = position_dict
+            self.motion_object.set_corner_position(label, position_dict)
         else:
             msg = QMessageBox()
             msg.setText(f"Position: {label} corner not set for some reason")
@@ -166,8 +188,99 @@ class PosGenWindow(QMainWindow):
 
     def generate_positions(self):
         # code to generate positions based on the positions needed
-        pass
+        try:
+            if self.motion_object.nrows != None and self.motion_object.ncols != None:
+                self.motion_object.construct_grid() 
+                self.positions_to_write = self.motion_object.positions
+        except Exception as e:
+            msg = QMessageBox()
+            msg.setText(f"Positions not generated due to: {e}")
+            msg.setIcon(QMessageBox.Warning)
+            msg.exec()
+        
+    def save_positions_to_file(self):
 
+        filename, _ = QFileDialog.getSaveFileName(self, "Save .pos positions file",
+                            "../data", "Position files (*.pos)",
+                            options=QFileDialog.DontUseNativeDialog)
+        sys.stdout.write(f"Filename: {filename} selected\n")
+        sys.stdout.flush()
+        write_json = None
+        try:
+            core = Core()
+            if core.get_focus_device() != 'PFSOffset':
+                raise ValueError("Foucs device is not PFSOffset")
+            if core.get_xy_stage_device() != 'XYStage':
+                raise ValueError("XY device is not XYStage")
+            
+            write_json = construct_pos_file(self.positions_to_write, {
+                'xy_device': core.get_xy_stage_device(),
+                'z_device': core.get_focus_device(),
+            })
+        except Exception as e:
+            msg = QMessageBox()
+            msg.setText(f"Micromanger 2.0 position not grabbed due to: {e}")
+            msg.setIcon(QMessageBox.Critical)
+            msg.exec()
+        finally:
+            if core:
+                del core
+
+        if filename == '' or self.positions_to_write == None or write_json == None:
+            msg = QMessageBox()
+            msg.setText("Position file to save not selected or positions not generated correctly")
+            msg.setIcon(QMessageBox.Warning)
+            msg.exec()
+        else:
+            filename = Path(filename)
+            with open(filename, 'w') as fh:
+                fh.write(json.dumps(write_json))
+
+    def clear_data(self):
+        self.one_side = True
+        self.two_sides = False
+        self.corners_dict = {}
+        self.motion_object = None
+        self.positions_to_write = None
+        self.current_n_rows = None
+        self.current_n_cols = None
+        if not self.one_side:
+            self.enable_one_side_buttons(False)
+            self.motion_object = TwoRectGridMotion()
+        if not self.two_sides:
+            self.enable_two_sides_buttons(False)
+            self.motion_object = RectGridMotion()
+    
+    def n_rows_changed(self):
+        n_rows = self.ui.n_rows_edit.text()
+        try:
+            int_n_rows = int(n_rows)
+        except:
+            self.ui.n_rows_edit.setText("")
+            int_n_rows = None
+        finally:
+            self.current_n_rows = int_n_rows
+            self.motion_object.set_rows(self.current_n_rows)
+
+        sys.stdout.write(f"Number of rows set to : {self.current_n_rows}\n")
+        sys.stdout.flush()
+
+    def n_cols_changed(self):
+        n_cols = self.ui.n_cols_edit.text()
+        try:
+            int_n_cols = int(n_cols)
+        except:
+            self.ui.n_colss_edit.setText("")
+            int_n_cols = None
+        finally:
+            self.current_n_cols = int_n_cols
+            self.motion_object.set_cols(self.current_n_cols)
+
+        sys.stdout.write(f"Number of columns set to : {self.current_n_cols}\n")
+        sys.stdout.flush()
+    
+    def quit(self):
+        self.close()
 
 def main():
     app = QApplication(sys.argv)
