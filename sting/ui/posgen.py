@@ -10,7 +10,7 @@ from PyQt5.QtCore import QTimer, QFile, QThread
 from sting.ui.qt_ui_classes.posgen_window_ui import Ui_PosGenWindow
 
 from datetime import datetime
-from pycromanager import Core
+from pycromanager import Core, Acquisition
 from sting.microscope.motion import RectGridMotion, TwoRectGridMotion
 from sting.microscope.utils import construct_pos_file
 
@@ -29,6 +29,10 @@ class PosGenWindow(QMainWindow):
         self.positions_to_write = None
         self.current_n_rows = None
         self.current_n_cols = None
+
+        self.save_dir = None
+        self.exposure = None
+
         if not self.one_side:
             self.enable_one_side_buttons(False)
             self.motion_object = TwoRectGridMotion()
@@ -66,6 +70,8 @@ class PosGenWindow(QMainWindow):
         self.ui.generate_pos_button.clicked.connect(self.generate_positions)
 
         self.ui.clear_button.clicked.connect(self.clear_data)
+        self.ui.from_file_button.clicked.connect(self.load_positions_from_file)
+
 
         self.ui.save_pos_button.clicked.connect(self.save_positions_to_file)
 
@@ -73,6 +79,12 @@ class PosGenWindow(QMainWindow):
         self.ui.n_cols_edit.textChanged.connect(self.n_cols_changed)
 
         self.ui.update_plot_button.clicked.connect(self.update_plot)
+
+        self.ui.save_dir_button.clicked.connect(self.set_save_dir)
+        self.ui.exposure_button.clicked.connect(self.set_exposure)
+        self.ui.exposure_edit.textChanged.connect(self.set_exposure)
+
+        self.ui.dry_acquire_button.clicked.connect(self.acquire_dry_run)
 
         self.ui.quit_button.clicked.connect(self.quit)
 
@@ -246,6 +258,8 @@ class PosGenWindow(QMainWindow):
         self.positions_to_write = None
         self.current_n_rows = None
         self.current_n_cols = None
+        self.save_dir = None
+        self.exposure = None
         if not self.one_side:
             self.enable_one_side_buttons(False)
             self.motion_object = TwoRectGridMotion()
@@ -303,6 +317,61 @@ class PosGenWindow(QMainWindow):
     
     def quit(self):
         self.close()
+    
+    def load_positions_from_file(self):
+
+        filename, _ = QFileDialog.getOpenFileName(self, "Load .pos positiions file",
+                            "../data", "Position files (*.pos)", 
+                            options=QFileDialog.DontUseNativeDialog)
+        sys.stdout.write(f"Using: {filename} for loading corner positions\n")
+        sys.stdout.flush()
+        corner_positions = None
+        try:
+            if self.one_side:
+                microscope_props, corner_positions = RectGridMotion().parse_position_file(Path(filename))
+        except Exception as e:
+            msg = QMessageBox()
+            msg.setText(f"Corner positions couldn't be loaded due to {e}")
+            msg.setIcon(QMessageBox.Warning)
+            msg.exec()
+        finally:
+            if corner_positions != None:
+                for corner in corner_positions:
+                    self.corners_dict[corner['label'][3:]] = corner
+                    self.motion_object.set_corner_position(corner['label'][3:], corner) 
+
+    def set_save_dir(self):
+        saving_dir = QFileDialog.getExistingDirectory(self, "Open Directory", 
+                            "../data", options=QFileDialog.ShowDirsOnly | QFileDialog.DontUseNativeDialog)
+
+        sys.stdout.write(f"Saving images of dry run set to: {saving_dir}")
+        sys.stdout.flush()
+        self.save_dir = Path(saving_dir)
+        if saving_dir == '':
+            msg = QMessageBox()
+            msg.setText(f"Saving images for dry set to {self.save_dir}")
+            msg.setIcon(QMessageBox.Warning)
+            msg.exec()
+        else:
+            self.ui.save_dir_path_edit.setText(str(self.save_dir))
+
+    def set_exposure(self):
+        exp_ms = self.ui.exposure_edit.text()
+        try:
+            int_exp = int(exp_ms)
+        except:
+            self.ui.exposure_edit.setText("")
+            int_exp = None
+        finally:
+            self.exposure = int_exp
+
+        sys.stdout.write(f"Exposure set to : {self.exposure} (ms)\n")
+        sys.stdout.flush()
+
+
+    def acquire_dry_run(self):
+        pass
+        
 
 def main():
     app = QApplication(sys.argv)

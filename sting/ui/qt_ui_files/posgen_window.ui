@@ -296,8 +296,8 @@
    <widget class="QPushButton" name="clear_button">
     <property name="geometry">
      <rect>
-      <x>130</x>
-      <y>80</y>
+      <x>30</x>
+      <y>90</y>
       <width>89</width>
       <height>25</height>
      </rect>
@@ -315,6 +315,90 @@
       <height>311</height>
      </rect>
     </property>
+   </widget>
+   <widget class="QPushButton" name="from_file_button">
+    <property name="geometry">
+     <rect>
+      <x>140</x>
+      <y>90</y>
+      <width>89</width>
+      <height>25</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>From File</string>
+    </property>
+   </widget>
+   <widget class="QPushButton" name="dry_acquire_button">
+    <property name="geometry">
+     <rect>
+      <x>420</x>
+      <y>420</y>
+      <width>89</width>
+      <height>25</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>Dry Acquire</string>
+    </property>
+   </widget>
+   <widget class="QWidget" name="horizontalLayoutWidget_6">
+    <property name="geometry">
+     <rect>
+      <x>420</x>
+      <y>340</y>
+      <width>261</width>
+      <height>31</height>
+     </rect>
+    </property>
+    <layout class="QHBoxLayout" name="save_dir_layout">
+     <item>
+      <widget class="QLineEdit" name="save_dir_path_edit">
+       <property name="enabled">
+        <bool>true</bool>
+       </property>
+       <property name="readOnly">
+        <bool>true</bool>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QPushButton" name="save_dir_button">
+       <property name="text">
+        <string>Save Dir</string>
+       </property>
+      </widget>
+     </item>
+    </layout>
+   </widget>
+   <widget class="QWidget" name="horizontalLayoutWidget_7">
+    <property name="geometry">
+     <rect>
+      <x>420</x>
+      <y>370</y>
+      <width>261</width>
+      <height>31</height>
+     </rect>
+    </property>
+    <layout class="QHBoxLayout" name="horizontalLayout">
+     <item>
+      <widget class="QLineEdit" name="exposure_edit"/>
+     </item>
+     <item>
+      <widget class="QLabel" name="exposure_label">
+       <property name="text">
+        <string>(ms)</string>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QPushButton" name="exposure_button">
+       <property name="text">
+        <string>Set Exposure</string>
+       </property>
+      </widget>
+     </item>
+    </layout>
    </widget>
   </widget>
   <widget class="QMenuBar" name="menubar">
