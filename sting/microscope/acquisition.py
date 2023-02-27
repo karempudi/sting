@@ -4,7 +4,7 @@ from pathlib import Path
 from typing import Union
 from sting.utils.types import RecursiveNamespace
 from itertools import cycle, repeat
-from sting.microscope.motion import MotionFromFile, RectGridMotion, TwoRectMotion 
+from sting.microscope.motion import MotionFromFile, RectGridMotion, TwoRectGridMotion 
 from tifffile import imread
 import numpy as np
 

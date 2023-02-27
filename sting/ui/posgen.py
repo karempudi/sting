@@ -283,7 +283,21 @@ class PosGenWindow(QMainWindow):
     
     def update_plot(self):
         plotItem = self.ui.positions_plot.getPlotItem()
-        plotItem.plot(x, y, symbol='o')
+        plotItem.invertY(b=True)
+        plotItem.invertX(b=True)
+        positions = self.positions_to_write
+        x = [position['x'] for position in positions]
+        y = [position['y'] for position in positions]
+        plotItem.plot(x, y, symbol='o', pen=(0, 128,0), symbolBrush=(0, 0, 200))
+
+        corners_x = []
+        corners_y = []
+        for corner in self.corners_dict:
+            corners_x.append(self.corners_dict[corner]['x'])
+            corners_y.append(self.corners_dict[corner]['y'])
+        
+        plotItem.plot(corners_x, corners_y, symbol='o', pen=None, symbolBrush=(200, 0, 0))
+
         plotItem.setLabel('bottom', 'X')
         plotItem.setLabel('left', 'Y')
     
