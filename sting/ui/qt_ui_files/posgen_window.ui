@@ -43,16 +43,6 @@
      </item>
     </layout>
    </widget>
-   <widget class="ImageView" name="positions_plot">
-    <property name="geometry">
-     <rect>
-      <x>20</x>
-      <y>320</y>
-      <width>411</width>
-      <height>391</height>
-     </rect>
-    </property>
-   </widget>
    <widget class="QWidget" name="gridLayoutWidget">
     <property name="geometry">
      <rect>
@@ -316,6 +306,16 @@
      <string>Clear</string>
     </property>
    </widget>
+   <widget class="PlotWidget" name="positions_plot" native="true">
+    <property name="geometry">
+     <rect>
+      <x>30</x>
+      <y>350</y>
+      <width>341</width>
+      <height>311</height>
+     </rect>
+    </property>
+   </widget>
   </widget>
   <widget class="QMenuBar" name="menubar">
    <property name="geometry">
@@ -330,9 +330,10 @@
  </widget>
  <customwidgets>
   <customwidget>
-   <class>ImageView</class>
-   <extends>QGraphicsView</extends>
+   <class>PlotWidget</class>
+   <extends>QWidget</extends>
    <header>pyqtgraph</header>
+   <container>1</container>
   </customwidget>
  </customwidgets>
  <resources/>

@@ -27,9 +27,6 @@ class Ui_PosGenWindow(object):
         self.two_rect_button = QtWidgets.QRadioButton(self.horizontalLayoutWidget)
         self.two_rect_button.setObjectName("two_rect_button")
         self.grid_type_layout.addWidget(self.two_rect_button)
-        self.positions_plot = ImageView(self.posgen_widget)
-        self.positions_plot.setGeometry(QtCore.QRect(20, 320, 411, 391))
-        self.positions_plot.setObjectName("positions_plot")
         self.gridLayoutWidget = QtWidgets.QWidget(self.posgen_widget)
         self.gridLayoutWidget.setGeometry(QtCore.QRect(10, 130, 200, 80))
         self.gridLayoutWidget.setObjectName("gridLayoutWidget")
@@ -147,6 +144,9 @@ class Ui_PosGenWindow(object):
         self.clear_button = QtWidgets.QPushButton(self.posgen_widget)
         self.clear_button.setGeometry(QtCore.QRect(130, 80, 89, 25))
         self.clear_button.setObjectName("clear_button")
+        self.positions_plot = PlotWidget(self.posgen_widget)
+        self.positions_plot.setGeometry(QtCore.QRect(30, 350, 341, 311))
+        self.positions_plot.setObjectName("positions_plot")
         PosGenWindow.setCentralWidget(self.posgen_widget)
         self.menubar = QtWidgets.QMenuBar(PosGenWindow)
         self.menubar.setGeometry(QtCore.QRect(0, 0, 766, 22))
@@ -183,7 +183,7 @@ class Ui_PosGenWindow(object):
         self.manual_spacing_button.setText(_translate("PosGenWindow", "Manual Spacing"))
         self.clear_button.setText(_translate("PosGenWindow", "Clear"))
 
-from pyqtgraph import ImageView
+from pyqtgraph import PlotWidget
 
 if __name__ == "__main__":
     import sys

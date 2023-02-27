@@ -42,9 +42,9 @@ class PosGenWindow(QMainWindow):
         # set up button handlers for all the buttons
 
         # hide some of the pyqtgraph plotting settings
-        self.ui.positions_plot.ui.histogram.hide()
-        self.ui.positions_plot.ui.roiBtn.hide()
-        self.ui.positions_plot.ui.menuBtn.hide()
+        #self.ui.positions_plot.ui.histogram.hide()
+        #self.ui.positions_plot.ui.roiBtn.hide()
+        #self.ui.positions_plot.ui.menuBtn.hide()
 
         self.ui.one_rect_button.toggled.connect(self.set_layout_type)
         self.ui.two_rect_button.toggled.connect(self.set_layout_type)
@@ -71,6 +71,8 @@ class PosGenWindow(QMainWindow):
 
         self.ui.n_rows_edit.textChanged.connect(self.n_rows_changed)
         self.ui.n_cols_edit.textChanged.connect(self.n_cols_changed)
+
+        self.ui.update_plot_button.clicked.connect(self.update_plot)
 
         self.ui.quit_button.clicked.connect(self.quit)
 
@@ -278,6 +280,12 @@ class PosGenWindow(QMainWindow):
 
         sys.stdout.write(f"Number of columns set to : {self.current_n_cols}\n")
         sys.stdout.flush()
+    
+    def update_plot(self):
+        plotItem = self.ui.positions_plot.getPlotItem()
+        plotItem.plot(x, y, symbol='o')
+        plotItem.setLabel('bottom', 'X')
+        plotItem.setLabel('left', 'Y')
     
     def quit(self):
         self.close()
