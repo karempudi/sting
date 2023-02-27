@@ -13,6 +13,7 @@ from datetime import datetime
 from pycromanager import Core, Acquisition
 from sting.microscope.motion import RectGridMotion, TwoRectGridMotion
 from sting.microscope.utils import construct_pos_file
+import multiprocessing as tmp
 
 class PosGenWindow(QMainWindow):
 
@@ -369,8 +370,23 @@ class PosGenWindow(QMainWindow):
         sys.stdout.flush()
 
 
+    @staticmethod
+    def generate_events_to_acq(self, positions):
+        events = []
+        for one_position in positions:
+            event = {}
+            event['axis'] = {'time': 0, 'position': int(one_position['label'][3:])}
+            event['x'] = one_position['x']
+            event['y'] = one_position['y']
+            event['z'] = one_position['z']
+            event['channel'] = {'group': 'imaging', 'config': 'phase_slow'}
+            event['exposure'] = self.exposure
+            event['min_start_time'] = 0
+            events.append(event)
+        return events
+
     def acquire_dry_run(self):
-        pass
+        print("Calle acquired function ... ")
         
 
 def main():

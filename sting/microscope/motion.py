@@ -175,7 +175,7 @@ class RectGridMotion(Motion):
         
         return corners
     
-    def construct_grid(self, start_position_no=0):
+    def construct_grid(self, start_position_no=1):
         
         # check that you have all the 4 positions and verify them and then
         # construct the list of positions that will be visited in linear fashion
@@ -443,7 +443,7 @@ class TwoRectGridMotion(Motion):
             elif int(label[2:]) == 2:
                 self.right_half_motion.corner_pos_dict[label[:2]] = position_dict
     
-    def construct_grid(self, starting_position_no=0):
+    def construct_grid(self, starting_position_no=1):
         if len(self.left_half_motion.corner_pos_dict) != 4 or len(self.right_half_motion.corner_pos_dict) != 4:
             raise ValueError(f"All 8 corners not set .. check that everything is set")
 
