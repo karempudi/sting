@@ -166,7 +166,7 @@ def cut_channels_and_props(image, raw_shape, channel_locations, channel_width, m
         sliced_img = label(image[:, location-channel_width:location+channel_width])
         labelled_slices[:, i * 2 * channel_width: (i+1) * 2 * channel_width] = sliced_img
         props_slice = regionprops(sliced_img)
-        props[i] = {}
+        props[str(i)] = {}
         for cell_i, properties in enumerate(props_slice):
             if (properties['area']) > min_area:
                 cell = {}
@@ -180,7 +180,7 @@ def cut_channels_and_props(image, raw_shape, channel_locations, channel_width, m
                 cell['initial_mother'] = 0
                 cell['growth'] = None
                 cell['state'] = None
-                props[i][properties['label']] = cell
+                props[str(i)][str(properties['label'])] = cell
     return labelled_slices, props
 
 def process_image(datapoint, model, param, visualize=True):
