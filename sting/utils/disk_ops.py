@@ -290,7 +290,7 @@ def read_files(read_type, param, position, channel_no, max_imgs=20):
 
             
             return {
-                'image': full_img,
+                'image': 255-full_img,
                 'left_barcode': left_barcode_img,
                 'right_barcode': right_barcode_img
             }
@@ -330,7 +330,9 @@ def read_files(read_type, param, position, channel_no, max_imgs=20):
                 full_img = np.hstack(full_img)
                 tracks_filenames = [tracks_dir / Path('tracks_' + str(i).zfill(4) + '.json') for i in range(n_slices-1, max(-1, n_slices-max_imgs),-1)]
 
+            #full_img = np.stack((full_img, full_img, full_img, full_img), axis=-1)
             full_img = np.stack((full_img, full_img, full_img), axis=-1)
+            #full_img[:, :, 3] = 255
             track_data = []
             for filename in tracks_filenames:
                 with open(filename, 'r') as fh:
@@ -346,16 +348,23 @@ def read_files(read_type, param, position, channel_no, max_imgs=20):
                         if res_dict2[key2]['index'] == cell_index:
                             cm_t1_x, cm_t1_y = res_dict1[key1]['cm']
                             cm_t2_x, cm_t2_y = res_dict2[key2]['cm']
-                            rr, cc = line(int(cm_t1_x), int(cm_t1_y) + (i * channel_width), int(cm_t2_x), int(cm_t2_y) + j * channel_width)
-                            full_img[rr, cc, :] = [255, 0, 0]
+                            #rows, cols, weights = line_aa(int(cm_t1_x), int(cm_t1_y) + (i * 2 * channel_width), int(cm_t2_x), int(cm_t2_y) + j * 2 * channel_width)
+                            rows, cols = line(int(cm_t1_x), int(cm_t1_y) + (i * 2 * channel_width), int(cm_t2_x), int(cm_t2_y) + j * 2 * channel_width)
+                            #w = weights.reshape([-1, 1])
+                            #lineColorRgb = [255, 0, 0]
+                            #full_img[rows, cols, 0:3] =  (np.multiply((1 - w) * np.ones([1, 3]), full_img[rows, cols, 0:3]) + w * np.array([lineColorRgb]))
+                            full_img[rows, cols, :] = np.array([25, 0, 0])
                         elif res_dict2[key2]['mother'] == cell_index and res_dict2[key2]['state'] == 'S':
                             cm_t1_x, cm_t1_y = res_dict1[key1]['cm']
                             cm_t2_x, cm_t2_y = res_dict2[key2]['cm']
-                            rr, cc = line(int(cm_t1_x), int(cm_t1_y) + (i * channel_width), int(cm_t2_x), int(cm_t2_y) + j * channel_width)
-                            full_img[rr, cc, :] = [0, 255, 0]
-
+                            #rows, cols, weights = line_aa(int(cm_t1_x), int(cm_t1_y) + (i * 2 * channel_width), int(cm_t2_x), int(cm_t2_y) + j * 2 * channel_width)
+                            rows, cols = line(int(cm_t1_x), int(cm_t1_y) + (i * 2 * channel_width), int(cm_t2_x), int(cm_t2_y) + j * 2 * channel_width)
+                            #w = weights.reshape([-1, 1])
+                            #lineColorRgb = [0, 255, 0]
+                            #full_img[rows, cols, 0:3] =  (np.multiply((1 - w) * np.ones([1, 3]), full_img[rows, cols, 0:3]) + w * np.array([lineColorRgb]))
+                            full_img[rows, cols, :] = np.array([25, 0, 0])
             return {
-                'image': full_img,
+                'image': 255-full_img,
                 'left_barcode': left_barcode_img,
                 'right_barcode': right_barcode_img
             }

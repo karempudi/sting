@@ -180,7 +180,8 @@ class TweezerWindow(QMainWindow):
         img_data = self.data_fetch_thread.get_data()
         
         if img_data != None:
-            if img_data['image'].shape[-1] == 3:
+            if img_data['image'].shape[-1] == 4:
+                print("Got color image")
                 self.ui.image_plot.setImage(img_data['image'].T, autoLevels=True, autoRange=True)
             else:
                 self.ui.image_plot.setImage(img_data['image'].T, autoLevels=True, autoRange=True)
