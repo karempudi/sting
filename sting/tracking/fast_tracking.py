@@ -233,81 +233,126 @@ def fast_tracking_cells(tracking_event, param):
     
     """
     
-    start_time = time.time()
-    position = tracking_event['position']
-    timepoint = tracking_event['time']
-    # props is a dictionary with keys as channel numbers
-    props_all_channels = tracking_event['props']
-    image = tracking_event['labelled_slices']
-    height, width = image.shape
-    n_channels = len(tracking_event['channel_locations_list'])
+    try:
+        start_time = time.time()
+        position = tracking_event['position']
+        timepoint = tracking_event['time']
+        # props is a dictionary with keys as channel numbers
+        props_all_channels = tracking_event['props']
+        image = tracking_event['labelled_slices']
+        height, width = image.shape
+        n_channels = len(tracking_event['channel_locations_list'])
 
 
-    save_dir = Path(param.Save.directory) if isinstance(param.Save.directory, str) else param.Save.directory
-    position_dir = save_dir / Path('Pos' + str(position))
+        save_dir = Path(param.Save.directory) if isinstance(param.Save.directory, str) else param.Save.directory
+        position_dir = save_dir / Path('Pos' + str(position))
 
-    cells_filename = position_dir / Path('cells.zarr')
-    tracks_dir = position_dir / Path('tracks')
-    compressor = Zlib(level=param.Save.small_file_compression_level)
+        cells_filename = position_dir / Path('cells.zarr')
+        tracks_dir = position_dir / Path('tracks')
+        compressor = Zlib(level=param.Save.small_file_compression_level)
 
-    if not tracks_dir.exists():
-        tracks_dir.mkdir(exist_ok=True, parents=True)
+        if not tracks_dir.exists():
+            tracks_dir.mkdir(exist_ok=True, parents=True)
+        
     
-   
-    if timepoint == 0:
-        # we create a file with appropriate compression and chunking and write the first image
-        cells_array = zarr.convenience.open(cells_filename, mode='a', shape=(1, height, width),
+        if timepoint == 0:
+            # we create a file with appropriate compression and chunking and write the first image
+            cells_array = zarr.convenience.open(cells_filename, mode='a', shape=(1, height, width),
+                            chunks=(1, height, 2*param.Save.channel_width), order='C', 
+                            dtype='uint8', compressor=compressor)
+            cells_array[0] = image
+
+            # write the initial tracks 
+
+            # for each channel at timepoint 0, set the index value of each cell
+            # in the channel to be it's key
+            for channel_no, one_channel_props in props_all_channels.items():
+                for cell_idx in one_channel_props:
+                    one_channel_props[cell_idx]['index'] = int(cell_idx)
+                    
+            tracks_write_filename = tracks_dir / Path('tracks_' + str(timepoint).zfill(4) + '.json')
+            with open(tracks_write_filename, 'w') as tracks_fh:
+                tracks_fh.write(json.dumps(props_all_channels))
+
+
+
+        else:
+
+            # read the tracks of the previous file so that you can modify the attributes
+            # of cells in the previous frame, (for now we test read times and write)
+            prev_track_filename = tracks_dir / Path('tracks_' + str(timepoint-1).zfill(4) + '.json')
+            with open(prev_track_filename, 'r') as prev_track_fh:
+                prev_track_data = json.load(prev_track_fh) 
+
+
+            # mismatch case
+            if len(prev_track_data) != len(props_all_channels) and (len(prev_track_data) != 0):
+                # this means that the number of channels didn't match
+                #raise ValueError(f"Number of channel don't match between {timepoint} and {timepoint-1}")
+                # we put an empty image instead and for the current timepoint and write empty properties
+                cells_array = zarr.convenience.open(cells_filename, mode='a', shape=(1, height, width),
                         chunks=(1, height, 2*param.Save.channel_width), order='C', 
                         dtype='uint8', compressor=compressor)
-        cells_array[0] = image
-
-        # write the initial tracks 
-
-        # for each channel at timepoint 0, set the index value of each cell
-        # in the channel to be it's key
-        for channel_no, one_channel_props in props_all_channels.items():
-            for cell_idx in one_channel_props:
-                one_channel_props[cell_idx]['index'] = int(cell_idx)
-                
-        tracks_write_filename = tracks_dir / Path('tracks_' + str(timepoint).zfill(4) + '.json')
-        with open(tracks_write_filename, 'w') as tracks_fh:
-            tracks_fh.write(json.dumps(props_all_channels))
+                cells_array.append(np.zeros((1, height, width), dtype='uint8'))
 
 
+                tracks_write_filename = tracks_dir / Path('tracks_' + str(timepoint).zfill(4) + '.json')
 
-    else:
-        cells_array = zarr.convenience.open(cells_filename, mode='a', shape=(1, height, width),
-                chunks=(1, height, 2*param.Save.channel_width), order='C', 
-                dtype='uint8', compressor=compressor)
-        cells_array.append(image[np.newaxis, :])
+                props_all_channels = {}
+                with open(tracks_write_filename, 'w') as tracks_fh:
+                    tracks_fh.write(json.dumps(props_all_channels))
 
-        # read the tracks of the previous file so that you can modify the attributes
-        # of cells in the previous frame, (for now we test read times and write)
-        prev_track_filename = tracks_dir / Path('tracks_' + str(timepoint-1).zfill(4) + '.json')
-        with open(prev_track_filename, 'r') as prev_track_fh:
-            prev_track_data = json.load(prev_track_fh) 
-
-        # Link the previous data to current data and write both of them back to disk
-
-        if len(prev_track_data) != len(props_all_channels):
-            raise ValueError(f"Number of channel don't match between {timepoint} and {timepoint-1}")
-
-        for channel_no in prev_track_data:
-            prev_track_data[channel_no], props_all_channels[channel_no] = link_two_frames(prev_track_data[channel_no], props_all_channels[channel_no], 
-                            frame1_no=timepoint-1, frame2_no=timepoint)
-
-        tracks_write_filename = tracks_dir / Path('tracks_' + str(timepoint).zfill(4) + '.json')
-        with open(tracks_write_filename, 'w') as tracks_fh:
-            tracks_fh.write(json.dumps(props_all_channels))
-
-        with open(prev_track_filename, 'w') as prev_track_fh:
-            prev_track_fh.write(json.dumps(prev_track_data))
-
+            # matched case
+            elif len(prev_track_data) == len(props_all_channels) and (len(prev_track_data) != 0):
+                # number of channels matched between previous and current timepoint
+                # do normal calculations and write back both results
         
+                cells_array = zarr.convenience.open(cells_filename, mode='a', shape=(1, height, width),
+                        chunks=(1, height, 2*param.Save.channel_width), order='C', 
+                        dtype='uint8', compressor=compressor)
+                cells_array.append(image[np.newaxis, :])
 
-    duration = 1000 * (time.time() - start_time)
-    sys.stdout.write(f"Tracking Pos: {tracking_event['position']} time: {tracking_event['time']} , no ch: {len(props_all_channels)}, duration: {duration:0.4f}ms ...\n")
-    sys.stdout.flush()
+                for channel_no in prev_track_data:
+                    prev_track_data[channel_no], props_all_channels[channel_no] = link_two_frames(prev_track_data[channel_no], props_all_channels[channel_no], 
+                                    frame1_no=timepoint-1, frame2_no=timepoint)
 
-    return None
+                tracks_write_filename = tracks_dir / Path('tracks_' + str(timepoint).zfill(4) + '.json')
+                with open(tracks_write_filename, 'w') as tracks_fh:
+                    tracks_fh.write(json.dumps(props_all_channels))
+
+                with open(prev_track_filename, 'w') as prev_track_fh:
+                    prev_track_fh.write(json.dumps(prev_track_data))
+            
+            # failed at previous timepoint, restart case
+            elif len(prev_track_data) == 0:
+                # this means that previous timepoint failed and we wrote zeros
+                # we need to restart tracking, do what you do for timepoint zero and reset all the indices
+                        # we create a file with appropriate compression and chunking and write the first image
+                cells_array = zarr.convenience.open(cells_filename, mode='a', shape=(1, height, width),
+                                chunks=(1, height, 2*param.Save.channel_width), order='C', 
+                                dtype='uint8', compressor=compressor)
+                cells_array.append(image[np.newaxis, :])
+
+                # for each channel at this timepoint, set the index value of each cell
+                # in the channel to be it's key, this will reset the tracking to start 
+                # from this frame onwards
+                for channel_no, one_channel_props in props_all_channels.items():
+                    for cell_idx in one_channel_props:
+                        one_channel_props[cell_idx]['index'] = int(cell_idx)
+                        
+                tracks_write_filename = tracks_dir / Path('tracks_' + str(timepoint).zfill(4) + '.json')
+                with open(tracks_write_filename, 'w') as tracks_fh:
+                    tracks_fh.write(json.dumps(props_all_channels))
+
+
+        duration = 1000 * (time.time() - start_time)
+        sys.stdout.write(f"Tracking Pos: {tracking_event['position']} time: {tracking_event['time']} , no ch: {len(props_all_channels)}, duration: {duration:0.4f}ms ...\n")
+        sys.stdout.flush()
+
+        return None
     
+    except Exception as e:
+        sys.stdout.write(f"Tracking Pos: {tracking_event['position']} time: {tracking_event['time']} failed completely due to {e}:(\n")
+        sys.stdout.flush()
+        return None
+        
