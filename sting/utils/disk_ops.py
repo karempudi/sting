@@ -12,6 +12,8 @@ from skimage.measure import label
 import h5py
 from sting.utils.db_ops import read_from_db
 import zarr
+import json
+from skimage.draw import line, line_aa
 
 def write_files(event_data, event_type, param):
     """
@@ -293,9 +295,71 @@ def read_files(read_type, param, position, channel_no, max_imgs=20):
                 'right_barcode': right_barcode_img
             }
         
-        elif read_type == 'cell_tracks':
-            return np.random.rand((100, 100)) * 255
+        elif read_type == 'cell_tracks' and param.Save.small_file_format == '.zarr':
 
+            # read the zarr file and load the corresponding segmentation masks
+            cells_filename = dir_name / Path('Pos' + str(position)) / Path('cells.zarr')
+
+            channel_width = param.Save.channel_width
+
+            data = zarr.convenience.open(cells_filename, mode='r')
+            n_slices, height, width = data.shape
+            last_key = n_slices - 1
+            prev_phase_filename = dir_name / Path('Pos' + str(position)) / Path('phase') / Path('phase_' + str(last_key).zfill(4) + '.tiff')
+            barcode_data = read_from_db('barcode_locations', dir_name, position=position, timepoint=last_key)
+            #print(f"Last key: {last_key}, barcode_data: {barcode_data}")
+            # get the barcode locations and grab barcode images from the phase image
+            channel_location = barcode_data['channel_locations'][channel_no]
+            for i, barcode in enumerate(barcode_data['barcode_locations'], 0):
+                if (((barcode[0] + barcode[2])/2) > channel_location):
+                    break
+            left_barcode =  barcode_data['barcode_locations'][i-1]
+            right_barcode = barcode_data['barcode_locations'][i]
+            prev_phase_img = imread(prev_phase_filename)
+            left_barcode_img = prev_phase_img[int(left_barcode[1]): int(left_barcode[3]), int(left_barcode[0]): int(left_barcode[2])]
+            right_barcode_img = prev_phase_img[int(right_barcode[1]): int(right_barcode[3]), int(right_barcode[0]): int(right_barcode[2])]
+
+            # tracks dir
+            tracks_dir = dir_name / Path('Pos' + str(position)) / Path('tracks')
+            if max_imgs == None:
+                full_img = data[:, :, (channel_no) * 2 * channel_width : (channel_no+1) * 2 * channel_width]
+                full_img = np.hstack(full_img)
+                tracks_filenames = [tracks_dir / Path('tracks_' + str(i).zfill(4) + '.json') for i in range(n_slices)]
+            else:
+                full_img = data[-max_imgs:, :, (channel_no) * 2 * channel_width : (channel_no+1) * 2 * channel_width]
+                full_img = np.hstack(full_img)
+                tracks_filenames = [tracks_dir / Path('tracks_' + str(i).zfill(4) + '.json') for i in range(n_slices-1, max(-1, n_slices-max_imgs),-1)]
+
+            full_img = np.stack((full_img, full_img, full_img), axis=-1)
+            track_data = []
+            for filename in tracks_filenames:
+                with open(filename, 'r') as fh:
+                    track_data.append(json.load(fh)[str(channel_no)])
+            indices = list(range(len(track_data)))
+            for (i, j) in zip(indices[:-1], indices[1:]):
+                res_dict1 = track_data[i]
+                res_dict2 = track_data[j]
+                for key1 in res_dict1:
+                    cell_index = res_dict1[key1]['index']
+                    for key2 in res_dict2:
+                        # check for same index
+                        if res_dict2[key2]['index'] == cell_index:
+                            cm_t1_x, cm_t1_y = res_dict1[key1]['cm']
+                            cm_t2_x, cm_t2_y = res_dict2[key2]['cm']
+                            rr, cc = line(int(cm_t1_x), int(cm_t1_y) + (i * channel_width), int(cm_t2_x), int(cm_t2_y) + j * channel_width)
+                            full_img[rr, cc, :] = [255, 0, 0]
+                        elif res_dict2[key2]['mother'] == cell_index and res_dict2[key2]['state'] == 'S':
+                            cm_t1_x, cm_t1_y = res_dict1[key1]['cm']
+                            cm_t2_x, cm_t2_y = res_dict2[key2]['cm']
+                            rr, cc = line(int(cm_t1_x), int(cm_t1_y) + (i * channel_width), int(cm_t2_x), int(cm_t2_y) + j * channel_width)
+                            full_img[rr, cc, :] = [0, 255, 0]
+
+            return {
+                'image': full_img,
+                'left_barcode': left_barcode_img,
+                'right_barcode': right_barcode_img
+            }
+ 
 
     except KeyError as k:
         sys.stdout.write(f"Reading failded to lay of some key {k}...\n")

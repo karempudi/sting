@@ -178,8 +178,12 @@ class TweezerWindow(QMainWindow):
         sys.stdout.write(f"Image updated ...\n")
         sys.stdout.flush()
         img_data = self.data_fetch_thread.get_data()
+        
         if img_data != None:
-            self.ui.image_plot.setImage(img_data['image'].T, autoLevels=True, autoRange=True)
+            if img_data['image'].shape[-1] == 3:
+                self.ui.image_plot.setImage(img_data['image'].T, autoLevels=True, autoRange=True)
+            else:
+                self.ui.image_plot.setImage(img_data['image'].T, autoLevels=True, autoRange=True)
             self.ui.barcode_plot_1.setImage(img_data['left_barcode'].T, autoLevels=True, autoRange=True)
             self.ui.barcode_plot_2.setImage(img_data['right_barcode'].T, autoLevels=True, autoRange=True)
         self.data_fetch_thread.quit()
