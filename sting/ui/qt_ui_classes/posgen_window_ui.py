@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 
-# Form implementation generated from reading ui file 'qt_ui_files/posgen_window.ui'
+# Form implementation generated from reading ui file '.\qt_ui_files\posgen_window.ui'
 #
-# Created by: PyQt5 UI code generator 5.15.6
+# Created by: PyQt5 UI code generator 5.9.2
 #
 # WARNING! All changes made in this file will be lost!
 
@@ -91,7 +91,7 @@ class Ui_PosGenWindow(object):
         self.right_side_layout.addWidget(self.right_br_button, 1, 1, 1, 1)
         self.two_sides_layout.addLayout(self.right_side_layout)
         self.horizontalLayoutWidget_3 = QtWidgets.QWidget(self.posgen_widget)
-        self.horizontalLayoutWidget_3.setGeometry(QtCore.QRect(400, 10, 298, 80))
+        self.horizontalLayoutWidget_3.setGeometry(QtCore.QRect(460, 0, 298, 80))
         self.horizontalLayoutWidget_3.setObjectName("horizontalLayoutWidget_3")
         self.general_buttons = QtWidgets.QHBoxLayout(self.horizontalLayoutWidget_3)
         self.general_buttons.setContentsMargins(0, 0, 0, 0)
@@ -186,9 +186,22 @@ class Ui_PosGenWindow(object):
         self.dry_run_progressbar.setGeometry(QtCore.QRect(420, 460, 261, 23))
         self.dry_run_progressbar.setProperty("value", 0)
         self.dry_run_progressbar.setObjectName("dry_run_progressbar")
+        self.horizontalLayoutWidget_8 = QtWidgets.QWidget(self.posgen_widget)
+        self.horizontalLayoutWidget_8.setGeometry(QtCore.QRect(240, 80, 211, 41))
+        self.horizontalLayoutWidget_8.setObjectName("horizontalLayoutWidget_8")
+        self.mm_version_layout = QtWidgets.QHBoxLayout(self.horizontalLayoutWidget_8)
+        self.mm_version_layout.setContentsMargins(0, 0, 0, 0)
+        self.mm_version_layout.setObjectName("mm_version_layout")
+        self.mm20_button = QtWidgets.QRadioButton(self.horizontalLayoutWidget_8)
+        self.mm20_button.setChecked(True)
+        self.mm20_button.setObjectName("mm20_button")
+        self.mm_version_layout.addWidget(self.mm20_button)
+        self.mm14_button = QtWidgets.QRadioButton(self.horizontalLayoutWidget_8)
+        self.mm14_button.setObjectName("mm14_button")
+        self.mm_version_layout.addWidget(self.mm14_button)
         PosGenWindow.setCentralWidget(self.posgen_widget)
         self.menubar = QtWidgets.QMenuBar(PosGenWindow)
-        self.menubar.setGeometry(QtCore.QRect(0, 0, 766, 22))
+        self.menubar.setGeometry(QtCore.QRect(0, 0, 766, 21))
         self.menubar.setObjectName("menubar")
         PosGenWindow.setMenuBar(self.menubar)
 
@@ -226,6 +239,8 @@ class Ui_PosGenWindow(object):
         self.save_dir_button.setText(_translate("PosGenWindow", "Save Dir"))
         self.exposure_label.setText(_translate("PosGenWindow", "(ms)"))
         self.exposure_button.setText(_translate("PosGenWindow", "Set Exposure"))
+        self.mm20_button.setText(_translate("PosGenWindow", "2.0"))
+        self.mm14_button.setText(_translate("PosGenWindow", "1.4"))
 
 from pyqtgraph import PlotWidget
 

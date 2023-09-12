@@ -160,7 +160,7 @@ Live:
   mm_app_path: 'test'
   mm_config_file_path: 'test_config_path'
   timeout: 50000
-  fake_image: False
+  fake_image: True
   fake_image_path: 'C:\\Users\\elflab\\Documents\\Praneeth\\data\\test_imgs\\phase_0021.tiff'
 
 

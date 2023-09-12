@@ -189,8 +189,8 @@
    <widget class="QWidget" name="horizontalLayoutWidget_3">
     <property name="geometry">
      <rect>
-      <x>400</x>
-      <y>10</y>
+      <x>460</x>
+      <y>0</y>
       <width>298</width>
       <height>80</height>
      </rect>
@@ -413,6 +413,35 @@
      <number>0</number>
     </property>
    </widget>
+   <widget class="QWidget" name="horizontalLayoutWidget_8">
+    <property name="geometry">
+     <rect>
+      <x>240</x>
+      <y>80</y>
+      <width>211</width>
+      <height>41</height>
+     </rect>
+    </property>
+    <layout class="QHBoxLayout" name="mm_version_layout">
+     <item>
+      <widget class="QRadioButton" name="mm20_button">
+       <property name="text">
+        <string>2.0</string>
+       </property>
+       <property name="checked">
+        <bool>true</bool>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QRadioButton" name="mm14_button">
+       <property name="text">
+        <string>1.4</string>
+       </property>
+      </widget>
+     </item>
+    </layout>
+   </widget>
   </widget>
   <widget class="QMenuBar" name="menubar">
    <property name="geometry">
@@ -420,7 +449,7 @@
      <x>0</x>
      <y>0</y>
      <width>766</width>
-     <height>22</height>
+     <height>21</height>
     </rect>
    </property>
   </widget>

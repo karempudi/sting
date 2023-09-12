@@ -33,6 +33,7 @@ class PosGenWindow(QMainWindow):
 
         self.save_dir = None
         self.exposure = None
+        self.mm_version=2.0
 
         if not self.one_side:
             self.enable_one_side_buttons(False)
@@ -53,6 +54,9 @@ class PosGenWindow(QMainWindow):
 
         self.ui.one_rect_button.toggled.connect(self.set_layout_type)
         self.ui.two_rect_button.toggled.connect(self.set_layout_type)
+
+        self.ui.mm14_button.toggled.connect(self.set_mm_version)
+        self.ui.mm20_button.toggled.connect(self.set_mm_version)
 
         self.ui.tl_button.clicked.connect(self.set_tl_position)
         self.ui.tr_button.clicked.connect(self.set_tr_position)
@@ -102,6 +106,15 @@ class PosGenWindow(QMainWindow):
             self.enable_one_side_buttons(True)
             self.motion_object = RectGridMotion()
         self.corners_dict = {}
+
+    def set_mm_version(self, clicked):
+        self.mm14_true = self.ui.mm14_button.isChecked()
+        self.mm20_true = self.ui.mm14_button.isChecked()
+
+        if self.mm14_true:
+            self.mm_version = 1.4
+        else:
+            self.mm_version = 2.0
 
 
     def enable_one_side_buttons(self, value):
@@ -231,7 +244,7 @@ class PosGenWindow(QMainWindow):
             write_json = construct_pos_file(self.positions_to_write, {
                 'xy_device': core.get_xy_stage_device(),
                 'z_device': core.get_focus_device(),
-            })
+            }, version=self.mm_version)
         except Exception as e:
             msg = QMessageBox()
             msg.setText(f"Micromanger 2.0 position not grabbed due to: {e}")
