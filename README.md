@@ -19,4 +19,6 @@ A package that will be developed to a production quality.
 - [ ] Backbone generation right after segmentation and effects on cell size. See if a network output or post-processed output can be useful here.
 - [ ] Dot detection intergration on the cluster (most likely) or some simple GPU implementation of wavelet methods if doable
 - [ ] Fork plot construction on the cluster and request results over the network.
-- [ ] More UI options to support Fork plotting and other data fetching from the cluster. 
+- [ ] More UI options to support Fork plotting and other data fetching from the cluster.
+- [ ] Better UI options descriptions.
+- [ ] Documentation
