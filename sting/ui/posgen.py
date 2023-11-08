@@ -34,13 +34,17 @@ class PosGenWindow(QMainWindow):
         self.save_dir = None
         self.exposure = None
         self.mm_version=2.0
+        self.chip_orientation = 'vertical'
 
         if not self.one_side:
             self.enable_one_side_buttons(False)
-            self.motion_object = TwoRectGridMotion()
+            self.motion_object = TwoRectGridMotion(chip_orientation=self.chip_orientation)
         if not self.two_sides:
             self.enable_two_sides_buttons(False)
-            self.motion_object = RectGridMotion()
+            if self.chip_orientation == 'vertical':
+                self.motion_object = RectGridMotion(movement_type='top')
+            else:
+                self.motion_object = RectGridMotion(movement_type='left')
         # setup button handlers
         self.setup_button_handlers()
        
@@ -57,6 +61,9 @@ class PosGenWindow(QMainWindow):
 
         self.ui.mm14_button.toggled.connect(self.set_mm_version)
         self.ui.mm20_button.toggled.connect(self.set_mm_version)
+
+        self.ui.chip_horizontal_button.toggled.connect(self.set_chip_orientation)
+        self.ui.chip_vertical_button.toggled.connect(self.set_chip_orientation)
 
         self.ui.tl_button.clicked.connect(self.set_tl_position)
         self.ui.tr_button.clicked.connect(self.set_tr_position)
@@ -99,12 +106,15 @@ class PosGenWindow(QMainWindow):
         if not self.one_side:
             self.enable_one_side_buttons(False)
             self.enable_two_sides_buttons(True)
-            self.motion_object = TwoRectGridMotion()
+            self.motion_object = TwoRectGridMotion(chip_orientation=self.chip_orientation)
 
         if not self.two_sides:
             self.enable_two_sides_buttons(False)
             self.enable_one_side_buttons(True)
-            self.motion_object = RectGridMotion()
+            if self.chip_orientation == 'vertical':
+                self.motion_object = RectGridMotion(movement_type='top')
+            else:
+                self.motion_object = RectGridMotion(movement_type='left')
         self.corners_dict = {}
 
     def set_mm_version(self, clicked):
@@ -115,6 +125,16 @@ class PosGenWindow(QMainWindow):
             self.mm_version = 1.4
         else:
             self.mm_version = 2.0
+    
+    def set_chip_orientation(self, clicked):
+        self.vertical_true = self.ui.chip_vertical_button.isChecked()
+        self.horizontal_true = self.ui.chip_horizontal_button.isChecked()
+
+        if self.vertical_true:
+            self.chip_orientation = 'vertical'
+        else:
+            self.chip_orientation = 'horizontal'
+
 
 
     def enable_one_side_buttons(self, value):
@@ -276,10 +296,13 @@ class PosGenWindow(QMainWindow):
         self.exposure = None
         if not self.one_side:
             self.enable_one_side_buttons(False)
-            self.motion_object = TwoRectGridMotion()
+            self.motion_object = TwoRectGridMotion(chip_orientation=self.chip_orientation)
         if not self.two_sides:
             self.enable_two_sides_buttons(False)
-            self.motion_object = RectGridMotion()
+            if self.chip_orientation == 'vertical':
+                self.motion_object = RectGridMotion(movement_type='top')
+            else:
+                self.motion_object = RectGridMotion(movement_type='left')
     
     def n_rows_changed(self):
         n_rows = self.ui.n_rows_edit.text()

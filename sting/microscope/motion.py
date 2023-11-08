@@ -55,8 +55,11 @@ class RectGridMotion(Motion):
             position names "PosTL", "PosTR", "PosBR", "PosBL", that mark the
             4 corners of the rectangle containing 25 rows of mother-machine
             channels
-        movement_type (str): left or right. More on this in the make_pattern function docstring.
+        movement_type (str): left or right or top or bottom.
+            More on this in the make_pattern function docstring.
             basically meant to show how the positions are going to be moving.
+            Use left or right with chip is placed horizontal
+            Use top or bottom when chip is placed vertical
         corner_names: a list of position labels used 
         nrows (int): number of rows  (depends on how many rows you want to image)
         ncols (int): number of cols  (depends on magnification, stick to 40x, 100 blocks, so 20 positions)
@@ -236,6 +239,9 @@ class RectGridMotion(Motion):
             movement_type: 'left' or 'right' (these are mean to be how you move
                         on the chip). Left half starts at TL->TR-> going down
                         Right half starts BL-> BR -> going up
+
+                        'top' or 'bottom' (these mean to move in one row on the chip
+                         we move down or up.)
         Returns:
             tuples: a list of tuples with i, j of the position
         The microscope is intended to stop at each of the
@@ -261,6 +267,29 @@ class RectGridMotion(Motion):
                     for j in range(ncols-1, -1, -1):
                         tuples.append((i, j))
             return tuples    
+        
+        elif movement_type == 'top':
+            tuples = []
+            for i in range(ncols):
+                if i%2 == 0:
+                    for j in range(nrows):
+                        tuples.append((j, i))
+                elif i%2 == 1:
+                    for j in range(nrows-1, -1, -1):
+                        tuples.append((j, i))
+            return tuples
+
+        elif movement_type == 'bottom':
+            tuples = []
+            for i in range(ncols-1, -1, -1):
+                if i%2 == 0:
+                    for j in range(nrows):
+                        tuples.append((j, i))
+                elif i%2 == 1:
+                    for j in range(nrows-1, -1, -1):
+                        tuples.append((j, i))
+            return tuples
+            
 
     @staticmethod
     def parse_position_file(filename: Union[str, pathlib.Path]):
@@ -371,6 +400,10 @@ class TwoRectGridMotion(Motion):
     specified by the 4 corners and a grid of certain size specifed by
     the number of positions to grab between the corners in x and y directions
 
+
+    The top blocks can be vertical if the chip orientation is vertical
+    but the corner labels are the same.
+
     (TL1) (0) ---------- (TR1) (1)   (TL2) (0) ---------- (TR2) (1)
      |                   |            |                    |
      |                   |            |                    |
@@ -390,23 +423,30 @@ class TwoRectGridMotion(Motion):
             containing 25 rows of mother-machine channels or how many ever you 
             specify, of this class, the restriction will be that
             number of rows should be odd.
+        chip_orientation: Which way is the chip oriented. 'horizontal' or 'vertical'
         corner_names: a list of position labels used 
         nrows (int): number of rows  (depends on how many rows you want to image)
         ncols (int): number of cols  (depends on magnification, stick to 40x, 100 blocks, so 20 positions)
     """
     def __init__(self, filename: Union[str, pathlib.Path] = None, objective: int = 40,
                 corner_names=['TL', 'TR', 'BR', 'BL'],
-                nrows=None, ncols=None):
+                nrows=None, ncols=None, chip_orientation='vertical'):
         # The strategy here is to create two sub rectangles and merge their positions
         # to create full scale
         super().__init__(objective=objective)
         self.nrows = nrows
         self.ncols = ncols
         self.corner_names = corner_names
-        self.left_half_motion = RectGridMotion(objective=objective, movement_type='left',
-                                corner_names=corner_names)
-        self.right_half_motion = RectGridMotion(objective=objective, movement_type='right',
-                                corner_names=corner_names)
+        if chip_orientation == 'vertical':
+            self.left_half_motion = RectGridMotion(objective=objective, movement_type='top',
+                                    corner_names=corner_names)
+            self.right_half_motion = RectGridMotion(objective=objective, movement_type='bottom',
+                                    corner_names=corner_names)
+        elif chip_orientation == 'horizontal':
+            self.left_half_motion = RectGridMotion(objective=objective, movement_type='left',
+                                    corner_names=corner_names)
+            self.right_half_motion = RectGridMotion(objective=objective, movement_type='right',
+                                    corner_names=corner_names)
 
         self.positions = None
     
@@ -594,3 +634,116 @@ class MotionFromFile(Motion):
         plt.tight_layout()
         plt.show()
     
+
+class VerticalTwoRectGridMotion(Motion):
+    """
+    Two Rectangular grids of positions, where the positions are 
+    specified by the 4 corners and a grid of certain size specifed by
+    the number of positions to grab between the corners in x and y directions
+
+    (TL1) (0) ---------- (TR1) (1)
+     |                   |           
+     |                   |          
+     |                   |         
+     |                   |         
+     |                   |        
+     |                   |         
+    (BL1) (3) ---------- (BR1) (2) 
+
+    (TL2) (0) ---------- (TR2) (1)
+     |                   |           
+     |                   |          
+     |                   |         
+     |                   |         
+     |                   |        
+     |                   |         
+    (BL2) (3) ---------- (BR2) (2) 
+
+
+    The number in the bracket represent the indices you will use to 
+    figure out which are the 8 corners in xy plane.
+
+    Args:
+        filename: a file name with positions list from micromanager 2.0 with
+            position names "PosTL1", "PosTR1", "PosBR1", "PosBL2", "PosTL2", 
+            "PosTR2", "PosBR1", "PosBL2" that mark the 8 corners of the rectangle
+            containing 25 rows of mother-machine channels or how many ever you 
+            specify, of this class, the restriction will be that
+            number of rows should be odd.
+        corner_names: a list of position labels used 
+        nrows (int): number of rows  (depends on how many rows you want to image)
+        ncols (int): number of cols  (depends on magnification, stick to 40x, 100 blocks, so 20 positions)
+    """
+    def __init__(self, filename: Union[str, pathlib.Path] = None, objective: int = 40,
+                corner_names=['TL', 'TR', 'BR', 'BL'],
+                nrows=None, ncols=None):
+        # The strategy here is to create two sub rectangles and merge their positions
+        # to create full scale
+        super().__init__(objective=objective)
+        self.nrows = nrows
+        self.ncols = ncols
+        self.corner_names = corner_names
+        self.left_half_motion = RectGridMotion(objective=objective, movement_type='top',
+                                corner_names=corner_names)
+        self.right_half_motion = RectGridMotion(objective=objective, movement_type='bottom',
+                                corner_names=corner_names)
+
+        self.positions = None
+    
+    def set_rows(self, rows):
+        self.left_half_motion.set_rows(rows)
+        self.right_half_motion.set_rows(rows)
+        self.nrows = rows
+    
+    def set_cols(self, cols):
+        self.left_half_motion.set_cols(cols)
+        self.right_half_motion.set_cols(cols)
+        self.ncols = cols
+
+    
+    def set_corner_position(self, label, position_dict):
+        """
+        Function that will set the positions of the corners,
+        by passing one at a time. It is used if you set the positions
+        from a UI by grabbing the current location.
+        Arguments:
+            label: one of 'TL1', 'TR1', 'BR1', 'BL1', 'TL2', 'TR2', 'BR2', 'BL2'
+            position_dict: dict with keys 'X', 'Y', 'Z', 'grid_row', 'grid_col', 'label'
+        """
+        if label[:2] not in self.corner_names:
+            raise ValueError(f"Position label not in the corner label list, found: {label}...")
+        else:
+            # check if all keys are in the position dict
+            keys = ['x', 'y', 'z', 'grid_row', 'grid_col', 'label']
+            for key in keys:
+                if key not in position_dict:
+                    raise ValueError(f"Key {key} not found in position dict: {position_dict}")
+            if int(label[2:]) == 1:
+                self.left_half_motion.corner_pos_dict[label[:2]] = position_dict
+            elif int(label[2:]) == 2:
+                self.right_half_motion.corner_pos_dict[label[:2]] = position_dict
+    
+    def construct_grid(self, starting_position_no=1):
+        if len(self.left_half_motion.corner_pos_dict) != 4 or len(self.right_half_motion.corner_pos_dict) != 4:
+            raise ValueError(f"All 8 corners not set .. check that everything is set")
+
+        print(self.left_half_motion.corner_pos_dict)
+        print(self.right_half_motion.corner_pos_dict)
+        
+        self.left_half_motion.construct_grid(starting_position_no)
+        n_left_positions = len(self.left_half_motion.positions)
+        self.right_half_motion.construct_grid(starting_position_no + n_left_positions)
+
+        left_positions = self.left_half_motion.positions
+        right_positions = self.right_half_motion.positions
+        self.positions = left_positions + right_positions
+        print(n_left_positions, len(self.positions))
+
+    @classmethod
+    def parse(cls, param):
+        pass
+    
+    def plot_motion_plan(self):
+        plt.figure()
+        plt.close()
+        
